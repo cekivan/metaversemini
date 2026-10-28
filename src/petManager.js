@@ -166,8 +166,8 @@ function spawnPet(ownerId, arg2, arg3) {
         createdAt: Date.now(),
         durationMs: PET_DURATION_MS,
         expiresAt: Date.now() + PET_DURATION_MS,
-        speech: `${cfg.emoji} Merhaba!`,
-        speechUntil: Date.now() + 6000
+        speech: null,
+        speechUntil: 0
     };
 
     activeCompanionPets[username] = pet;
@@ -190,12 +190,7 @@ function spawnPet(ownerId, arg2, arg3) {
         }
     }
 
-    // 1. PERİYODİK PET SESLERİ (Her 45 saniyede bir sevimli miyav/hav/cik)
-    petTalkIntervals[username] = setInterval(() => {
-        triggerRandomPetTalk(username);
-    }, 45000);
-
-    // 2. 15 DAKİKA SONRA VEDA VE DESPAWN
+    // 1. 15 DAKİKA SONRA VEDA VE DESPAWN
     petExpireTimers[username] = setTimeout(() => {
         despawnPet(username, "15 dakikalık süre doldu");
     }, PET_DURATION_MS);
@@ -204,26 +199,10 @@ function spawnPet(ownerId, arg2, arg3) {
 }
 
 /**
- * Petin rastgele konuşması
+ * Petin rastgele konuşması (Kullanıcı talebiyle kaldırıldı)
  */
 function triggerRandomPetTalk(username) {
-    const pet = activeCompanionPets[username];
-    if (!pet || Date.now() >= pet.expiresAt) return;
-
-    const cfg = PET_CONFIGS[pet.petType];
-    if (!cfg || !cfg.sayings || cfg.sayings.length === 0) return;
-
-    const chosen = cfg.sayings[Math.floor(Math.random() * cfg.sayings.length)];
-    pet.speech = chosen;
-    pet.speechUntil = Date.now() + 7000;
-
-    if (ioRef && pet.room) {
-        ioRef.to(pet.room).emit('companionPetSpeak', {
-            petId: pet.id,
-            ownerId: pet.ownerId,
-            speech: pet.speech
-        });
-    }
+    return;
 }
 
 /**

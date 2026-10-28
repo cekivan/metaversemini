@@ -579,6 +579,13 @@
             return false;
         }
 
+        if (myP.hasHorse) {
+            if (typeof alert === 'function') {
+                alert("⚠️ Binek atındayken Kuğu Deniz Bisikleti kiralayamazsınız! Önce attan inmelisiniz.");
+            }
+            return true;
+        }
+
         if (myP.hasSwanBoat) {
             if (typeof showGameNotification === 'function') {
                 showGameNotification("🦢 Zaten Kuğu Deniz Bisikleti kiraladınız! Denizde 2 kat hızla süzülebilirsiniz.");

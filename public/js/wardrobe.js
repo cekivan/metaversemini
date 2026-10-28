@@ -2,16 +2,16 @@
 
 let myMoney = 2000;
 let myInventory = {
-    hats: ['none', 'bere'],
+    hats: ['none', 'bere', 'k2_skater_bucket'],
     faces: ['none'],
     skins: ['#facc15'],
-    outfits: ['outfit_camo_set', 'outfit_c2_gentleman'],
-    tshirts: ['tshirt_divalar', '#3b82f6'],
-    pants: ['pants_camo_cargo', 'pants_classic_jeans'],
-    shirts: ['#3b82f6'],
-    shoes: ['none', 'sneakers'],
+    outfits: ['outfit_c2_gentleman'],
+    tshirts: ['#3b82f6', 'k2_cyber_street', 'k2_graffiti_oversize'],
+    pants: ['pants_classic_jeans', 'pants_k2_tactical_jogger', 'pants_k2_skater_cargo'],
+    shirts: ['#3b82f6', 'k2_cyber_street', 'k2_graffiti_oversize'],
+    shoes: ['none', 'sneakers', 'shoes_k2_chunky_sneaker', 'shoes_k2_skate_pro'],
     watches: ['none'],
-    props: ['none']
+    props: ['none', 'k2_energy_drink', 'k2_skateboard']
 };
 let myAvatar = {
     model: 'classic_2',
@@ -30,10 +30,6 @@ let myAvatar = {
 const WARDROBE_CATALOG = {
     hats: [
         { id: 'none', name: 'Yok', cost: 0, icon: '🚫', model: 'all' },
-        // 2.5D İzometrik Saç Koleksiyonu
-        { id: 'hair_sanalika_dreadlocks', name: 'Kızıl Rasta & Bandana', cost: 0, icon: '🧑‍🦰', model: 'sanalika_v2' },
-        { id: 'hair_sanalika_street', name: 'Sokak Diken Saç', cost: 220, icon: '💇‍♂️', model: 'sanalika_v2' },
-        { id: 'hair_sanalika_wavy', name: 'Dalgalı Salaş Saç', cost: 250, icon: '💇', model: 'sanalika_v2' },
         // Klasik & Klasik 2 Şapkalar & Saç Modelleri
         { id: 'bere', name: 'Kırmızı Bere', cost: 200, icon: '🔴', gender: 'male', model: ['classic', 'classic_2'] },
         { id: 'kasket', name: 'Kıraathane Kasketi', cost: 260, icon: '🧢', gender: 'male', model: ['classic', 'classic_2'] },
@@ -42,6 +38,7 @@ const WARDROBE_CATALOG = {
         { id: 'korsan', name: 'Korsan Kaptanı', cost: 420, icon: '🏴‍☠️', model: ['classic', 'classic_2'] },
         { id: 'sihirbaz', name: 'Sihirbaz Silindiri', cost: 360, icon: '🎩', model: ['classic', 'classic_2'] },
         { id: 'kulaklik', name: 'DJ Kulaklığı', cost: 250, icon: '🎧', model: ['classic', 'classic_2'] },
+        { id: 'k2_skater_bucket', name: 'K2 Sokak Kova Şapka', cost: 280, icon: '🧢', model: ['classic', 'classic_2'], description: 'Grafiti sokak stili çift dikişli salaş kova şapka (8 açılı)' },
         // Kadın Saç Modelleri & Şapkalar
         { id: 'hair_long', name: 'Uzun Düz Saç', cost: 260, icon: '👩', gender: 'female', model: ['classic', 'classic_2'] },
         { id: 'hair_wavy', name: 'Dalgalı Saç', cost: 320, icon: '💇‍♀️', gender: 'female', model: ['classic', 'classic_2'] },
@@ -55,7 +52,10 @@ const WARDROBE_CATALOG = {
         { id: 'hair_bun_chopsticks', name: 'Zarif Topuz & Çiçekli Toka', cost: 290, icon: '🌸', gender: 'female', model: ['classic', 'classic_2'] },
         { id: 'hair_redhead_wavy', name: 'Kızıl Dalgalı Romantik Saç', cost: 300, icon: '👩‍🦰', gender: 'female', model: ['classic', 'classic_2'] },
         { id: 'hair_pigtails_ribbon', name: 'Kurdeleli İkili Yan Saç', cost: 280, icon: '🎀', gender: 'female', model: ['classic', 'classic_2'] },
-        { id: 'hair_curly_brown', name: 'Kıvırcık Kahverengi Saç', cost: 290, icon: '👩‍🦱', gender: 'female', model: ['classic', 'classic_2'] }
+        { id: 'hair_curly_brown', name: 'Kıvırcık Kahverengi Saç', cost: 290, icon: '👩‍🦱', gender: 'female', model: ['classic', 'classic_2'] },
+        { id: 'hair_k2_twin_tails', name: 'K2 İkili Yandan Kuyruk', cost: 290, icon: '👧', gender: 'female', model: 'all', description: 'Renkli neon tokalı, omuzlara inen ikili sokak at kuyruğu' },
+        { id: 'hair_k2_wavy_shoulder', name: 'K2 Dalgalı Omuz Saçı', cost: 320, icon: '💇‍♀️', gender: 'female', model: 'all', description: 'Yandan ayrımlı, köprücük kemiğine dökülen havalı dalgalı saç' },
+        { id: 'hair_k2_hime_cut', name: 'K2 Gotik Hime / Düz Perçem', cost: 300, icon: '🖤', gender: 'female', model: 'all', description: 'Düz alın perçemli ve yanaklardan sarkan gotik sokak saçı' }
     ],
     faces: [
         { id: 'none', name: 'Sade', cost: 0, icon: '🙂', model: 'all' },
@@ -71,11 +71,6 @@ const WARDROBE_CATALOG = {
     ],
     // 1. KIYAFET / TAKIM (Hem Alt Hem Üst Set)
     outfits: [
-        // 2.5D İzometrik Setler
-        { id: 'outfit_camo_set', name: 'Siyah Tişört & Kargo Seti', cost: 0, color: '#18181b', icon: '🩳', isOutfit: true, model: 'sanalika_v2' },
-        { id: 'outfit_street_tracksuit', name: 'Sokak Eşofman Takımı', cost: 260, color: '#312e81', icon: '🏃', isOutfit: true, model: 'sanalika_v2' },
-        { id: 'overalls_blue', name: 'Mavi İşçi Tulumu', cost: 280, color: '#2563eb', icon: '🧑‍🔧', isOutfit: true, model: 'sanalika_v2' },
-        
         // Klasik 2 Özel Tasarım Setler (Yeni Model için Özel Kombinler)
         { id: 'outfit_c2_gentleman', name: 'Beyefendi Yelekli Takım', cost: 380, color: '#334155', icon: '🤵', isOutfit: true, model: 'classic_2', description: 'Yelekli şık ceket, kravat ve kumaş pantolon' },
         { id: 'outfit_c2_street_cool', name: 'Sokak Stili Bomber & Jean', cost: 340, color: '#0f766e', icon: '🧥', isOutfit: true, model: 'classic_2', description: 'Yeşil bomber ceket, beyaz tişört ve rahat jean' },
@@ -95,17 +90,12 @@ const WARDROBE_CATALOG = {
         { id: 'outfit_sporty', name: 'Pastel Fitness Takımı', cost: 250, color: '#38bdf8', icon: '🎽', gender: 'female', isOutfit: true, model: ['classic', 'classic_2'] },
         { id: 'dress_vintage_polka', name: 'Vintage Puantiyeli Elbise', cost: 300, color: '#dc2626', icon: '💃', gender: 'female', isOutfit: true, model: ['classic', 'classic_2'] },
         { id: 'dress_ocean_blue', name: 'Okyanus Mavisi Elbise', cost: 270, color: '#06b6d4', icon: '🌊', gender: 'female', isOutfit: true, model: ['classic', 'classic_2'] },
-        { id: 'outfit_turtleneck_skirt', name: 'Krem Balıkçı & Ekose Takım', cost: 290, color: '#fef3c7', icon: '🧣', gender: 'female', isOutfit: true, model: ['classic', 'classic_2'] }
+        { id: 'outfit_turtleneck_skirt', name: 'Krem Balıkçı & Ekose Takım', cost: 290, color: '#fef3c7', icon: '🧣', gender: 'female', isOutfit: true, model: ['classic', 'classic_2'] },
+        { id: 'dress_k2_cyber_street', name: 'K2 Siber Neon Mini Elbise', cost: 360, color: '#0ea5e9', icon: '👗', gender: 'female', isOutfit: true, model: 'all', description: 'Neon pembe askılı, siber şeritli ve jartiyer detaylı modern A-kesim mini sokak elbisesi' },
+        { id: 'dress_k2_goth_grunge', name: 'K2 Gotik Grunge Elbise', cost: 380, color: '#581c87', icon: '🖤', gender: 'female', isOutfit: true, model: 'all', description: 'Korse kesimli, gümüş zincirli çift katmanlı gotik pileli sokak elbisesi & choker' }
     ],
     // 2. TİŞÖRT / ÜST (Sadece Üst)
     tshirts: [
-        // 2.5D İzometrik Modele Özel Tişörtler (Klasik modelden kaldırıldı)
-        { id: 'tshirt_divalar', name: '"Divalar Yemek Yapmaz" Tişört', cost: 0, color: '#ffffff', icon: '✨', description: 'Özel baskılı beyaz tişört', model: 'sanalika_v2' },
-        { id: 'tshirt_black_fitted', name: 'Fitted Siyah Tişört', cost: 120, color: '#18181b', icon: '👕', model: 'sanalika_v2' },
-        { id: 'tshirt_hoodie_purple', name: 'Mor Sokak Hoodie', cost: 240, color: '#581c87', icon: '🧥', model: 'sanalika_v2' },
-        { id: 'tshirt_polo_striped', name: 'Çizgili Retro Polo Yaka', cost: 200, color: '#f8fafc', icon: '👕', model: 'sanalika_v2' },
-        { id: 'tshirt_leather_jacket', name: 'Motorcu Deri Ceket', cost: 350, color: '#09090b', icon: '🥼', model: 'sanalika_v2' },
-
         // Klasik & Klasik 2 Tişörtler ve Üstler
         { id: '#3b82f6', name: 'Mavi Tişört', cost: 0, color: '#3b82f6', icon: '👕', model: ['classic', 'classic_2'] },
         { id: '#ef4444', name: 'Kırmızı Tişört', cost: 100, color: '#ef4444', icon: '👕', model: ['classic', 'classic_2'] },
@@ -117,24 +107,26 @@ const WARDROBE_CATALOG = {
         { id: 'hoodie', name: 'Oversize Hoodie', cost: 220, color: '#6366f1', icon: '🧥', model: ['classic', 'classic_2'] },
         { id: 'leather', name: 'Klasik Deri Ceket', cost: 350, color: '#18181b', icon: '🥼', model: ['classic', 'classic_2'] },
         { id: 'skirt_crop', name: 'Pembe Crop Üst', cost: 220, color: '#f43f5e', icon: '👚', gender: 'female', model: ['classic', 'classic_2'] },
-        { id: 'skirt_denim', name: 'Kot Ceket & Üst', cost: 240, color: '#38bdf8', icon: '🎽', gender: 'female', model: ['classic', 'classic_2'] }
+        { id: 'skirt_denim', name: 'Kot Ceket & Üst', cost: 240, color: '#38bdf8', icon: '🎽', gender: 'female', model: ['classic', 'classic_2'] },
+        { id: 'k2_cyber_street', name: 'K2 Siber Sokak Tişörtü', cost: 240, color: '#0ea5e9', icon: '⚡', model: 'all', description: 'Neon mavi siber şeritli 8 açılı modern oversize tişört' },
+        { id: 'k2_graffiti_oversize', name: 'K2 Grafiti Oversize Tişört', cost: 260, color: '#18181b', icon: '🎨', model: 'all', description: 'Canlı neon grafiti sprey desenli ve sırt baskılı oversize sokak tişörtü' },
+        { id: 'top_k2_cyber_crop', name: 'K2 Siber Neon Crop Top', cost: 260, color: '#06b6d4', icon: '🎽', gender: 'female', model: 'all', description: 'Göbeği açık, neon mavi & pembe askılı modern siber crop top' },
+        { id: 'top_k2_grunge_oversize', name: 'K2 Grunge Düşük Omuz Tişört', cost: 250, color: '#4c1d95', icon: '👚', gender: 'female', model: 'all', description: 'Tek omzu açıkta bırakan salaş gotik mor sokak tişörtü' },
+        { id: 'top_k2_pastel_hoodie', name: 'K2 Pastel Crop Hoodie', cost: 270, color: '#f472b6', icon: '🧥', gender: 'female', model: 'all', description: 'Kapüşon ipli tatlı pastel pembe kısa sokak hoodisi' }
     ],
     // 3. PANTOLON / ALT (Sadece Alt)
     pants: [
-        // 2.5D İzometrik Pantolonlar (Klasik modelden ayrıldı)
-        { id: 'pants_camo_cargo', name: 'Kamuflaj Kargo Şort', cost: 0, color: '#4b5563', icon: '🩳', model: 'sanalika_v2' },
-        { id: 'pants_jeans_street', name: 'Yırtık Sokak Jean Pantolon', cost: 190, color: '#3b82f6', icon: '👖', model: 'sanalika_v2' },
-        { id: 'pants_chino_beige', name: 'Bej Chino Pantolon', cost: 160, color: '#d97706', icon: '👖', model: 'sanalika_v2' },
-        { id: 'pants_jogger_black', name: 'Siyah Sokak Jogger', cost: 200, color: '#18181b', icon: '👖', model: 'sanalika_v2' },
-        { id: 'pants_skirt_crop', name: 'Pileli Mini Etek', cost: 220, color: '#f43f5e', icon: '👗', gender: 'female', model: 'sanalika_v2' },
-        { id: 'pants_skirt_denim', name: 'Kot Mini Etek', cost: 210, color: '#3b82f6', icon: '👗', gender: 'female', model: 'sanalika_v2' },
-
         // Klasik & Klasik 2 Pantolonlar (Klasik Vücut Oranlarına Özel)
         { id: 'pants_classic_jeans', name: 'Klasik Mavi Jean', cost: 0, color: '#2563eb', icon: '👖', model: ['classic', 'classic_2'], description: 'Rahat kesim klasik mavi kot pantolon' },
         { id: 'pants_classic_black', name: 'Klasik Kumaş Siyah', cost: 190, color: '#1e293b', icon: '👖', model: ['classic', 'classic_2'], description: 'Resmi ve şık siyah kumaş pantolon' },
         { id: 'pants_classic_beige', name: 'Klasik Bej Chino', cost: 170, color: '#d4b996', icon: '👖', model: ['classic', 'classic_2'], description: 'Zarif bej keten chino pantolon' },
         { id: 'pants_classic_cargo_olive', name: 'Zeytin Yeşili Kargo', cost: 200, color: '#4d5d3b', icon: '👖', model: ['classic', 'classic_2'], description: 'Çok cepli rahat zeytin yeşili kargo' },
-        { id: 'pants_classic_white_skirt', name: 'Klasik Beyaz Pileli Etek', cost: 210, color: '#ffffff', icon: '👗', gender: 'female', model: ['classic', 'classic_2'], description: 'Zarif beyaz mini pileli etek' }
+        { id: 'pants_classic_white_skirt', name: 'Klasik Beyaz Pileli Etek', cost: 210, color: '#ffffff', icon: '👗', gender: 'female', model: ['classic', 'classic_2'], description: 'Zarif beyaz mini pileli etek' },
+        { id: 'pants_k2_tactical_jogger', name: 'K2 Taktik Urban Kargo', cost: 220, color: '#334155', icon: '👖', model: 'all', description: 'Yanları tokalı cepli 8 açılı taktik kargo jogger' },
+        { id: 'pants_k2_skater_cargo', name: 'K2 Skater Salaş Kargo', cost: 220, color: '#3f3f46', icon: '👖', model: 'all', description: 'Diz eskitmeli, gümüş zincirli bol kesim sokak skater kargo pantolonu' },
+        { id: 'pants_k2_cargo_mini', name: 'K2 Taktik Kargo Mini Etek', cost: 260, color: '#1e293b', icon: '👗', gender: 'female', model: 'all', description: 'Metal tokalı kemerli ve yan cepli siyah kargo mini etek' },
+        { id: 'pants_k2_flared_jeans', name: 'K2 İspanyol Paça Yüksek Bel Jean', cost: 280, color: '#1d4ed8', icon: '👖', gender: 'female', model: 'all', description: 'Gümüş zincirli, yüksek belli ve paçaları hafif genişleyen sokak kotu' },
+        { id: 'pants_k2_goth_fishnet', name: 'K2 Gotik Yırtık Jean & File', cost: 290, color: '#18181b', icon: '🖤', gender: 'female', model: 'all', description: 'Yırtık dizlerinden file çorap görünen gotik siyah sokak pantolonu' }
     ],
     // 4. KOL SAATLERİ (Klasik 2 Özel Koleksiyonu)
     watches: [
@@ -145,8 +137,6 @@ const WARDROBE_CATALOG = {
     ],
     shoes: [
         { id: 'none', name: 'Yalınayak', cost: 0, icon: '🦶', model: 'all' },
-        { id: 'sanalika_white_sneakers', name: 'Beyaz Sokak Sneaker', cost: 0, icon: '👟', model: 'sanalika_v2' },
-        { id: 'sanalika_skate_shoes', name: 'Sokak Kaykay Ayakkabısı', cost: 180, icon: '🛹', model: 'sanalika_v2' },
         { id: 'sneakers', name: 'Spor Sneaker', cost: 180, icon: '👟', model: ['classic', 'classic_2'] },
         { id: 'classic', name: 'Kösele Klasik Ayakkabı', cost: 240, icon: '👞', model: ['classic', 'classic_2'] },
         { id: 'boots', name: 'Kışlık Bot', cost: 280, icon: '🥾', model: ['classic', 'classic_2'] },
@@ -154,7 +144,10 @@ const WARDROBE_CATALOG = {
         { id: 'heels_gold', name: 'Altın Simli Stiletto', cost: 340, icon: '👠', gender: 'female', model: ['classic', 'classic_2'] },
         { id: 'boots_thigh_high', name: 'Diz Üstü Süet Çizme', cost: 350, icon: '👢', gender: 'female', model: ['classic', 'classic_2'] },
         { id: 'sandals_gladiator', name: 'İncili Gladyatör Sandalet', cost: 220, icon: '👡', gender: 'female', model: ['classic', 'classic_2'] },
-        { id: 'flats', name: 'Babet & Düz Ayakkabı', cost: 190, icon: '🥿', gender: 'female', model: ['classic', 'classic_2'] }
+        { id: 'flats', name: 'Babet & Düz Ayakkabı', cost: 190, icon: '🥿', gender: 'female', model: ['classic', 'classic_2'] },
+        { id: 'shoes_k2_chunky_sneaker', name: 'K2 Chunky Platform Sneaker', cost: 200, icon: '👟', model: 'all', description: 'Kalın beyaz tabanlı neon şeritli 8 açılı sokak sneakerı' },
+        { id: 'shoes_k2_skate_pro', name: 'K2 Skater Pro Chunky Sneaker', cost: 200, icon: '🛹', model: 'all', description: 'Süet burunlu, neon yeşil bağcıklı ve sakız tabanlı kaykay sneakerı' },
+        { id: 'shoes_k2_goth_boots', name: 'K2 Gotik Kalın Taban Bot', cost: 280, icon: '👢', gender: 'female', model: 'all', description: 'Gümüş tokalı ve kalın platform tabanlı gotik sokak botu' }
     ],
     props: [
         { id: 'none', name: 'Boş El', cost: 0, icon: '✋', model: 'all' },
@@ -174,7 +167,9 @@ const WARDROBE_CATALOG = {
         { id: 'kupa', name: 'Şampiyonluk Kupası', cost: 580, icon: '🏆', model: 'all' },
         { id: 'kilic', name: 'Orta Çağ Kılıcı', cost: 500, icon: '🗡️', model: 'all' },
         { id: 'oyuncak_araba', name: 'Küçük Oyuncak Araba', cost: 600, icon: '🚗', model: 'all' },
-        { id: 'sigara', name: 'Tüten Sigara', cost: 10000, icon: '🚬', model: 'all', description: 'Hafif dumanı tüten karizmatik el sigarası.' }
+        { id: 'sigara', name: 'Tüten Sigara', cost: 10000, icon: '🚬', model: 'all', description: 'Hafif dumanı tüten karizmatik el sigarası.' },
+        { id: 'k2_energy_drink', name: 'K2 Buzlu Enerji İçeceği', cost: 150, icon: '⚡', model: 'all', description: 'Buz gibi neon siber enerji içeceği (8 açılı)' },
+        { id: 'k2_skateboard', name: 'K2 Grafiti Sokak Kaykayı', cost: 350, icon: '🛹', model: 'all', description: 'Canlı grafiti desenli, neon tekerlekli çift burunlu profesyonel sokak kaykayı' }
     ]
 };
 for (const [category, items] of Object.entries(WARDROBE_CATALOG)) {
@@ -241,125 +236,68 @@ function itemMatchesModel(itemModel, currentModel) {
 
 function sanitizeAvatarForModel(av, targetModel) {
     if (!av) return;
-    if (targetModel === 'classic') targetModel = 'classic_2';
-    if (targetModel === 'sanalika_v2') {
-        let hatItem = WARDROBE_CATALOG.hats.find(h => h.id === av.hat);
-        if (!hatItem || !itemMatchesModel(hatItem.model, 'sanalika_v2')) {
-            av.hat = 'hair_sanalika_dreadlocks';
-        }
-        let shoeItem = (WARDROBE_CATALOG.shoes || []).find(s => s.id === av.shoes);
-        if (!shoeItem || !itemMatchesModel(shoeItem.model, 'sanalika_v2')) {
-            av.shoes = 'sanalika_white_sneakers';
-        }
-        if (av.outfit) {
-            let outItem = (WARDROBE_CATALOG.outfits || []).find(o => o.id === av.outfit);
-            if (outItem && !itemMatchesModel(outItem.model, 'sanalika_v2')) {
-                av.outfit = null;
-                av.shirt = 'tshirt_divalar';
-                av.color = 'tshirt_divalar';
-                av.pants = 'pants_camo_cargo';
-            }
-        }
-        let shirtItem = (WARDROBE_CATALOG.tshirts || []).find(t => t.id === av.shirt || t.id === av.color);
-        if (shirtItem && !itemMatchesModel(shirtItem.model, 'sanalika_v2')) {
-            av.shirt = 'tshirt_divalar';
-            av.color = 'tshirt_divalar';
-        }
-        let pantsItem = (WARDROBE_CATALOG.pants || []).find(p => p.id === av.pants);
-        if (pantsItem && !itemMatchesModel(pantsItem.model, 'sanalika_v2')) {
-            av.pants = 'pants_camo_cargo';
-        }
-    } else if (targetModel === 'classic_2') {
-        let hatItem = WARDROBE_CATALOG.hats.find(h => h.id === av.hat);
-        if (hatItem && !itemMatchesModel(hatItem.model, 'classic_2')) {
-            av.hat = 'bere';
-        }
-        let shoeItem = (WARDROBE_CATALOG.shoes || []).find(s => s.id === av.shoes);
-        if (shoeItem && !itemMatchesModel(shoeItem.model, 'classic_2')) {
-            av.shoes = 'sneakers';
-        }
-        let shirtItem = (WARDROBE_CATALOG.tshirts || []).find(t => t.id === av.shirt || t.id === av.color);
-        if (shirtItem && !itemMatchesModel(shirtItem.model, 'classic_2')) {
-            av.shirt = '#3b82f6';
-            av.color = '#3b82f6';
-        }
-        let pantsItem = (WARDROBE_CATALOG.pants || []).find(p => p.id === av.pants);
-        if (pantsItem && !itemMatchesModel(pantsItem.model, 'classic_2')) {
-            av.pants = 'pants_classic_jeans';
-        }
-        if (av.outfit) {
-            let outItem = (WARDROBE_CATALOG.outfits || []).find(o => o.id === av.outfit);
-            if (outItem && !itemMatchesModel(outItem.model, 'classic_2')) {
-                av.outfit = 'outfit_c2_gentleman';
-            }
-        }
-        if (!av.watch) av.watch = 'none';
-    }
+    targetModel = (targetModel === 'karakter_2' || targetModel === 'character_2') ? 'karakter_2' : 'classic_2';
+    if (!av.watch) av.watch = 'none';
+    av.model = targetModel;
 }
 window.sanitizeAvatarForModel = sanitizeAvatarForModel;
 
 function selectAvatarBodyModel(modelId) {
-    if (modelId !== 'sanalika_v2') modelId = 'classic_2';
+    let validModel = (modelId === 'karakter_2' || modelId === 'character_2') ? 'karakter_2' : 'classic_2';
     if (!previewAvatar) previewAvatar = { ...myAvatar };
-    previewAvatar.model = modelId;
-    myAvatar.model = modelId;
+    previewAvatar.model = validModel;
+    myAvatar.model = validModel;
+    window.selectedModelId = validModel;
 
-    // Seçilen modele uyumlu olmayan kıyafetleri otomatik uyarla
-    sanitizeAvatarForModel(previewAvatar, modelId);
-    sanitizeAvatarForModel(myAvatar, modelId);
+    sanitizeAvatarForModel(previewAvatar, validModel);
+    sanitizeAvatarForModel(myAvatar, validModel);
 
     if (typeof players !== 'undefined' && players[myId]) {
-        players[myId].model = modelId;
+        players[myId].model = validModel;
         Object.assign(players[myId], myAvatar);
     }
     if (typeof socket !== 'undefined' && socket.emit) {
-        socket.emit('setAvatarModel', { model: modelId });
+        socket.emit('setAvatarModel', { model: validModel });
     }
     updateModelSelectorUI();
-    renderWardrobeUI(); // Rozetleri ve filtreli ürün ızgarasını derhal yenile
+    renderWardrobeUI();
     if (typeof drawAvatarPreview === 'function') drawAvatarPreview();
 }
 window.selectAvatarBodyModel = selectAvatarBodyModel;
 
 function updateModelSelectorUI() {
-    let curModel = (previewAvatar && previewAvatar.model) || (myAvatar && myAvatar.model) || 'classic_2';
-    if (curModel === 'classic') curModel = 'classic_2';
-
-    let btnClassic2 = document.getElementById('bodyModelBtnClassic2');
-    let btnIsometric = document.getElementById('bodyModelBtnIsometric') || document.getElementById('bodyModelBtnSanalika');
-
-    const setBtnActive = (btn, gradient, border, glow) => {
-        if (!btn) return;
-        btn.style.background = gradient;
-        btn.style.borderColor = border;
-        btn.style.color = '#ffffff';
-        btn.style.boxShadow = `0 0 12px ${glow}`;
-    };
-    const setBtnInactive = (btn) => {
-        if (!btn) return;
-        btn.style.background = 'rgba(30, 41, 59, 0.6)';
-        btn.style.borderColor = 'rgba(255,255,255,0.15)';
-        btn.style.color = '#94a3b8';
-        btn.style.boxShadow = 'none';
-    };
-
-    setBtnInactive(btnClassic2);
-    setBtnInactive(btnIsometric);
-
-    if (curModel === 'sanalika_v2') {
-        setBtnActive(btnIsometric, 'linear-gradient(135deg, #ec4899, #8b5cf6)', '#f472b6', 'rgba(236,72,153,0.5)');
-    } else {
-        setBtnActive(btnClassic2, 'linear-gradient(135deg, #10b981, #059669)', '#34d399', 'rgba(16,185,129,0.5)');
-    }
-
+    let cur = (previewAvatar && previewAvatar.model) || (myAvatar && myAvatar.model) || 'classic_2';
+    let isK2 = (cur === 'karakter_2');
+    
     let modelBadge = document.getElementById('currentModelBadge');
     if (modelBadge) {
-        if (curModel === 'sanalika_v2') {
-            modelBadge.innerText = '🌟 2.5D İzometrik';
-            modelBadge.style.color = '#f472b6';
+        modelBadge.innerText = isK2 ? '🌟 Karakter 2 (Eklemli)' : '🚶 Karakter 1 (Klasik)';
+        modelBadge.style.color = isK2 ? '#facc15' : '#34d399';
+    }
+
+    let btnClassic = document.getElementById('btnModelClassic');
+    let btnK2 = document.getElementById('btnModelKarakter2');
+    if (btnClassic && btnK2) {
+        if (isK2) {
+            btnClassic.style.background = 'rgba(30, 41, 59, 0.6)';
+            btnClassic.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+            btnClassic.style.color = '#94a3b8';
+            btnClassic.style.boxShadow = 'none';
+
+            btnK2.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            btnK2.style.border = '1.5px solid #fde68a';
+            btnK2.style.color = '#ffffff';
+            btnK2.style.boxShadow = '0 0 12px rgba(245, 158, 11, 0.4)';
         } else {
-            modelBadge.innerText = '🚶 Klasik';
-            modelBadge.style.color = '#34d399';
+            btnClassic.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            btnClassic.style.border = '1.5px solid #a7f3d0';
+            btnClassic.style.color = '#ffffff';
+            btnClassic.style.boxShadow = '0 0 12px rgba(16, 185, 129, 0.4)';
+
+            btnK2.style.background = 'rgba(30, 41, 59, 0.6)';
+            btnK2.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+            btnK2.style.color = '#94a3b8';
+            btnK2.style.boxShadow = 'none';
         }
     }
 }
@@ -367,8 +305,7 @@ window.updateModelSelectorUI = updateModelSelectorUI;
 
 function isItemOwned(category, id) {
     if (id === 'none' || id === 'watch_none' || id === '#facc15' || id === '#3b82f6') return true;
-    if (id === 'hair_sanalika_dreadlocks' || id === 'sanalika_camo_cargo' || id === 'sanalika_white_sneakers') return true;
-    if (id === 'tshirt_divalar' || id === 'pants_camo_cargo' || id === 'pants_classic_jeans' || id === 'outfit_camo_set' || id === 'outfit_c2_gentleman') return true;
+    if (id === 'pants_classic_jeans' || id === 'outfit_c2_gentleman') return true;
     let normCat = (category === 'watch' || category === 'watches') ? 'watches' : (category.endsWith('s') ? category : (category + 's'));
     let key = `${normCat}_${id}`;
     if (normCat === 'props') {
@@ -376,7 +313,7 @@ function isItemOwned(category, id) {
         return (propInv[key] && propInv[key] > 0);
     }
     if (normCat === 'watches' && id === 'none') return true;
-    if (normCat === 'shoes' && (id === 'none' || id === 'sneakers' || id === 'flats' || id === 'sanalika_white_sneakers')) return true;
+    if (normCat === 'shoes' && (id === 'none' || id === 'sneakers' || id === 'flats')) return true;
     if (Array.isArray(myInventory)) {
         if (myInventory.includes(key)) return true;
         if (myInventory.includes(id)) return true;
@@ -397,6 +334,7 @@ function openWardrobe() {
         }
     }
     setWardrobeGenderFilter(wardrobeGenderFilter || 'all');
+    updateModelSelectorUI();
     renderWardrobeUI();
     const modal = document.getElementById('wardrobeModal');
     if (modal) modal.style.display = 'flex';
@@ -454,7 +392,16 @@ function previewWardrobeItem(category, id) {
     }
     else if (category === 'shoes') previewAvatar.shoes = id;
     else if (category === 'watches') previewAvatar.watch = id;
-    else if (category === 'props') previewAvatar.heldItem = id;
+    else if (category === 'props') {
+        previewAvatar.heldItem = id;
+        if (id === 'sigara') {
+            previewAvatar._k2CigLit = false;
+            previewAvatar._k2UseLighter = true;
+            if (typeof triggerK2SmokeAnimation === 'function') {
+                triggerK2SmokeAnimation(previewAvatar, true);
+            }
+        }
+    }
     renderWardrobeUI();
 }
 
@@ -703,22 +650,35 @@ socket.on('wardrobeUpdate', (data) => {
         window.currentSkinSlot = currentSkinSlot;
     }
     if (data.avatar) {
+        const prevHeld = myAvatar ? myAvatar.heldItem : null;
         myAvatar = data.avatar;
         if (!myAvatar.shoes) myAvatar.shoes = (window.myGender === 'female' ? 'flats' : 'sneakers');
-        if (myAvatar.model !== 'sanalika_v2') myAvatar.model = 'classic_2';
+        if (data.avatar.model) {
+            myAvatar.model = (data.avatar.model === 'karakter_2' || data.avatar.model === 'character_2') ? 'karakter_2' : 'classic_2';
+        } else if (!myAvatar.model) {
+            myAvatar.model = 'classic_2';
+        }
         if (!myAvatar.shirt) myAvatar.shirt = myAvatar.color || '#3b82f6';
-        if (!myAvatar.pants) myAvatar.pants = (myAvatar.model === 'sanalika_v2') ? 'pants_camo_cargo' : 'pants_classic_jeans';
+        if (!myAvatar.pants) myAvatar.pants = 'pants_classic_jeans';
         if (!myAvatar.watch) myAvatar.watch = 'none';
+        if (myAvatar.heldItem === 'sigara' && prevHeld !== 'sigara') {
+            myAvatar._k2CigLit = false;
+            myAvatar._k2UseLighter = true;
+            if (typeof triggerK2SmokeAnimation === 'function') {
+                triggerK2SmokeAnimation(myAvatar, true);
+            }
+        }
         previewAvatar = { ...myAvatar };
         if (players[myId]) Object.assign(players[myId], myAvatar);
     }
     updateSkinSetsUI();
+    updateModelSelectorUI();
     renderWardrobeUI();
 });
 
 socket.on('playerAvatarChange', (data) => {
     let av = data.avatar || {
-        model: data.model === 'sanalika_v2' ? 'sanalika_v2' : 'classic_2',
+        model: (data.model === 'karakter_2' || (data.avatar && data.avatar.model === 'karakter_2')) ? 'karakter_2' : 'classic_2',
         hat: data.hat,
         face: data.face,
         skinColor: data.skinColor,
@@ -730,17 +690,33 @@ socket.on('playerAvatarChange', (data) => {
         heldItem: data.heldItem,
         shoes: data.shoes || 'sneakers'
     };
-    av.model = av.model === 'sanalika_v2' ? 'sanalika_v2' : 'classic_2';
+    av.model = (data.avatar && (data.avatar.model === 'karakter_2' || data.avatar.model === 'character_2')) ? 'karakter_2' : (data.model === 'karakter_2' ? 'karakter_2' : (av.model || 'classic_2'));
     if (!av.shirt) av.shirt = av.color || '#3b82f6';
-    if (!av.pants) av.pants = (av.model === 'sanalika_v2') ? 'pants_camo_cargo' : 'pants_classic_jeans';
+    if (!av.pants) av.pants = 'pants_classic_jeans';
     if (!av.watch) av.watch = data.watch || 'none';
 
     if (players[data.id]) {
+        const prevHeld = players[data.id].heldItem;
         Object.assign(players[data.id], av);
+        if (av.heldItem === 'sigara' && prevHeld !== 'sigara') {
+            players[data.id]._k2CigLit = false;
+            players[data.id]._k2UseLighter = true;
+            if (typeof triggerK2SmokeAnimation === 'function') {
+                triggerK2SmokeAnimation(players[data.id], true);
+            }
+        }
     }
     if (data.id === myId) {
+        const prevMyHeld = myAvatar ? myAvatar.heldItem : null;
         myAvatar = { ...myAvatar, ...av };
         previewAvatar = { ...myAvatar };
+        if (av.heldItem === 'sigara' && prevMyHeld !== 'sigara') {
+            myAvatar._k2CigLit = false;
+            myAvatar._k2UseLighter = true;
+            if (typeof triggerK2SmokeAnimation === 'function') {
+                triggerK2SmokeAnimation(myAvatar, true);
+            }
+        }
         renderWardrobeUI();
     }
 });
@@ -766,7 +742,7 @@ window.previewFacing = 'down';
 
 function rotateAvatarPreview(delta) {
     let curModel = (previewAvatar && previewAvatar.model) || (myAvatar && myAvatar.model) || 'classic_2';
-    let isClassic = (curModel !== 'classic_2' && curModel !== 'sanalika_v2');
+    let isClassic = (curModel === 'classic');
     let anglesList = isClassic ? PREVIEW_FACING_ANGLES_4WAY : PREVIEW_FACING_ANGLES;
 
     let curIdx = anglesList.findIndex(a => a.key === (window.previewFacing || 'down'));
@@ -839,7 +815,7 @@ function selectSkinSetSlot(slot) {
         if (typeof previewAvatar !== 'undefined') {
             previewAvatar = {
                 ...previewAvatar,
-                model: saved.model === 'sanalika_v2' ? 'sanalika_v2' : 'classic_2',
+                model: 'classic_2',
                 hat: saved.hat || 'bere',
                 face: saved.face || 'none',
                 skinColor: saved.skinColor || '#facc15',
@@ -870,7 +846,7 @@ function saveCurrentSkinSet() {
     let setName = (mySkinSets && mySkinSets[slot] && mySkinSets[slot].name) || defaultNames[slot] || ('Set ' + slot);
 
     let setPayload = {
-        model: avToSave.model === 'sanalika_v2' ? 'sanalika_v2' : 'classic_2',
+        model: 'classic_2',
         hat: avToSave.hat || 'bere',
         face: avToSave.face || 'none',
         skinColor: avToSave.skinColor || '#facc15',

@@ -108,7 +108,7 @@ function registerRouletteHandlers(io, socket, players) {
             return;
         }
 
-        if (!checkRateLimit(socket, 'roulette_spin', 1, 1500)) {
+        if (!checkRateLimit(socket, 'roulette_spin', 1, 4500)) {
             socket.emit('roulette_error', 'Lütfen çarkın durmasını bekleyin.');
             return;
         }

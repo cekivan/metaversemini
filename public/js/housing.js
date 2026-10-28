@@ -876,10 +876,17 @@ function setupFurnitureCanvasInteractions() {
     canvasInteractionSetupDone = true;
 
     function getCanvasCoords(e) {
+        if (typeof window.getCanvasEventCoords === 'function') {
+            return window.getCanvasEventCoords(e);
+        }
         let rect = gCanvas.getBoundingClientRect();
+        const borderLeft = gCanvas.clientLeft || 0;
+        const borderTop = gCanvas.clientTop || 0;
+        const clientW = gCanvas.clientWidth || (rect.width - borderLeft * 2);
+        const clientH = gCanvas.clientHeight || (rect.height - borderTop * 2);
         return {
-            x: (e.clientX - rect.left) * (gCanvas.width / rect.width),
-            y: (e.clientY - rect.top) * (gCanvas.height / rect.height)
+            x: ((e.clientX - rect.left - borderLeft) / (clientW || 1)) * gCanvas.width,
+            y: ((e.clientY - rect.top - borderTop) / (clientH || 1)) * gCanvas.height
         };
     }
 

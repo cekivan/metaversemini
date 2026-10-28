@@ -93,6 +93,8 @@ const UserSchema = new mongoose.Schema({
         }]
     },
     teaExpiresAt: { type: Number, default: null },
+    horseExpiresAt: { type: Number, default: null },
+    horseModel: { type: String, default: 'royal_sprite' },
     banExpiresAt: { type: Number, default: null },
     banReason: { type: String, default: null },
     bannedBy: { type: String, default: null },
@@ -109,7 +111,8 @@ const UserSchema = new mongoose.Schema({
 UserSchema.statics.findByUsername = function(uname) {
     if (!uname || typeof uname !== 'string') return Promise.resolve(null);
     const clean = uname.trim();
-    return this.findOne({ username: { $regex: new RegExp(`^${clean}$`, 'i') } });
+    const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return this.findOne({ username: { $regex: new RegExp(`^${escaped}$`, 'i') } });
 };
 
 module.exports = mongoose.model('User', UserSchema);

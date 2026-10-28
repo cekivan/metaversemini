@@ -76,6 +76,8 @@
                         </div>`
                     ).join('');
                 }
+            }
+
             const chessList = document.getElementById('chessLeaderList');
             if (chessList) {
                 if (!data.chess || data.chess.length === 0) {

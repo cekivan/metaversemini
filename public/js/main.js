@@ -14,7 +14,7 @@ var players = {};
 var currentRoom = "sokak";
 
 // WASD Hareket Değişkenleri (Akıcı Yürüyüş)
-var keys = { w: false, a: false, s: false, d: false };
+var keys = { w: false, a: false, s: false, d: false, shift: false };
 
 
 // --- 1. OTURUM & YÖNETİM DURUM DİNLENMESİ ---
@@ -150,27 +150,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameModal = document.getElementById('gameModal');
     const modalHeader = document.getElementById('modalHeader');
     let isModalDragging = false, mStartX = 0, mStartY = 0, mInitialLeft = 0, mInitialTop = 0;
+    let mHasMoved = false;
 
-    function startModalDrag(clientX, clientY) {
-        if (!gameModal) return;
+    function startModalDrag(clientX, clientY, target) {
+        if (!gameModal) return false;
+        if (target && (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.in-game-zoom-ctrl') || target.closest('.game-window-controls'))) {
+            return false;
+        }
         isModalDragging = true;
+        mHasMoved = false;
         mStartX = clientX;
         mStartY = clientY;
 
-        // CSS animasyonunu durdur ve tam ekran koordinatlarına kilitle
-        gameModal.style.animation = 'none';
         const rect = gameModal.getBoundingClientRect();
-        gameModal.style.transform = 'none';
-        gameModal.style.margin = '0';
-        gameModal.style.left = rect.left + 'px';
-        gameModal.style.top = rect.top + 'px';
-
         mInitialLeft = rect.left;
         mInitialTop = rect.top;
+        return true;
     }
 
     function moveModalDrag(clientX, clientY) {
         if (!isModalDragging || !gameModal) return;
+        const dist = Math.hypot(clientX - mStartX, clientY - mStartY);
+        if (dist > 3 && !mHasMoved) {
+            mHasMoved = true;
+            gameModal.style.animation = 'none';
+            gameModal.style.transform = 'none';
+            gameModal.style.margin = '0';
+            gameModal.style.left = mInitialLeft + 'px';
+            gameModal.style.top = mInitialTop + 'px';
+        }
+        if (!mHasMoved) return;
+
         const dx = clientX - mStartX;
         const dy = clientY - mStartY;
         let newLeft = mInitialLeft + dx;
@@ -190,13 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function endModalDrag() {
         isModalDragging = false;
+        mHasMoved = false;
     }
 
     if (modalHeader && gameModal) {
         modalHeader.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-            startModalDrag(e.clientX, e.clientY);
-            e.preventDefault();
+            if (startModalDrag(e.clientX, e.clientY, e.target)) {
+                e.preventDefault();
+            }
         });
         document.addEventListener('mousemove', (e) => {
             moveModalDrag(e.clientX, e.clientY);
@@ -205,9 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Dokunmatik (Mobil / Tablet) Sürükleme Desteği
         modalHeader.addEventListener('touchstart', (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
             if (e.touches && e.touches.length === 1) {
-                startModalDrag(e.touches[0].clientX, e.touches[0].clientY);
+                startModalDrag(e.touches[0].clientX, e.touches[0].clientY, e.target);
             }
         }, { passive: true });
         document.addEventListener('touchmove', (e) => {
@@ -224,10 +234,57 @@ document.addEventListener('DOMContentLoaded', () => {
         sideInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                sendSideChat();
+                const val = (sideInput.value || '').trim();
+                if (val.length > 0) {
+                    // Mesaj yazılmış: Gönder, chat panelini açık tut ve imleci chat inputunda tut
+                    sendSideChat();
+                    setTimeout(() => {
+                        sideInput.focus();
+                    }, 10);
+                } else {
+                    // Chat boşken Enter'a basıldı: Chat modundan çık, imleci kaldır ve oyuna dön
+                    sideInput.blur();
+                    const canvas = document.getElementById('gameCanvas');
+                    if (canvas) canvas.focus();
+                    window.focus();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                sideInput.blur();
+                const canvas = document.getElementById('gameCanvas');
+                if (canvas) canvas.focus();
+                window.focus();
             }
         });
         sideInput.addEventListener('input', updateChatCharCounter);
+    }
+
+    // Yeni Alt Hızlı Chat Input Dinleyicisi (Enter ile gönderme / boş Enter veya Escape ile oyuna dönme)
+    const bottomInput = document.getElementById('bottomChatInput');
+    if (bottomInput) {
+        bottomInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = (bottomInput.value || '').trim();
+                if (val.length > 0) {
+                    if (typeof sendBottomChat === 'function') sendBottomChat();
+                    setTimeout(() => {
+                        bottomInput.focus();
+                    }, 10);
+                } else {
+                    bottomInput.blur();
+                    const canvas = document.getElementById('gameCanvas');
+                    if (canvas) canvas.focus();
+                    window.focus();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                bottomInput.blur();
+                const canvas = document.getElementById('gameCanvas');
+                if (canvas) canvas.focus();
+                window.focus();
+            }
+        });
     }
 
     const passwordInput = document.getElementById('passwordInput');
@@ -252,6 +309,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!window._isGameLoopRunning) {
         window._isGameLoopRunning = true;
         requestAnimationFrame(gameLoop);
+    }
+
+    // Ekran Zoom Kontrollerini Başlat ve Kayıtlı Değeri Yükle
+    if (typeof initGameZoom === 'function') {
+        initGameZoom();
     }
 });
 
@@ -289,6 +351,9 @@ socket.on('playerMoved', (data) => {
             players[data.id].targetY = data.y;
             if (data.isMoving !== undefined) {
                 players[data.id].serverMoving = data.isMoving;
+            }
+            if (data.isSprinting !== undefined) {
+                players[data.id].isSprinting = data.isSprinting;
             }
             if (data.facing) {
                 players[data.id].facing = data.facing;
@@ -394,23 +459,33 @@ function changeRoom(newRoom, targetSpawn) {
     }
     currentRoom = newRoom;
     roomTransitionFadeAlpha = 0.95; // Sinematik mekan geçiş kararması (Fade in)
-    // Dinamik Ekran Büyütme (Star Caddesi, Meydan v2, Dostlar Kıraathanesi: 1000 x 625, Diğerleri: 800 x 500)
+    // Dinamik Ekran Büyütme (Star Caddesi, Meydan v2, Dostlar Kıraathanesi, Sahil v2: 1000 x 625, Diğerleri: 800 x 500)
     if (canvas) {
         if (newRoom === 'star_caddesi' || newRoom === 'meydanv2' || newRoom === 'dostlar_kiraathanesi' || newRoom === 'sahilv2') {
             canvas.width = 1000;
             canvas.height = 625;
-            canvas.style.width = '1000px';
             canvas.style.aspectRatio = '1000 / 625';
             canvas.classList.add('wide-screen');
+            const bottomBar = document.getElementById('gameBottomControlBar');
+            if (bottomBar) {
+                bottomBar.classList.add('wide-screen');
+            }
         } else {
             canvas.width = 800;
             canvas.height = 500;
-            canvas.style.width = '800px';
             canvas.style.aspectRatio = '800 / 500';
             canvas.classList.remove('wide-screen');
+            const bottomBar = document.getElementById('gameBottomControlBar');
+            if (bottomBar) {
+                bottomBar.classList.remove('wide-screen');
+            }
         }
-        if (typeof updateCanvasRect === 'function') {
-            updateCanvasRect();
+        if (typeof applyGameZoom === 'function') {
+            applyGameZoom(currentGameZoom, false);
+        } else {
+            if (typeof updateCanvasRect === 'function') {
+                updateCanvasRect();
+            }
         }
     }
 
@@ -518,9 +593,7 @@ function changeRoom(newRoom, targetSpawn) {
 
     socket.emit('changeRoom', newRoom);
     const fishBtn = document.getElementById('btnFishAction');
-    if (fishBtn) {
-        fishBtn.style.display = (newRoom === 'sahil' || newRoom === 'sahilv2') ? 'flex' : 'none';
-    }
+    if (fishBtn) fishBtn.style.display = 'none';
 
 
 
@@ -573,6 +646,256 @@ window.selectPlace = function(place) {
     }
 };
 
+// 🔍 EKRAN ZOOM / ÇÖZÜNÜRLÜK KONTROL SİSTEMİ
+let currentGameZoom = 100;
+try {
+    const savedZoom = localStorage.getItem('mm_canvasZoom');
+    if (savedZoom) {
+        const parsed = parseInt(savedZoom, 10);
+        if (!isNaN(parsed) && parsed >= 60 && parsed <= 220) {
+            currentGameZoom = parsed;
+        }
+    }
+} catch (e) {}
+
+window.initGameZoom = function() {
+    window.applyGameZoom(currentGameZoom, false);
+    if (typeof window.applyInGameZoom === 'function') {
+        window.applyInGameZoom(currentInGameZoom, false);
+    }
+};
+
+window.toggleZoomMenu = function(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    const menu = document.getElementById('zoomDropdownMenu');
+    if (menu) {
+        const isShown = menu.style.display === 'flex' || menu.classList.contains('active');
+        if (isShown) {
+            menu.style.display = 'none';
+            menu.classList.remove('active');
+        } else {
+            // Mekanlar menüsü açıksa kapat
+            const placesMenu = document.getElementById('placesDropdownMenu');
+            if (placesMenu) {
+                placesMenu.style.display = 'none';
+                placesMenu.classList.remove('active');
+                const placesArrow = document.getElementById('placesArrow');
+                if (placesArrow) placesArrow.style.transform = 'rotate(0deg)';
+            }
+            menu.style.display = 'flex';
+            menu.classList.add('active');
+            syncZoomUI();
+        }
+        const arrow = document.getElementById('zoomArrow');
+        if (arrow) arrow.style.transform = (menu.style.display === 'flex') ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+};
+
+window.applyGameZoom = function(zoomPercent, save = true) {
+    if (typeof zoomPercent === 'number' || typeof zoomPercent === 'string') {
+        const num = parseInt(zoomPercent, 10);
+        if (!isNaN(num)) {
+            currentGameZoom = Math.max(60, Math.min(220, num));
+        }
+    }
+    if (save) {
+        try {
+            localStorage.setItem('mm_canvasZoom', currentGameZoom);
+        } catch (e) {}
+    }
+
+    const isWide = (currentRoom === 'star_caddesi' || currentRoom === 'meydanv2' || currentRoom === 'dostlar_kiraathanesi' || currentRoom === 'sahilv2');
+    const baseWidth = isWide ? 1000 : 800;
+    const baseHeight = isWide ? 625 : 500;
+    const scaledWidth = Math.round(baseWidth * (currentGameZoom / 100));
+    const scaledHeight = Math.round(baseHeight * (currentGameZoom / 100));
+
+    if (canvas) {
+        canvas.style.setProperty('width', scaledWidth + 'px', 'important');
+        canvas.style.setProperty('height', scaledHeight + 'px', 'important');
+        canvas.style.setProperty('max-width', '98vw');
+        canvas.style.setProperty('aspect-ratio', `${baseWidth} / ${baseHeight}`);
+    }
+    const bottomBar = document.getElementById('gameBottomControlBar');
+    if (bottomBar) {
+        bottomBar.style.setProperty('max-width', scaledWidth + 'px', 'important');
+    }
+
+    syncZoomUI();
+
+    if (typeof updateCanvasRect === 'function') {
+        updateCanvasRect();
+    }
+};
+
+window.stepZoom = function(delta) {
+    window.applyGameZoom(currentGameZoom + delta);
+};
+
+window.handleZoomSliderInput = function(val) {
+    window.applyGameZoom(val);
+};
+
+window.fitZoomToScreen = function() {
+    const isWide = (currentRoom === 'star_caddesi' || currentRoom === 'meydanv2' || currentRoom === 'dostlar_kiraathanesi' || currentRoom === 'sahilv2');
+    const baseWidth = isWide ? 1000 : 800;
+    const baseHeight = isWide ? 625 : 500;
+    const aspect = baseWidth / baseHeight;
+
+    // Üst panel, alt kontrol çubuğu ve marjinlerin gerçek yükseklik payı
+    const topNav = document.querySelector('.top-nav');
+    const bottomBar = document.getElementById('gameBottomControlBar');
+    const topNavH = topNav ? (topNav.offsetHeight + 24) : 74;
+    const bottomH = bottomBar ? (bottomBar.offsetHeight + 22) : 58;
+    const extraPadding = 36; // Tarayıcı scrollbar ve nefes payı
+
+    const maxAvailableWidth = window.innerWidth * 0.94;
+    const maxAvailableHeight = Math.max(260, window.innerHeight - topNavH - bottomH - extraPadding);
+
+    const widthFromHeight = maxAvailableHeight * aspect;
+    const optimalWidth = Math.min(maxAvailableWidth, widthFromHeight);
+
+    // Kullanıcı talebi: Hesaplanan değerden %15 daha kompakt / rahat sığacak şekilde düşür
+    let targetZoom = Math.round(((optimalWidth / baseWidth) * 100) * 0.85);
+    // 5'in katına yuvarlayarak temiz bir yüzde elde et (örn. 110%, 115%, 120%)
+    targetZoom = Math.round(targetZoom / 5) * 5;
+    targetZoom = Math.max(60, Math.min(200, targetZoom));
+
+    window.applyGameZoom(targetZoom);
+};
+
+function syncZoomUI() {
+    const badge = document.getElementById('currentZoomBadge');
+    if (badge) badge.textContent = currentGameZoom + '%';
+
+    const stepVal = document.getElementById('zoomStepVal');
+    if (stepVal) stepVal.textContent = currentGameZoom + '%';
+
+    const sliderDisplay = document.getElementById('zoomSliderDisplay');
+    if (sliderDisplay) sliderDisplay.textContent = currentGameZoom + '%';
+
+    const rangeInput = document.getElementById('zoomRangeSlider');
+    if (rangeInput && parseInt(rangeInput.value, 10) !== currentGameZoom) {
+        rangeInput.value = currentGameZoom;
+    }
+
+    document.querySelectorAll('.zoom-preset-btn').forEach(btn => {
+        const val = parseInt(btn.getAttribute('data-zoom'), 10);
+        if (val === currentGameZoom) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+// 🔍 OYUN İÇİ (MODAL) ZOOM SİSTEMİ (Tüm Masa ve Mini Oyunlar)
+let currentInGameZoom = 100;
+try {
+    const savedInGame = localStorage.getItem('mm_inGameZoom');
+    if (savedInGame) {
+        const val = parseInt(savedInGame, 10);
+        if (!isNaN(val) && val >= 70 && val <= 160) {
+            currentInGameZoom = val;
+        }
+    }
+} catch (e) {}
+
+window.applyInGameZoom = function(zoomPercent, save = true) {
+    if (typeof zoomPercent === 'number' || typeof zoomPercent === 'string') {
+        const num = parseInt(zoomPercent, 10);
+        if (!isNaN(num)) {
+            currentInGameZoom = Math.max(70, Math.min(160, num));
+        }
+    }
+    if (save) {
+        try {
+            localStorage.setItem('mm_inGameZoom', currentInGameZoom);
+        } catch (e) {}
+    }
+
+    const scaleVal = currentInGameZoom / 100;
+
+    // A) DIŞ DİALOG PENCERELERİ (MODAL CONTAINERS) DAİMA 1:1 STANDART KALIR:
+    // Böylece pencere pozisyonu, başlık çubuğu ve sürükleme koordinatları asla kaymaz / zıplamaz!
+    const gameModal = document.getElementById('gameModal');
+    if (gameModal) gameModal.style.zoom = '1';
+
+    const amiralContent = document.getElementById('amiralBattiModalContent');
+    if (amiralContent) amiralContent.style.zoom = '1';
+
+    const xoxContent = document.getElementById('xoxModalContent');
+    if (xoxContent) xoxContent.style.zoom = '1';
+
+    const chessContent = document.getElementById('chessModalContent');
+    if (chessContent) chessContent.style.zoom = '1';
+
+    const bjContainer = document.querySelector('.blackjack-table-container');
+    if (bjContainer) bjContainer.style.zoom = '1';
+
+    const rouletteContainer = document.querySelector('.roulette-table-container');
+    if (rouletteContainer) rouletteContainer.style.zoom = '1';
+
+    // B) ZOOM DEĞERİ YALNIZCA OYUN İÇERİK GÖVDELERİNE (INNER BODY) UYGULANIR:
+    // 1. Ana Oyun Masası Gövdesi (Batak, 101 Okey, Amerikan Bilardo, Tavla, Dost Kazığı)
+    const gameBody = document.getElementById('gameModalBody');
+    if (gameBody) {
+        gameBody.style.zoom = scaleVal;
+    }
+
+    // 2. Canlı Blackjack 21 Çuha Masası
+    const bjBody = document.getElementById('bjModalBody') || document.querySelector('.bj-felt-table');
+    if (bjBody) {
+        bjBody.style.zoom = scaleVal;
+    }
+
+    // 3. VIP Avrupa Ruleti Masası
+    const rouletteBody = document.getElementById('rouletteModalBody') || document.querySelector('.roulette-main-area');
+    if (rouletteBody) {
+        rouletteBody.style.zoom = scaleVal;
+    }
+
+    // 4. Dede'nin Şimşek Slotu
+    const slotBody = document.getElementById('slotModalBody') || document.querySelector('.slot-body');
+    if (slotBody) {
+        slotBody.style.zoom = scaleVal;
+    }
+
+    // 5. XOX Düello Gövdesi
+    const xoxBody = document.getElementById('xoxModalBody');
+    if (xoxBody) {
+        xoxBody.style.zoom = scaleVal;
+    }
+
+    // 6. Amiral Battı Deniz Muharebesi Gövdesi (Radar ve HUD)
+    const amiralBody = document.getElementById('amiralModalBody');
+    if (amiralBody) {
+        amiralBody.style.zoom = scaleVal;
+    }
+
+    // 7. Satranç Gövdesi (Tahta ve Saatler)
+    const chessBody = document.getElementById('chessModalBody');
+    if (chessBody) {
+        chessBody.style.zoom = scaleVal;
+    }
+
+    // Tüm oyun içi rozetleri güncelle
+    document.querySelectorAll('.ig-zoom-badge').forEach(badge => {
+        badge.textContent = currentInGameZoom + '%';
+    });
+};
+
+window.stepInGameZoom = function(delta) {
+    window.applyInGameZoom(currentInGameZoom + delta);
+};
+
+window.resetInGameZoom = function() {
+    window.applyInGameZoom(100);
+};
+
 document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('placesDropdownMenu');
     const btn = document.getElementById('placesDropdownBtn');
@@ -581,6 +904,17 @@ document.addEventListener('click', (e) => {
             dropdown.style.display = 'none';
             dropdown.classList.remove('active');
             const arrow = document.getElementById('placesArrow');
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    const zoomDropdown = document.getElementById('zoomDropdownMenu');
+    const zoomBtn = document.getElementById('zoomDropdownBtn');
+    if (zoomDropdown && (zoomDropdown.style.display === 'flex' || zoomDropdown.classList.contains('active'))) {
+        if (!zoomDropdown.contains(e.target) && e.target !== zoomBtn && !zoomBtn?.contains(e.target)) {
+            zoomDropdown.style.display = 'none';
+            zoomDropdown.classList.remove('active');
+            const arrow = document.getElementById('zoomArrow');
             if (arrow) arrow.style.transform = 'rotate(0deg)';
         }
     }
@@ -593,36 +927,56 @@ function updateSwanBoatButtonUI() {
     const swanBtn = document.getElementById('btnSwanBoatAction');
     if (!swanBtn) return;
     swanBtn.style.display = (currentRoom === 'sahil' || currentRoom === 'sahilv2') ? 'flex' : 'none';
-    if (players[myId] && players[myId].hasSwanBoat) {
-        if (swanBoatSecondsLeft > 0) {
-            let m = Math.floor(swanBoatSecondsLeft / 60);
-            let s = swanBoatSecondsLeft % 60;
-            swanBtn.innerText = `🦢 Kuğu Bisikletindesin (${m}:${s < 10 ? '0' : ''}${s})`;
+    if (swanBoatSecondsLeft > 0) {
+        let m = Math.floor(swanBoatSecondsLeft / 60);
+        let s = swanBoatSecondsLeft % 60;
+        let timeStr = `${m}:${s < 10 ? '0' : ''}${s}`;
+        if (players[myId] && players[myId].hasSwanBoat) {
+            swanBtn.innerText = `🦢 Kuğudan İn (${timeStr})`;
+            swanBtn.style.background = "linear-gradient(135deg, #ef4444, #dc2626)";
         } else {
-            swanBtn.innerText = "🦢 Kuğu Bisikletindesin (5 Dakika)";
+            swanBtn.innerText = `🦢 Kuğu'ya Bin (${timeStr})`;
+            swanBtn.style.background = "linear-gradient(135deg, #10b981, #059669)";
         }
-        swanBtn.style.background = "#059669";
     } else {
-        swanBtn.innerText = "🦢 Kuğu Deniz Bisikleti Kirala (20 TL)";
+        swanBtn.innerText = "🦢 Kuğu Kirala (20 TL)";
         swanBtn.style.background = "linear-gradient(135deg, #f43f5e, #be123c)";
     }
 }
 
 function handleRentSwanBoat() {
-    socket.emit('rentSwanBoat');
+    if (swanBoatSecondsLeft > 0) {
+        if (players[myId] && players[myId].hasSwanBoat) {
+            // Kuğudan in
+            socket.emit('toggle_swan_boat', { mounted: false });
+            players[myId].hasSwanBoat = false;
+            updateSwanBoatButtonUI();
+            if (typeof showGanyanToast === 'function') showGanyanToast("🦢 Kuğu deniz bisikletinden indin.");
+        } else {
+            // Kuğu'ya bin
+            if (players[myId] && players[myId].hasHorse) {
+                alert("⚠️ Kuğu'ya binmek için önce attan inmelisiniz!");
+                return;
+            }
+            socket.emit('toggle_swan_boat', { mounted: true });
+            players[myId].hasSwanBoat = true;
+            updateSwanBoatButtonUI();
+            if (typeof showGanyanToast === 'function') showGanyanToast("🦢 Kuğu deniz bisikletine bindin!");
+        }
+    } else {
+        // Kirala
+        if (players[myId] && players[myId].hasHorse) {
+            alert("⚠️ Binek atındayken Kuğu Deniz Bisikleti kiralayamazsınız! Önce attan inmelisiniz.");
+            return;
+        }
+        socket.emit('rentSwanBoat');
+    }
 }
 
 socket.on('playerSwanBoatUpdate', (data) => {
     if (players[data.id]) {
         players[data.id].hasSwanBoat = data.hasSwanBoat;
         if (data.id === myId) {
-            if (!data.hasSwanBoat) {
-                if (swanBoatCountdownInterval) {
-                    clearInterval(swanBoatCountdownInterval);
-                    swanBoatCountdownInterval = null;
-                }
-                swanBoatSecondsLeft = 0;
-            }
             updateSwanBoatButtonUI();
         }
     }
@@ -808,6 +1162,7 @@ socket.on('startGame', (gameType) => {
 socket.on('updateTableLobby', (data) => {
     if (!data) return;
     window.currentActiveTableId = data.tableId;
+    window.currentActiveTableBet = data.bet || 0;
     const modal = document.getElementById('gameModal');
     if (modal) {
         modal.style.display = 'block';
@@ -817,11 +1172,12 @@ socket.on('updateTableLobby', (data) => {
     }
     const statusEl = document.getElementById('modalStatus');
     if (statusEl) {
-        statusEl.innerText = `Lobi: ${data.name} (${data.count}/${data.min} Oyuncu Bekleniyor)`;
+        statusEl.innerText = `Lobi: ${data.name} (${data.count}/${data.min} Oyuncu Bekleniyor)${data.bet > 0 ? ` [Bahis: ${data.bet} TL]` : ''}`;
     }
     const lobbyBotBtn = document.getElementById('lobbyAddBotBtn');
     if (lobbyBotBtn) {
-        lobbyBotBtn.style.display = (data.count < data.min) ? 'inline-block' : 'none';
+        // Bahisli masalara oyun başında bot eklenemez; yalnızca ücretsiz masalarda görünür
+        lobbyBotBtn.style.display = (data.count < data.min && (!data.bet || data.bet === 0)) ? 'inline-block' : 'none';
     }
 });
 
@@ -840,6 +1196,7 @@ socket.on('gameError', (msg) => {
 function resetAllTableUIs() {
     window.isSpectating = false;
     window.currentActiveTableId = null;
+    window.currentActiveTableBet = 0;
     if (window.leaveTableVoiceChat) window.leaveTableVoiceChat();
     const lobbyBotBtn = document.getElementById('lobbyAddBotBtn');
     if (lobbyBotBtn) lobbyBotBtn.style.display = 'none';
@@ -881,6 +1238,8 @@ function resetAllTableUIs() {
     if (fundsModal) fundsModal.style.display = 'none';
     const leaveModal = document.getElementById('gameLeaveConfirmModal');
     if (leaveModal) leaveModal.style.display = 'none';
+    const tavlaOrientModal = document.getElementById('tavlaOrientationModal');
+    if (tavlaOrientModal) tavlaOrientModal.style.display = 'none';
     const dock = document.getElementById('minimizedGameDock');
     if (dock) dock.style.display = 'none';
     window.activeMinimizedGame = null;
@@ -1109,7 +1468,7 @@ function goToFreeTables() {
 window.goToFreeTables = goToFreeTables;
 
 
-// --- 7. MOUSE VE HOVER TAKİBİ (SIFIR LAYOUT THRASHING) ---
+// --- 7. MOUSE VE HOVER TAKİBİ (SIFIR DESYNC VE TAM ZOOM HİZALAMASI) ---
 let canvasMouseX = -1, canvasMouseY = -1;
 let hoveredTableId = null;
 let cachedCanvasRect = null;
@@ -1117,15 +1476,30 @@ let cachedCanvasRect = null;
 function updateCanvasRect() {
     if (canvas) cachedCanvasRect = canvas.getBoundingClientRect();
 }
+window.updateCanvasRect = updateCanvasRect;
 window.addEventListener('resize', updateCanvasRect);
 window.addEventListener('scroll', updateCanvasRect, { passive: true });
 window.addEventListener('orientationchange', updateCanvasRect);
 
+// Herhangi bir zoom, border veya ölçeklendirmede canvasın tam piksel koordinatını hesaplar
+function getCanvasEventCoords(e) {
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    cachedCanvasRect = rect;
+    const borderLeft = canvas.clientLeft || 0;
+    const borderTop = canvas.clientTop || 0;
+    const clientW = canvas.clientWidth || (rect.width - borderLeft * 2);
+    const clientH = canvas.clientHeight || (rect.height - borderTop * 2);
+    const clickX = ((e.clientX - rect.left - borderLeft) / (clientW || 1)) * canvas.width;
+    const clickY = ((e.clientY - rect.top - borderTop) / (clientH || 1)) * canvas.height;
+    return { x: clickX, y: clickY };
+}
+window.getCanvasEventCoords = getCanvasEventCoords;
+
 canvas.addEventListener('mousemove', (e) => {
-    if (!cachedCanvasRect) updateCanvasRect();
-    let rect = cachedCanvasRect;
-    canvasMouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
-    canvasMouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    let coords = getCanvasEventCoords(e);
+    canvasMouseX = coords.x;
+    canvasMouseY = coords.y;
 
     if (currentRoom === 'sahil') {
         let isVendorHover = (canvasMouseX >= 90 && canvasMouseX <= 175 && canvasMouseY >= 145 && canvasMouseY <= 235);
@@ -1183,6 +1557,14 @@ let lastCanvasTapTime = 0;
 // --- 7.5 KOLTUĞA, SANDALYEYE, TABUREYE VE BANKA OTURMA MEKANİĞİ ---
 function sitPlayerAt(seatX, seatY, facing = 'down') {
     if (!players[myId]) return;
+
+    // Kullanıcı Talebi: "sandalyeye oturduğumuzda otomatik attan inmiş olalım."
+    if (players[myId].hasHorse) {
+        if (typeof dismountHorseAutoOnSit === 'function') {
+            dismountHorseAutoOnSit();
+        }
+    }
+
     myFacing = facing;
     players[myId].x = seatX;
     players[myId].y = seatY;
@@ -1331,6 +1713,48 @@ function handleCanvasTapOrClick(clickX, clickY) {
         }
     }
 
+    // 2.5 ÖNCELİK: Sandalye, Bank veya Koltuğa Tıklama Kontrolü (Tıklayarak Gidip Oturma)
+    let findSeatFn = (typeof findSeatAtCoordinates === 'function') 
+        ? findSeatAtCoordinates 
+        : (typeof window.findSeatAtCoordinates === 'function' ? window.findSeatAtCoordinates : null);
+    let clickedSeat = findSeatFn ? findSeatFn(worldX, worldY) : null;
+    if (clickedSeat && players[myId]) {
+        let myP = players[myId];
+        // Halihazırda oturuyorsa önce ayağa kalk
+        if (myP.action === 'sitting') {
+            standUpIfSitting();
+        }
+
+        let distToSeat = Math.hypot(clickedSeat.x - myP.x, clickedSeat.y - myP.y);
+        if (distToSeat <= 30) {
+            // Zaten koltuğun hemen dibindeyse doğrudan otur
+            sitPlayerAt(clickedSeat.x, clickedSeat.y, clickedSeat.facing);
+            if (typeof openGameForSeat === 'function') {
+                openGameForSeat(clickedSeat);
+            }
+            return;
+        }
+
+        // Koltuğa doğru yürü ve varınca otur
+        targetWalkPos = {
+            x: clickedSeat.x,
+            y: clickedSeat.y,
+            isSeatTarget: true,
+            targetSeat: clickedSeat,
+            onReach: () => {
+                sitPlayerAt(clickedSeat.x, clickedSeat.y, clickedSeat.facing);
+                if (typeof openGameForSeat === 'function') {
+                    openGameForSeat(clickedSeat);
+                }
+            }
+        };
+
+        if (!tapRipples) tapRipples = [];
+        tapRipples.push({ x: clickedSeat.x, y: clickedSeat.y, radius: 4, alpha: 1.0 });
+        if (tapRipples.length > 5) tapRipples.shift();
+        return;
+    }
+
     // 3. Modüler Mekan Etkileşim Motoru (public/js/roomInteractions.js)
     if (typeof handleRoomInteractionClick === 'function') {
         let handled = handleRoomInteractionClick(worldX, worldY, currentRoom, players[myId], (currentRoom === 'sanalika_cadde' ? 1600 : canvas.width), (currentRoom === 'sanalika_cadde' ? 960 : canvas.height));
@@ -1377,21 +1801,14 @@ function handleCanvasTapOrClick(clickX, clickY) {
 }
 
 canvas.addEventListener('click', (e) => {
-    if (!cachedCanvasRect) updateCanvasRect();
-    let rect = cachedCanvasRect;
-    let clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
-    let clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
-    handleCanvasTapOrClick(clickX, clickY);
+    const coords = getCanvasEventCoords(e);
+    handleCanvasTapOrClick(coords.x, coords.y);
 });
 
 canvas.addEventListener('touchstart', (e) => {
     if (e.touches && e.touches.length === 1) {
-        let t = e.touches[0];
-        if (!cachedCanvasRect) updateCanvasRect();
-        let rect = cachedCanvasRect;
-        let clickX = (t.clientX - rect.left) * (canvas.width / rect.width);
-        let clickY = (t.clientY - rect.top) * (canvas.height / rect.height);
-        handleCanvasTapOrClick(clickX, clickY);
+        const coords = getCanvasEventCoords(e.touches[0]);
+        handleCanvasTapOrClick(coords.x, coords.y);
     }
 }, { passive: true });
 
@@ -1459,9 +1876,10 @@ function update8WayFacingFromKeys() {
     if (kx !== 0 || ky !== 0) {
         let p = (typeof players !== 'undefined') ? players[myId] : null;
         let curModel = (p && p.model) || (typeof myAvatar !== 'undefined' && myAvatar.model) || 'classic_2';
-        let isClassic = (curModel !== 'classic_2' && curModel !== 'sanalika_v2');
+        let isClassic = (curModel === 'classic');
+        let isMountedNow = (typeof isMounted !== 'undefined' && isMounted) || (p && p.hasHorse) || (p && p.hasSwanBoat);
         let newFacing;
-        if (isClassic) {
+        if (isClassic && !isMountedNow) {
             // Nostaljik Klasik Model: 8'li dönme yok, sadece 4 ana yön
             if (kx !== 0 && ky === 0) newFacing = kx > 0 ? 'right' : 'left';
             else if (ky !== 0 && kx === 0) newFacing = ky > 0 ? 'down' : 'up';
@@ -1482,29 +1900,76 @@ function update8WayFacingFromKeys() {
     }
 }
 
+// --- AFK & ETKİLEŞİM TAKİBİ (Minimum 5 Dakika Hareketsizlik / Uyuklama Sistemi) ---
+const AFK_IDLE_TIMEOUT_MS = 300000; // 5 dakika (300.000 ms)
+let lastUserActivityTime = Date.now();
+
+function recordUserActivity() {
+    lastUserActivityTime = Date.now();
+    if (typeof players !== 'undefined' && typeof myId !== 'undefined' && players[myId]) {
+        let me = players[myId];
+        if (me.action === 'afk') {
+            me.action = null;
+            if (typeof socket !== 'undefined' && socket && socket.connected) {
+                socket.emit('playerAction', { action: 'stand' });
+            }
+        }
+    }
+}
+window.recordUserActivity = recordUserActivity;
+
+function checkAfkStatus() {
+    if (typeof players === 'undefined' || typeof myId === 'undefined' || !players[myId]) return;
+    let me = players[myId];
+    if (!me.isMoving && me.action !== 'afk' && me.action !== 'sitting' && me.action !== 'dance') {
+        if (Date.now() - lastUserActivityTime >= AFK_IDLE_TIMEOUT_MS) {
+            me.action = 'afk';
+            if (typeof socket !== 'undefined' && socket && socket.connected) {
+                socket.emit('playerAction', { action: 'afk' });
+            }
+        }
+    }
+}
+
+// Arka plan sekmelerinde de (rAF dursa bile) kesintisiz çalışması için periyodik kontrol (her 3 sn)
+setInterval(checkAfkStatus, 3000);
+
+['keydown', 'mousedown', 'touchstart', 'pointerdown'].forEach(evt => {
+    window.addEventListener(evt, recordUserActivity, { passive: true });
+});
+
 // Alt+Tab veya pencere odak kaybında tuş takılmasını (Sticky Keys) önleme
 window.addEventListener('blur', () => {
     keys.w = false;
     keys.a = false;
     keys.s = false;
     keys.d = false;
+    keys.shift = false;
     targetWalkPos = null;
 });
 
 window.addEventListener('keydown', (e) => {
     // 1. ENTER TUŞU YÖNETİMİ
     if (e.key === 'Enter') {
+        // Eğer son 300ms içinde chat'ten çıkılmışsa (boş Enter ile blur), tekrar chat'i açma!
+        if (window.lastChatExitTime && (Date.now() - window.lastChatExitTime < 300)) {
+            e.preventDefault();
+            return;
+        }
+
+        // Oyun içi pop-up uyarı modalı açıksa Enter ile kapat
+        const inGameAlert = document.getElementById('inGameAlertModal');
+        if (inGameAlert && inGameAlert.style.display === 'flex') {
+            e.preventDefault();
+            if (typeof closeInGameAlert === 'function') closeInGameAlert();
+            return;
+        }
+
         // Masadan ayrılma onay modalı açıksa Enter ile onayla
         const leaveConfirmModal = document.getElementById('gameLeaveConfirmModal');
         if (leaveConfirmModal && leaveConfirmModal.style.display === 'flex') {
             e.preventDefault();
             confirmLeaveCurrentGame();
-            return;
-        }
-
-        // Eğer kullanıcı bir yazı inputundaysa normal input davranışını bozma
-        let activeTag = document.activeElement ? document.activeElement.tagName : '';
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag) || document.activeElement?.isContentEditable) {
             return;
         }
 
@@ -1523,10 +1988,39 @@ window.addEventListener('keydown', (e) => {
             if (typeof closeMysteryBoxRewardModal === 'function') closeMysteryBoxRewardModal();
             return;
         }
+
+        // Eğer kullanıcı bir yazı inputundaysa normal input davranışını bozma
+        let activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag) || document.activeElement?.isContentEditable) {
+            return;
+        }
+
+        // Açık tam ekran oyun masası veya kumarhane modalı varsa arka plandaki chat'e odaklanmayı engelle
+        if (typeof getOpenGameModal === 'function' && getOpenGameModal()) return;
+        const activeFullscreenModal = ['blackjackModal', 'rouletteModal', 'slotModal', 'ganyanKuponModal'].some(id => {
+            const el = document.getElementById(id);
+            return el && el.style.display !== 'none' && el.style.display !== '';
+        });
+        if (activeFullscreenModal) return;
+
+        // Oyun modundayken Enter'a basıldı: CHAT'İ AÇ VE ODAKLAN!
+        e.preventDefault();
+        if (typeof openAndFocusChat === 'function') {
+            openAndFocusChat();
+        }
+        return;
     }
 
     // 2. ESCAPE (ESC) TUŞU YÖNETİMİ
     if (e.key === 'Escape' || e.key === 'Esc') {
+        // Oyun içi pop-up uyarı modalı açıksa Esc ile kapat
+        const inGameAlert = document.getElementById('inGameAlertModal');
+        if (inGameAlert && inGameAlert.style.display === 'flex') {
+            e.preventDefault();
+            if (typeof closeInGameAlert === 'function') closeInGameAlert();
+            return;
+        }
+
         // Masadan ayrılma onay modalı açıksa Esc ile iptal et / kapat
         const leaveConfirmModal = document.getElementById('gameLeaveConfirmModal');
         if (leaveConfirmModal && leaveConfirmModal.style.display === 'flex') {
@@ -1543,6 +2037,16 @@ window.addEventListener('keydown', (e) => {
             return;
         }
 
+        // Açık emote menüsü varsa Esc ile kapat
+        const emoteDropdown = document.getElementById('emoteDropdownMenu');
+        if (emoteDropdown && emoteDropdown.style.display === 'flex') {
+            e.preventDefault();
+            emoteDropdown.style.display = 'none';
+            const arrow = document.getElementById('emoteMenuArrow');
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+            return;
+        }
+
         // Genel pencereler/sekmeler açıksa (gardırop, eşya, vb.) sekmeyi kapat
         let closedAny = closeTopmostGeneralModal();
         if (closedAny) {
@@ -1554,6 +2058,9 @@ window.addEventListener('keydown', (e) => {
         let activeTag = document.activeElement ? document.activeElement.tagName : '';
         if (['INPUT', 'TEXTAREA'].includes(activeTag)) {
             document.activeElement.blur();
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas) canvas.focus();
+            window.focus();
             return;
         }
     }
@@ -1570,6 +2077,8 @@ window.addEventListener('keydown', (e) => {
     }
 
     // Aktif oyun masası veya tam ekran pencereler açıkken arka planda karakterin yürümesini engelle
+    let alertModal = document.getElementById('inGameAlertModal');
+    if (alertModal && alertModal.style.display === 'flex') return;
     let gameModal = document.getElementById('gameModal');
     if (gameModal && gameModal.style.display === 'flex') return;
     let wardrobeModal = document.getElementById('wardrobeModal');
@@ -1585,6 +2094,7 @@ window.addEventListener('keydown', (e) => {
 
     let wasdAllowed = !window.movementSettings || window.movementSettings.wasdEnabled !== false;
     if (wasdAllowed) {
+        if (e.key === 'Shift') { keys.shift = true; }
         if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') { keys.w = true; targetWalkPos = null; }
         if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') { keys.a = true; targetWalkPos = null; }
         if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') { keys.s = true; targetWalkPos = null; }
@@ -1596,6 +2106,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keyup', (e) => {
+    if (e.key === 'Shift') keys.shift = false;
     if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = false;
     if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = false;
     if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = false;
@@ -1682,6 +2193,7 @@ let lastMovementEmitTime = 0;
 let lastEmittedX = -9999;
 let lastEmittedY = -9999;
 let lastEmittedMoving = false;
+let lastEmittedSprinting = false;
 let lastGameLoopTime = 0;
 const MOVEMENT_EMIT_INTERVAL_MS = 38; // ~26 Hz (Ağı şişirmeyen, mükemmel pürüzsüz ağ güncelleme sıklığı)
 const _playerSortPool = []; // Sıfır Garbage Collection (GC) derinlik sıralama havuzu
@@ -1782,14 +2294,14 @@ function gameLoop(timestamp) {
         ctx.restore();
     }
 
-    // 2. Kendi Oyuncumuzu Hareket Ettir (Normal hız: 2.6; Atlı hız: 6.5 - Kullanıcı isteği: %30 artırıldı)
+    // 2. Kendi Oyuncumuzu Hareket Ettir (Normal hız: 2.6; Atlı hız: 5.2 - Kullanıcı isteği: 2 kat hız)
     if (players[myId]) {
         let isMounted = !!(players[myId] && players[myId].hasHorse);
         let myPet = (typeof window.activeCompanionPets !== 'undefined' && players[myId])
             ? (window.activeCompanionPets[myId] || Object.values(window.activeCompanionPets).find(pet => pet && (pet.ownerId === myId || pet.ownerName === players[myId].name)))
             : null;
         let hasCat = !!(myPet && myPet.petType === 'cat');
-        let speed = isMounted ? 6.5 : (hasCat ? 2.6 * 1.3 : 2.6);
+        let speed = isMounted ? 5.2 : (hasCat ? 2.6 * 1.3 : 2.6);
 
         // Kuğu Hız Kuralları (Sahil & Sahil V2): Kumsal/İskele 1x (2.6), Deniz/Su 2x (5.2)
         let isSwanInWater = false;
@@ -1812,6 +2324,14 @@ function gameLoop(timestamp) {
         let clickAllowed = !window.movementSettings || window.movementSettings.clickEnabled !== false;
 
         let hasKeyInput = wasdAllowed && (keys.w || keys.s || keys.a || keys.d);
+
+        // 2. ADIM: Shift Tuşu ile Koşma (Sprint Dynamics - %42 Hız Artışı)
+        let isSprinting = !isMounted && !p.hasSwanBoat && hasKeyInput && !!(keys.shift) && (p.action !== 'sitting' && p.action !== 'dance' && !p.isFishing);
+        if (isSprinting) {
+            speed *= 1.42; // 2.6 -> ~3.70 Hız
+        }
+        p.isSprinting = isSprinting;
+
         if (hasKeyInput) {
             targetWalkPos = null; // Klavye yön tuşuna basıldığı an tıklama rotasını iptal et
             if (keys.w) moveDy -= speed;
@@ -1824,11 +2344,12 @@ function gameLoop(timestamp) {
                 moveDx *= 0.70710678;
                 moveDy *= 0.70710678;
             }
-        } else if ((clickAllowed || (targetWalkPos && targetWalkPos.isVenueDoor)) && targetWalkPos) {
+        } else if ((clickAllowed || (targetWalkPos && (targetWalkPos.isVenueDoor || targetWalkPos.isSeatTarget))) && targetWalkPos) {
             let tdx = targetWalkPos.x - p.x;
             let tdy = targetWalkPos.y - p.y;
             let dist = Math.hypot(tdx, tdy);
-            if (dist < 4.5) {
+            let reachLimit = targetWalkPos.isSeatTarget ? 18 : 4.5;
+            if (dist < reachLimit) {
                 let pendingRoom = targetWalkPos.targetRoom;
                 let pendingAction = targetWalkPos.onReach;
                 targetWalkPos = null;
@@ -1865,7 +2386,7 @@ function gameLoop(timestamp) {
 
         if (Math.abs(activeVx) > 0.01 || Math.abs(activeVy) > 0.01) {
             let curModel = (p && p.model) || (typeof myAvatar !== 'undefined' && myAvatar.model) || 'classic_2';
-            let isClassic = (curModel !== 'classic_2' && curModel !== 'sanalika_v2');
+            let isClassic = (curModel === 'classic');
             let curDir;
             if ((p && p.hasSwanBoat) || isMounted) {
                 // Kuğu ve binek atı her zaman 8 yönlü pürüzsüz dönüş kullanır
@@ -1888,8 +2409,9 @@ function gameLoop(timestamp) {
             }
             standUpIfSitting(curDir);
             isMoving = true;
+            recordUserActivity();
             let prevWalkCycle = walkCycle;
-            walkCycle += (isMounted ? 0.45 : 0.21) * timeScale;
+            walkCycle += (isMounted ? 0.45 : (isSprinting ? 0.32 : 0.21)) * timeScale;
 
             // Ritmik doğal adım, at toynak sesi veya su pedalı sesi
             if (Math.floor(walkCycle / Math.PI) !== Math.floor(prevWalkCycle / Math.PI)) {
@@ -1899,7 +2421,13 @@ function gameLoop(timestamp) {
                     } else if (isSwanInWater) {
                         window.playSound('waterPaddle');
                     } else {
-                        window.playSound('footstep');
+                        let surface = 'solid';
+                        if (typeof window.getSurfaceType === 'function') {
+                            surface = window.getSurfaceType(p.x, p.y);
+                        } else if (typeof Karakter2Renderer !== 'undefined' && typeof Karakter2Renderer.getSurfaceType === 'function') {
+                            surface = Karakter2Renderer.getSurfaceType(p.x, p.y);
+                        }
+                        window.playSound('footstep', { surface, isSprinting: !!isSprinting });
                     }
                 }
             }
@@ -1935,9 +2463,24 @@ function gameLoop(timestamp) {
 
             // Eğer tıklayarak yürüme sırasında tam duvara veya köşeye çarpıp iki eksende de ilerleyemiyorsa rotayı sonlandır
             if (targetWalkPos && colX && colY) {
-                targetWalkPos = null;
-                p.vx = 0;
-                p.vy = 0;
+                if (targetWalkPos.isSeatTarget && targetWalkPos.onReach) {
+                    let seatDist = Math.hypot(targetWalkPos.x - p.x, targetWalkPos.y - p.y);
+                    if (seatDist <= 48) {
+                        let act = targetWalkPos.onReach;
+                        targetWalkPos = null;
+                        p.vx = 0;
+                        p.vy = 0;
+                        act();
+                    } else {
+                        targetWalkPos = null;
+                        p.vx = 0;
+                        p.vy = 0;
+                    }
+                } else {
+                    targetWalkPos = null;
+                    p.vx = 0;
+                    p.vy = 0;
+                }
             }
 
             // Eğer oyuncu halihazırda bir mobilya/engel içindeyse (örneğin sandalyeden yeni kalktıysa):
@@ -1957,6 +2500,9 @@ function gameLoop(timestamp) {
                 p.walkCycle = 0;
             }
         }
+
+        // AFK / Uyuklama Kontrolü (Minimum 5 dakika boyunca hiçbir hareket/etkileşim yapılmadığında)
+        checkAfkStatus();
 
         // Mekanlar Arası Kesintisiz Yürüyerek Geçiş Koridorları (Modüler public/js/roomInteractions.js)
         if (Date.now() >= roomTransitionCooldownUntil) {
@@ -1981,15 +2527,17 @@ function gameLoop(timestamp) {
 
         // Ağ Trafiği Throttling & Hassas Sayı Sıkıştırması (Bant Genişliği %40 Tasarruf)
         let posChanged = (Math.abs(p.x - lastEmittedX) > 0.3 || Math.abs(p.y - lastEmittedY) > 0.3);
+        let sprintChanged = (p.isSprinting !== lastEmittedSprinting);
         if (isMoving) {
-            if (posChanged && (now - lastMovementEmitTime >= MOVEMENT_EMIT_INTERVAL_MS)) {
+            if ((posChanged || sprintChanged) && (now - lastMovementEmitTime >= MOVEMENT_EMIT_INTERVAL_MS)) {
                 lastMovementEmitTime = now;
                 lastEmittedX = p.x;
                 lastEmittedY = p.y;
                 lastEmittedMoving = true;
+                lastEmittedSprinting = p.isSprinting;
                 let emitX = Math.round(p.x * 10) / 10;
                 let emitY = Math.round(p.y * 10) / 10;
-                socket.emit('playerMovement', { x: emitX, y: emitY, isMoving: true, facing: myFacing });
+                socket.emit('playerMovement', { x: emitX, y: emitY, isMoving: true, isSprinting: p.isSprinting, facing: myFacing });
             }
         } else if (lastEmittedMoving) {
             // Oyuncu yeni durdu! Son net pozisyonu kesinleştirici paket olarak gönder
@@ -1997,9 +2545,10 @@ function gameLoop(timestamp) {
             lastEmittedX = p.x;
             lastEmittedY = p.y;
             lastEmittedMoving = false;
+            lastEmittedSprinting = false;
             let emitX = Math.round(p.x * 10) / 10;
             let emitY = Math.round(p.y * 10) / 10;
-            socket.emit('playerMovement', { x: emitX, y: emitY, isMoving: false, facing: myFacing });
+            socket.emit('playerMovement', { x: emitX, y: emitY, isMoving: false, isSprinting: false, facing: myFacing });
         }
     }
 
@@ -2028,9 +2577,9 @@ function gameLoop(timestamp) {
                     p.x += dx * lerpFactor;
                     p.y += dy * lerpFactor;
                     p.isMoving = true;
-                    p.walkCycle = (p.walkCycle || 0) + (17 * dt);
+                    p.walkCycle = (p.walkCycle || 0) + ((p.isSprinting ? 24 : 17) * dt);
                     // 2.2 Yön Geçişlerinde Yumuşak Dönüş (Facing Lerp / Turn Smoothing)
-                    let isClassic = (p && p.model !== 'classic_2' && p.model !== 'sanalika_v2');
+                    let isClassic = (p && p.model === 'classic');
                     if (isClassic) {
                         if (Math.abs(dx) >= Math.abs(dy)) {
                             p.facing = dx > 0 ? 'right' : 'left';
@@ -2070,6 +2619,12 @@ function gameLoop(timestamp) {
     }
     _playerSortPool.length = poolIdx;
     _playerSortPool.sort((a, b) => a.y - b.y);
+
+    // Karakter 2 Ayak İzi, Su Dalgalanması & Anime Adım Tozu (Zemin Efektleri)
+    if (typeof Karakter2Renderer !== 'undefined' && typeof Karakter2Renderer.updateAndDrawFootstepParticles === 'function') {
+        Karakter2Renderer.updateAndDrawFootstepParticles(ctx);
+    }
+
     for (let i = 0; i < _playerSortPool.length; i++) {
         let item = _playerSortPool[i];
         drawAnimatedPlayer(item.p, item.id);
@@ -2129,4 +2684,79 @@ function gameLoop(timestamp) {
         roomTransitionFadeAlpha = Math.max(0, roomTransitionFadeAlpha - dt * 4.5);
     }
 }
+
+// --- OYUN İÇİ UYARI / BİLGİLENDİRME POP-UP SİSTEMİ (TARAYICI ALERT YERİNE) ---
+function showInGameAlert(message, title = 'Bildirim', icon = '⚠️', btnText = 'Tamam', callback = null) {
+    const modal = document.getElementById('inGameAlertModal');
+    if (!modal) {
+        console.warn("inGameAlertModal bulunamadı:", message);
+        return;
+    }
+    const iconEl = document.getElementById('inGameAlertIcon');
+    const titleEl = document.getElementById('inGameAlertTitle');
+    const msgEl = document.getElementById('inGameAlertMessage');
+    const btnEl = document.getElementById('inGameAlertBtn');
+
+    if (iconEl) iconEl.innerText = icon || '⚠️';
+    if (titleEl) titleEl.innerText = title || 'Bildirim';
+    if (msgEl) {
+        msgEl.innerHTML = String(message || '').replace(/\n/g, '<br>');
+    }
+    if (btnEl) btnEl.innerText = btnText || 'Tamam';
+
+    window._inGameAlertCallback = callback;
+    modal.style.display = 'flex';
+}
+window.showInGameAlert = showInGameAlert;
+
+function closeInGameAlert() {
+    const modal = document.getElementById('inGameAlertModal');
+    if (modal) modal.style.display = 'none';
+    if (typeof window._inGameAlertCallback === 'function') {
+        const cb = window._inGameAlertCallback;
+        window._inGameAlertCallback = null;
+        try { cb(); } catch (err) { console.error(err); }
+    }
+    const canvas = document.getElementById('gameCanvas');
+    if (canvas) canvas.focus();
+    window.focus();
+}
+window.closeInGameAlert = closeInGameAlert;
+
+function openAndFocusChat() {
+    const sidePanel = document.getElementById('sideChatContainer');
+    const isSideOpen = sidePanel && sidePanel.style.display !== 'none' && !sidePanel.classList.contains('chat-minimized');
+
+    if (isSideOpen) {
+        const sideInput = document.getElementById('sideChatInput');
+        if (sideInput) sideInput.focus();
+    } else {
+        const bottomInput = document.getElementById('bottomChatInput');
+        if (bottomInput) {
+            bottomInput.focus();
+        } else {
+            const sideInput = document.getElementById('sideChatInput');
+            if (sideInput) sideInput.focus();
+        }
+    }
+}
+window.openAndFocusChat = openAndFocusChat;
+
+// Tarayıcının varsayılan "localhost:3000 web sitesinin mesajı" kutusunu engelle ve oyun içi pop-up'a yönlendir
+window.alert = function (msg) {
+    let icon = '⚠️';
+    let title = 'Oyun Bildirimi';
+    let str = String(msg || '');
+    if (str.includes('🐎') || str.toLowerCase().includes('at') || str.toLowerCase().includes('binek') || str.toLowerCase().includes('seyis')) {
+        icon = '🐎';
+        title = 'Seyis Dursun';
+    } else if (str.includes('🦢') || str.toLowerCase().includes('kuğu')) {
+        icon = '🦢';
+        title = 'Sahil Görevlisi';
+    } else if (str.includes('💰') || str.toLowerCase().includes('para') || str.toLowerCase().includes('tl') || str.toLowerCase().includes('bakiye')) {
+        icon = '💰';
+        title = 'Bakiye Bilgisi';
+    }
+    showInGameAlert(msg, title, icon);
+};
 

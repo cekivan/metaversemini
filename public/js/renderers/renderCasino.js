@@ -205,7 +205,7 @@ function renderStaticGanyanTo(bctx, width, height) {
     bctx.fillText("🐎 Binek Atı Kirala (200 TL)", 652, 386);
     bctx.fillStyle = "#fde047";
     bctx.font = "bold 11px sans-serif";
-    bctx.fillText("⚡ 5 Dakika Boyunca 2.5X Hız!", 652, 403);
+    bctx.fillText("⚡ 5 Dakika Boyunca 2X Hız!", 652, 403);
     bctx.fillStyle = "#e2e8f0";
     bctx.font = "9px sans-serif";
     bctx.fillText("Tüm mekanlarda rüzgar gibi dörtnal koş", 652, 417);

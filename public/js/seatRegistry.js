@@ -318,6 +318,126 @@ function openGameForSeat(seat) {
 window.openGameForSeat = openGameForSeat;
 
 /**
+ * Tıklanan koordinata (worldX, worldY) en yakın sandalye, koltuk, tabure veya bankı bulur.
+ * @param {number} worldX Tıklanan dünya X koordinatı
+ * @param {number} worldY Tıklanan dünya Y koordinatı
+ * @param {number} maxRadius Maksimum tıklama toleransı (varsayılan 36px)
+ * @returns {object|null} Bulunan koltuk nesnesi veya null
+ */
+function findSeatAtCoordinates(worldX, worldY, maxRadius = 36) {
+    let room = typeof currentRoom !== 'undefined' ? currentRoom : '';
+
+    // 1. Statik Mekan Koltukları / Sandalyeleri / Bankları
+    let staticSeats = STATIC_ROOM_SEATS[room];
+    if (staticSeats && staticSeats.length > 0) {
+        let bestSeat = null;
+        let minDistSq = maxRadius * maxRadius;
+        for (let i = 0; i < staticSeats.length; i++) {
+            let s = staticSeats[i];
+            let dx = worldX - s.x;
+            let dy = worldY - s.y;
+            let d2 = dx * dx + dy * dy;
+            if (d2 < minDistSq) {
+                minDistSq = d2;
+                bestSeat = s;
+            }
+        }
+        if (bestSeat) return bestSeat;
+    }
+
+    // 2. Dinamik Ev Mobilyaları (house_*)
+    if (room && room.startsWith("house_")) {
+        let house = (typeof getCurrentViewingHouse === 'function') ? getCurrentViewingHouse() : null;
+        if (!house || !house.furniture || house.furniture.length === 0) return null;
+
+        let catTable = window.FURNITURE_CATALOG || {};
+        let bestSeat = null;
+        let minDistSq = maxRadius * maxRadius;
+
+        for (let i = 0; i < house.furniture.length; i++) {
+            let item = house.furniture[i];
+            let cat = catTable[item.id] || { w: 60, h: 50 };
+            let rot = ((item.rotation || 0) % 4 + 4) % 4;
+            let isTransposed = (rot === 1 || rot === 3);
+            let effW = isTransposed ? cat.h : cat.w;
+            let effH = isTransposed ? cat.w : cat.h;
+            let left = item.x - effW / 2;
+            let right = item.x + effW / 2;
+            let top = item.y - effH / 2;
+            let bottom = item.y + effH / 2;
+
+            let isInside = (worldX >= left - 8 && worldX <= right + 8 && worldY >= top - 8 && worldY <= bottom + 8);
+
+            let sitX = item.x;
+            let sitY = item.y;
+            let facing = 'down';
+            let label = 'Mobilya';
+
+            if (item.id === 'sedir') {
+                if (rot === 0) {
+                    sitX = Math.max(left + 16, Math.min(right - 16, worldX));
+                    sitY = Math.round(item.y - 2);
+                    facing = 'down';
+                } else if (rot === 1) {
+                    sitX = Math.round(item.x + 8);
+                    sitY = Math.max(top + 16, Math.min(bottom - 16, worldY));
+                    facing = 'right';
+                } else if (rot === 2) {
+                    sitX = Math.max(left + 16, Math.min(right - 16, worldX));
+                    sitY = Math.round(item.y + 12);
+                    facing = 'up';
+                } else if (rot === 3) {
+                    sitX = Math.round(item.x - 8);
+                    sitY = Math.max(top + 16, Math.min(bottom - 16, worldY));
+                    facing = 'left';
+                }
+                label = 'Sedir';
+            } else if (item.id === 'berjer') {
+                let dirs = ['down', 'right', 'up', 'left'];
+                facing = dirs[rot];
+                label = 'Berjer';
+            } else if (item.id === 'bilgisayar') {
+                let dirs = ['up', 'left', 'down', 'right'];
+                let offX = [0, 16, 0, -16][rot];
+                let offY = [16, 0, -16, 0][rot];
+                sitX = item.x + offX;
+                sitY = item.y + offY;
+                facing = dirs[rot];
+                label = 'Çalışma Koltuğu';
+            } else if (item.id === 'piyano') {
+                sitX = item.x;
+                sitY = item.y + 18;
+                facing = 'up';
+                label = 'Piyano Taburesi';
+            } else if (item.id === 'yemek_masasi') {
+                let isTop = (worldY < item.y);
+                sitX = worldX < item.x ? item.x - 20 : item.x + 20;
+                sitY = isTop ? item.y - 18 : item.y + 18;
+                facing = isTop ? 'down' : 'up';
+                label = 'Yemek Sandalyesi';
+            } else {
+                continue;
+            }
+
+            if (isInside) {
+                return { x: sitX, y: sitY, facing: facing, label: label };
+            }
+
+            let dx = worldX - sitX;
+            let dy = worldY - sitY;
+            let d2 = dx * dx + dy * dy;
+            if (d2 < minDistSq) {
+                minDistSq = d2;
+                bestSeat = { x: sitX, y: sitY, facing: facing, label: label };
+            }
+        }
+        if (bestSeat) return bestSeat;
+    }
+
+    return null;
+}
+
+/**
  * Oyuncuyu tespit edilen en yakın koltuğa oturtur ve oyun masasıysa ekranını açar.
  * @returns {boolean} Oturma gerçekleştiyse true
  */
@@ -334,4 +454,5 @@ function checkAndSitOnNearestFurnitureOrChair() {
 // Global Erişim İçin window Nesnesine Kaydet
 window.STATIC_ROOM_SEATS = STATIC_ROOM_SEATS;
 window.findNearestSittableSeat = findNearestSittableSeat;
+window.findSeatAtCoordinates = findSeatAtCoordinates;
 window.checkAndSitOnNearestFurnitureOrChair = checkAndSitOnNearestFurnitureOrChair;

@@ -1,14 +1,77 @@
-// public/js/tavla.js - İstemci Tarafı Tavla (Backgammon) Arayüzü (Y Ekseninde Simetrik)
+// public/js/tavla.js - İstemci Tarafı Tavla (Backgammon) Arayüzü (Kullanıcı Tercihine Göre Sağ Alt / Sol Alt Simetrik)
 
 let currentTavlaState = null;
 let selectedTavlaPoint = null;
 let tavlaValidTargets = [];
+
+// Tavla Toplama Yönü (Orientation): 'sag_alt' (varsayılan Türk tavlası) veya 'sol_alt'
+let tavlaOrientation = localStorage.getItem('mm_tavla_orientation') || null;
+let tavlaPromptShownForTable = null;
+
+function getTavlaOrientation() {
+    return tavlaOrientation || 'sag_alt';
+}
+
+function openTavlaOrientationModal(force = false) {
+    const modal = document.getElementById('tavlaOrientationModal');
+    if (!modal) return;
+    if (force || !tavlaOrientation || !localStorage.getItem('mm_tavla_orientation_saved')) {
+        modal.style.display = 'flex';
+    }
+}
+window.openTavlaOrientationModal = openTavlaOrientationModal;
+
+function closeTavlaOrientationModal() {
+    const modal = document.getElementById('tavlaOrientationModal');
+    if (modal) modal.style.display = 'none';
+}
+window.closeTavlaOrientationModal = closeTavlaOrientationModal;
+
+function setTavlaOrientation(choice) {
+    tavlaOrientation = (choice === 'sol_alt') ? 'sol_alt' : 'sag_alt';
+    const rememberCheckbox = document.getElementById('tavlaRememberChoice');
+    if (rememberCheckbox && rememberCheckbox.checked) {
+        localStorage.setItem('mm_tavla_orientation', tavlaOrientation);
+        localStorage.setItem('mm_tavla_orientation_saved', 'true');
+    }
+    updateTavlaOrientationBadge();
+    closeTavlaOrientationModal();
+    if (currentTavlaState) {
+        renderTavlaBoard(currentTavlaState);
+    }
+}
+window.setTavlaOrientation = setTavlaOrientation;
+
+function toggleTavlaOrientation() {
+    let cur = getTavlaOrientation();
+    let next = (cur === 'sag_alt') ? 'sol_alt' : 'sag_alt';
+    setTavlaOrientation(next);
+}
+window.toggleTavlaOrientation = toggleTavlaOrientation;
+
+function updateTavlaOrientationBadge() {
+    const badge = document.getElementById('tavlaOrientationBadge');
+    if (badge) {
+        let cur = getTavlaOrientation();
+        badge.innerHTML = (cur === 'sag_alt') ? '↘️ Sağ Alt' : '↙️ Sol Alt';
+    }
+}
+window.updateTavlaOrientationBadge = updateTavlaOrientationBadge;
 
 socket.on('tavlaUpdate', (state) => {
     currentTavlaState = state;
     window.currentActiveTableId = state.tableId;
     if (window.setVoiceTable && state.tableId) window.setVoiceTable(state.tableId);
     window.isSpectating = !!state.isSpectator;
+
+    // Masaya ilk oturulduğunda veya tercih henüz kaydedilmediyse kullanıcıya yön sor
+    if (!state.isSpectator && tavlaPromptShownForTable !== state.tableId) {
+        tavlaPromptShownForTable = state.tableId;
+        if (!localStorage.getItem('mm_tavla_orientation_saved')) {
+            setTimeout(() => { openTavlaOrientationModal(); }, 150);
+        }
+    }
+    updateTavlaOrientationBadge();
 
     const specBanner = document.getElementById('spectatorBanner');
     if (specBanner) {
@@ -123,12 +186,29 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
     let viewColor = (state.isSpectator || !myColor) ? 'white' : myColor;
     let oppColor = viewColor === 'white' ? 'black' : 'white';
 
-    // Klasik Tavla Yolculuk Rotası (Herkesin kendi bakış açısından):
-    // Sol Üst (24..19) -> Sağ Üst (18..13) -> Sağ Alt (12..7) -> Sol Alt / Ev (6..1) -> Toplama (Sol Tepsisi)
-    let topSlotsLeft = [24, 23, 22, 21, 20, 19];   // Sol Üst (Rakip Evi)
-    let topSlotsRight = [18, 17, 16, 15, 14, 13]; // Sağ Üst (Rakip Dış Alanı)
-    let bottomSlotsLeft = [1, 2, 3, 4, 5, 6];      // Sol Alt (Kendi Önündeki Sol Taraf - EVİMİZ)
-    let bottomSlotsRight = [7, 8, 9, 10, 11, 12];  // Sağ Alt (Kendi Dış Alanımız)
+    let orientation = getTavlaOrientation();
+    let isSagAlt = (orientation === 'sag_alt');
+
+    // Tavla Yolculuk Rotası (Kullanıcının Tercihine Göre Simetrik Düzen):
+    let topSlotsLeft, topSlotsRight, bottomSlotsLeft, bottomSlotsRight;
+
+    if (isSagAlt) {
+        // ↘️ SAĞ ALT TOPLAMA (Saat Yönünde İlerleyiş - Geleneksel Türk Tavlası):
+        // Sol Üst (13..18) -> Sağ Üst / Rakip Evi (19..24)
+        // Sol Alt / Kendi Dış Alanı (12..7) -> Sağ Alt / Kendi Evimiz (6..1) -> Sağ Tepsiye Toplama
+        topSlotsLeft = [13, 14, 15, 16, 17, 18];
+        topSlotsRight = [19, 20, 21, 22, 23, 24];
+        bottomSlotsLeft = [12, 11, 10, 9, 8, 7];
+        bottomSlotsRight = [6, 5, 4, 3, 2, 1];
+    } else {
+        // ↙️ SOL ALT TOPLAMA (Saat Yönünün Tersinde İlerleyiş):
+        // Sol Üst / Rakip Evi (24..19) -> Sağ Üst / Rakip Dış (18..13)
+        // Sağ Alt / Kendi Dış Alanı (7..12) -> Sol Alt / Kendi Evimiz (1..6) -> Sol Tepsiye Toplama
+        topSlotsLeft = [24, 23, 22, 21, 20, 19];
+        topSlotsRight = [18, 17, 16, 15, 14, 13];
+        bottomSlotsLeft = [1, 2, 3, 4, 5, 6];
+        bottomSlotsRight = [7, 8, 9, 10, 11, 12];
+    }
 
     let canBearOffNow = !state.isSpectator && tavlaValidTargets.some(t => t.target === 'off');
 
@@ -175,8 +255,7 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
         }
     }
 
-    let html = `<div class="tavla-container">
-        <!-- 1. SOL TARAF: TOPLAMA BÖLMESİ (Borne Off - Kendi Önündeki Sol Tarafta Toplama) -->
+    let borneHtml = `
         <div class="tavla-borne-area">
             <!-- Üst Tepsi: Rakip Toplanan -->
             <div class="tavla-borne-box borne-opp">
@@ -189,7 +268,7 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
 
             <div class="borne-divider"></div>
 
-            <!-- Alt Tepsi: Benim Toplanan (Kendi Önündeki Sol Taraf) -->
+            <!-- Alt Tepsi: Benim Toplanan -->
             <div class="tavla-borne-box borne-my ${canBearOffNow ? 'target-point' : ''}" onclick="handleTavlaPointClick('off')">
                 ${canBearOffNow ? '<div class="collect-btn-badge">Buraya Topla!</div>' : ''}
                 <div class="borne-checkers-stack">
@@ -199,38 +278,9 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
                 <div class="borne-box-title">${myBorneTitle}</div>
             </div>
         </div>
+    `;
 
-        <!-- 2. ORTA: 24 KAPI ALANI (Tavla Tahtası) -->
-        <div class="tavla-fields">
-            <!-- Üst Sıra (Sol Üst: 24-19 -> Ahşap Orta Çıta -> Sağ Üst: 18-13) -->
-            <div class="tavla-row top-row">
-                <div class="tavla-quadrant quad-top-left">
-                    ${topSlotsLeft.map(s => renderPointHTML(s, true)).join('')}
-                </div>
-                <div class="tavla-vertical-divider"></div>
-                <div class="tavla-quadrant quad-top-right">
-                    ${topSlotsRight.map(s => renderPointHTML(s, true)).join('')}
-                </div>
-            </div>
-
-            <!-- Yatay Ahşap İntarsiya Şeridi -->
-            <div class="tavla-middle-divider">
-                <div class="middle-line"></div>
-            </div>
-
-            <!-- Alt Sıra (Sol Alt: 1-6 / Ev -> Ahşap Orta Çıta -> Sağ Alt: 7-12) -->
-            <div class="tavla-row bot-row">
-                <div class="tavla-quadrant quad-bot-left home-quadrant">
-                    ${bottomSlotsLeft.map(s => renderPointHTML(s, false)).join('')}
-                </div>
-                <div class="tavla-vertical-divider"></div>
-                <div class="tavla-quadrant quad-bot-right">
-                    ${bottomSlotsRight.map(s => renderPointHTML(s, false)).join('')}
-                </div>
-            </div>
-        </div>
-
-        <!-- 3. SAĞ TARAF: KIRIK TAŞLAR (BAR) -->
+    let barHtml = `
         <div class="tavla-bar" onclick="handleTavlaPointClick('bar')">
             <!-- Üst Kısım: Rakip Kırık -->
             <div class="bar-section bar-top">
@@ -248,6 +298,46 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
                 <div class="bar-sec-title">${myBarTitle}</div>
             </div>
         </div>
+    `;
+
+    let fieldsHtml = `
+        <div class="tavla-fields">
+            <!-- Üst Sıra -->
+            <div class="tavla-row top-row">
+                <div class="tavla-quadrant quad-top-left ${!isSagAlt ? 'opp-home-quadrant' : ''}">
+                    ${topSlotsLeft.map(s => renderPointHTML(s, true)).join('')}
+                </div>
+                <div class="tavla-vertical-divider"></div>
+                <div class="tavla-quadrant quad-top-right ${isSagAlt ? 'opp-home-quadrant' : ''}">
+                    ${topSlotsRight.map(s => renderPointHTML(s, true)).join('')}
+                </div>
+            </div>
+
+            <!-- Yatay Ahşap İntarsiya Şeridi -->
+            <div class="tavla-middle-divider">
+                <div class="middle-line"></div>
+            </div>
+
+            <!-- Alt Sıra -->
+            <div class="tavla-row bot-row">
+                <div class="tavla-quadrant quad-bot-left ${!isSagAlt ? 'home-quadrant' : ''}">
+                    ${bottomSlotsLeft.map(s => renderPointHTML(s, false)).join('')}
+                </div>
+                <div class="tavla-vertical-divider"></div>
+                <div class="tavla-quadrant quad-bot-right ${isSagAlt ? 'home-quadrant' : ''}">
+                    ${bottomSlotsRight.map(s => renderPointHTML(s, false)).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // SİMETRİK YERLEŞİM:
+    // Sağ Alt seçildiyse: Solda Kırık Taşlar (Bar), Ortada Tahta, Sağda Toplama Tepsisi (Borne)
+    // Sol Alt seçildiyse: Solda Toplama Tepsisi (Borne), Ortada Tahta, Sağda Kırık Taşlar (Bar)
+    let html = `<div class="tavla-container ${isSagAlt ? 'tavla-layout-sag' : 'tavla-layout-sol'}">
+        ${isSagAlt ? barHtml : borneHtml}
+        ${fieldsHtml}
+        ${isSagAlt ? borneHtml : barHtml}
     </div>`;
 
     boardEl.innerHTML = html;

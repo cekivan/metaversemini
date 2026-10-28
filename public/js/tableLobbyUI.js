@@ -58,6 +58,13 @@
             }
 
             if (title) title.innerText = `${data.baseName} Masaları`;
+
+            const addBotBtn = document.getElementById('btnAddBotBtn');
+            if (addBotBtn) {
+                // Bahisli masalara bot eklenemez; yalnızca ücretsiz açık masa varsa butonu göster
+                const hasFreeTable = data.tables && data.tables.some(t => (!t.bet || t.bet === 0) && !t.isActive && t.count < t.min);
+                addBotBtn.style.display = hasFreeTable ? 'flex' : 'none';
+            }
             if (list) {
                 list.innerHTML = "";
                 data.tables.forEach(t => {
@@ -119,7 +126,8 @@
                         </div>`;
                     } else {
                         let botBtnHtml = "";
-                        if (t.count < t.min) {
+                        // Yalnızca ücretsiz (bahissiz) masalara oyun başında bot eklenebilir
+                        if (t.count < t.min && (!t.bet || t.bet === 0)) {
                             botBtnHtml = `<button onclick="handleAddBotToTable('${t.id}')" style="padding: 8px 12px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; box-shadow: 0 2px 8px rgba(139,92,246,0.4);">🤖 Bot Ekle</button>`;
                         }
 
@@ -158,6 +166,14 @@
         let tId = specificTableId || window.currentActiveTableId;
         if (!tId && (currentSelectedBaseType || window.currentSelectedBaseType)) {
             tId = currentSelectedBaseType || window.currentSelectedBaseType;
+        }
+        if (window.currentActiveTableId && window.currentActiveTableBet > 0) {
+            if (typeof showSocialNotificationToast === 'function') {
+                showSocialNotificationToast('⚠️', 'Uyarı', 'Bahisli masalara oyun başında bot eklenemez! Botlar sadece ücretsiz masalarda geçerlidir.');
+            } else {
+                alert('Bahisli masalara oyun başında bot eklenemez!');
+            }
+            return;
         }
         let sock = socket || window.socket;
         if (tId && sock) {

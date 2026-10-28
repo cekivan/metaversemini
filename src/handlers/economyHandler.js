@@ -39,7 +39,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         } else if (config.WARDROBE_ITEM_PRICES[itemId] !== undefined) {
             itemCost = config.WARDROBE_ITEM_PRICES[itemId];
         }
-        let isFree = (itemCost === 0 || itemId === 'none' || itemId === 'watch_none' || itemId === '#facc15' || itemId === '#3b82f6' || itemId === 'tshirt_divalar' || itemId === 'pants_camo_cargo' || itemId === 'pants_classic_jeans' || itemId === 'outfit_camo_set' || itemId === 'hair_sanalika_dreadlocks');
+        let isFree = (itemCost === 0 || itemId === 'none' || itemId === 'watch_none' || itemId === '#facc15' || itemId === '#3b82f6' || itemId === 'pants_classic_jeans');
 
         if (normCat === 'props' && itemId !== 'none') {
             if (userData.money < itemCost) {
@@ -161,14 +161,14 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         });
     });
 
-    // 1.1 AVATAR VÜCUT MODELİ SEÇİMİ (KLASİK, KLASİK 2 vs 2.5D İZOMETRİK)
+    // 1.1 AVATAR VÜCUT MODELİ (HER ZAMAN KLASİK 2)
     socket.on('setAvatarModel', (data) => {
-        if (!players[socket.id] || !data || !data.model) return;
+        if (!players[socket.id]) return;
         let username = players[socket.id].name;
         let userData = dataManager.persistentData.users[username];
         if (!userData) return;
 
-        let model = data.model === 'sanalika_v2' ? 'sanalika_v2' : 'classic_2';
+        let model = (data && (data.model === 'karakter_2' || data.model === 'character_2')) ? 'karakter_2' : 'classic_2';
         if (!userData.avatar) userData.avatar = {};
         userData.avatar.model = model;
         players[socket.id].model = model;
@@ -197,6 +197,10 @@ function registerEconomyHandlers(io, socket, players, helpers) {
 
         if (players[socket.id].hasSwanBoat) {
             socket.emit('gameError', "Zaten Kuğu Deniz Bisikleti kiraladınız!");
+            return;
+        }
+        if (players[socket.id].hasHorse) {
+            socket.emit('gameError', "⚠️ Binek atındayken Kuğu Deniz Bisikleti kiralayamazsınız! Önce attan inmelisiniz.");
             return;
         }
         if (userData.money < 20) {
@@ -245,6 +249,43 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         socket.emit('swanBoatRented', { duration: SWAN_DURATION_SECONDS });
         io.to(players[socket.id].room).emit('playerSwanBoatUpdate', { id: socket.id, hasSwanBoat: true });
         socket.emit('systemMessage', "🦢 Tebrikler! 20 TL'ye Kuğu Deniz Bisikleti kiraladın. (Süre: 5 Dakika)");
+    });
+
+    socket.on('toggle_swan_boat', (data) => {
+        if (!players[socket.id]) return;
+        const wantMount = !!(data && data.mounted);
+        if (wantMount) {
+            if (players[socket.id].hasHorse) {
+                socket.emit('gameError', "⚠️ Kuğu'ya binmek için önce attan inmelisiniz!");
+                return;
+            }
+            if (!playerSwanTimers[socket.id]) {
+                socket.emit('gameError', "⚠️ Kuğu kiralama süreniz bulunmuyor!");
+                return;
+            }
+            players[socket.id].hasSwanBoat = true;
+            io.to(players[socket.id].room).emit('playerSwanBoatUpdate', { id: socket.id, hasSwanBoat: true });
+        } else {
+            players[socket.id].hasSwanBoat = false;
+            io.to(players[socket.id].room).emit('playerSwanBoatUpdate', { id: socket.id, hasSwanBoat: false });
+
+            // Eğer oyuncu denizdeyse, suda mahsur kalmaması için güvenle iskeleye/kumsala al
+            if (players[socket.id].room === 'sahil') {
+                let px = players[socket.id].x;
+                let py = players[socket.id].y;
+                let onPier = (px >= 70 && px <= 555 && py >= 150 && py <= 235);
+                let onSand = (py >= 370 && px >= 210) || (py >= 260 && px >= 340) || (py >= 180 && px >= 440) || (py >= 120 && px >= 550) || (px >= 640);
+                if (!onPier && !onSand) {
+                    players[socket.id].x = 420;
+                    players[socket.id].y = 350;
+                    io.to('sahil').emit('playerMoved', { id: socket.id, x: 420, y: 350 });
+                }
+            } else if (players[socket.id].room === 'sahilv2') {
+                players[socket.id].x = 740;
+                players[socket.id].y = 390;
+                io.to('sahilv2').emit('playerMoved', { id: socket.id, x: 740, y: 390 });
+            }
+        }
     });
 
     // 2.1 TROPİK SAHİL KOKTEYL BARI SATIN ALMA
@@ -312,13 +353,6 @@ function registerEconomyHandlers(io, socket, players, helpers) {
 
         let room = players[socket.id].room;
         io.to(room).emit('playerAvatarChange', { id: socket.id, avatar: userData.avatar, heldItem: players[socket.id].heldItem });
-
-        // Karakterin odada chat mesajı ve balonu çıkarmasını sağla
-        let chatMsg = `${item.icon} ${item.chatText}`;
-        io.to(room).emit('chatUpdate', {
-            id: socket.id,
-            msg: chatMsg
-        });
     });
 
     // 2.2 DOSTLAR KIRAATHANESİ İÇECEK STANDI (ÇAYCI HÜSEYİN USTA)
@@ -399,12 +433,6 @@ function registerEconomyHandlers(io, socket, players, helpers) {
 
         let room = players[socket.id].room;
         io.to(room).emit('playerAvatarChange', { id: socket.id, avatar: userData.avatar, heldItem: players[socket.id].heldItem });
-
-        let chatMsg = `${item.icon} ${item.chatText}`;
-        io.to(room).emit('chatUpdate', {
-            id: socket.id,
-            msg: chatMsg
-        });
     });
 
     // 3. SAHİL & SAHİL V2 BALIK TUTMA
@@ -645,7 +673,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         let chosenSet = userData.skinSets[slot];
         userData.avatar = {
             ...userData.avatar,
-            model: chosenSet.model === 'sanalika_v2' ? 'sanalika_v2' : 'classic_2',
+            model: 'classic_2',
             hat: chosenSet.hat || 'bere',
             face: chosenSet.face || 'none',
             skinColor: chosenSet.skinColor || '#facc15',
@@ -704,8 +732,6 @@ function registerEconomyHandlers(io, socket, players, helpers) {
     // 8. ŞANSLI KUTU (MYSTERY BOX) MEKANİĞİ & DİNAMİK FİYATA BAĞLI RNG ALGORİTMASI
     const CLOTHES_POOL = [
         // Şapkalar
-        { cat: 'hats', id: 'hair_sanalika_street', name: 'Sokak Diken Saç', icon: '💇‍♂️' },
-        { cat: 'hats', id: 'hair_sanalika_wavy', name: 'Dalgalı Salaş Saç', icon: '💇' },
         { cat: 'hats', id: 'bere', name: 'Kırmızı Bere', icon: '🔴' },
         { cat: 'hats', id: 'kasket', name: 'Kıraathane Kasketi', icon: '🧢' },
         { cat: 'hats', id: 'fes', name: 'Osmanlı Fesi', icon: '🏮' },
@@ -731,8 +757,6 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         { cat: 'faces', id: 'sunglasses', name: 'Havalı Gözlük', icon: '🕶️' },
         { cat: 'faces', id: 'beard', name: 'Kirli Sakal', icon: '🧔' },
         // Kıyafet Takımları
-        { cat: 'outfits', id: 'outfit_street_tracksuit', name: 'Sokak Eşofman Takımı', icon: '🏃' },
-        { cat: 'outfits', id: 'overalls_blue', name: 'Mavi İşçi Tulumu', icon: '🧑‍🔧' },
         { cat: 'outfits', id: 'outfit_c2_gentleman', name: 'Beyefendi Yelekli Takım', icon: '🤵' },
         { cat: 'outfits', id: 'outfit_c2_street_cool', name: 'Sokak Bomber & Jean', icon: '🧥' },
         { cat: 'outfits', id: 'outfit_c2_casual_polo', name: 'Marin Polo & Chino', icon: '👕' },
@@ -751,27 +775,17 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         { cat: 'outfits', id: 'dress_ocean_blue', name: 'Okyanus Mavisi Elbise', icon: '🌊' },
         { cat: 'outfits', id: 'outfit_turtleneck_skirt', name: 'Krem Balıkçı & Ekose', icon: '🧣' },
         // Tişörtler
-        { cat: 'tshirts', id: 'tshirt_black_fitted', name: 'Fitted Siyah Tişört', icon: '👕' },
-        { cat: 'tshirts', id: 'tshirt_hoodie_purple', name: 'Mor Sokak Hoodie', icon: '🧥' },
-        { cat: 'tshirts', id: 'tshirt_polo_striped', name: 'Çizgili Retro Polo', icon: '👕' },
-        { cat: 'tshirts', id: 'tshirt_leather_jacket', name: 'Motorcu Deri Ceket', icon: '🥼' },
         { cat: 'tshirts', id: 'polo', name: 'Beyaz Polo Yaka', icon: '👔' },
         { cat: 'tshirts', id: 'hoodie', name: 'Oversize Hoodie', icon: '🧥' },
         { cat: 'tshirts', id: 'leather', name: 'Klasik Deri Ceket', icon: '🥼' },
         { cat: 'tshirts', id: 'skirt_crop', name: 'Pembe Crop Üst', icon: '👚' },
         { cat: 'tshirts', id: 'skirt_denim', name: 'Kot Ceket & Üst', icon: '🎽' },
         // Pantolonlar
-        { cat: 'pants', id: 'pants_jeans_street', name: 'Yırtık Sokak Jean', icon: '👖' },
-        { cat: 'pants', id: 'pants_chino_beige', name: 'Bej Chino Pantolon', icon: '👖' },
-        { cat: 'pants', id: 'pants_jogger_black', name: 'Siyah Sokak Jogger', icon: '👖' },
-        { cat: 'pants', id: 'pants_skirt_crop', name: 'Pileli Mini Etek', icon: '👗' },
-        { cat: 'pants', id: 'pants_skirt_denim', name: 'Kot Mini Etek', icon: '👗' },
         { cat: 'pants', id: 'pants_classic_black', name: 'Klasik Kumaş Siyah', icon: '👖' },
         { cat: 'pants', id: 'pants_classic_beige', name: 'Klasik Bej Chino', icon: '👖' },
         { cat: 'pants', id: 'pants_classic_cargo_olive', name: 'Zeytin Yeşili Kargo', icon: '👖' },
         { cat: 'pants', id: 'pants_classic_white_skirt', name: 'Beyaz Pileli Etek', icon: '👗' },
         // Ayakkabılar
-        { cat: 'shoes', id: 'sanalika_skate_shoes', name: 'Sokak Kaykay Ayakkabısı', icon: '🛹' },
         { cat: 'shoes', id: 'classic', name: 'Kösele Klasik Ayakkabı', icon: '👞' },
         { cat: 'shoes', id: 'boots', name: 'Kışlık Bot', icon: '🥾' },
         { cat: 'shoes', id: 'heels', name: 'Topuklu Stiletto', icon: '👠' },

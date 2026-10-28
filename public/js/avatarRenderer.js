@@ -165,7 +165,7 @@ function drawSingleShoe(targetCtx, x, y, shoeType, skinColor, angle = 0, isCross
 }
 
 // --- 2. BACAKLAR VE AYAKKABILAR (8 AÇILI İZOMETRİK & KADIN/ERKEK ANATOMİSİ) ---
-function drawAvatarLegsAndShoes(targetCtx, pX, pY, legSwing = 0, skinColor = "#ffd1a4", shoeType = "sneakers", isSkirt = false, isSitting = false, facing = "down", isFemale = false, pantsColor = null) {
+function drawAvatarLegsAndShoes(targetCtx, pX, pY, legSwing = 0, skinColor = "#ffd1a4", shoeType = "sneakers", isSkirt = false, isSitting = false, facing = "down", isFemale = false, pantsColor = null, legFilter = 'all') {
     let f = normalize8WayFacing(facing);
     let legColor = pantsColor || (isSkirt ? (skinColor || "#ffd1a4") : "#1e293b");
     let shadowColor = "rgba(0, 0, 0, 0.28)";
@@ -176,136 +176,186 @@ function drawAvatarLegsAndShoes(targetCtx, pX, pY, legSwing = 0, skinColor = "#f
 
         if (f === 'right') {
             // SAĞA DÖNÜK PROFİL OTURMA
-            targetCtx.fillStyle = legColor;
-            targetCtx.fillRect(pX - 4, pY + 8, legW, 12);
-            drawSingleShoe(targetCtx, pX - 5, pY + 19, shoeType, skinColor, 0, false, f, isFemale);
+            // 1. Far Leg (bizden uzak bacak - sol bacak)
+            if (legFilter === 'all' || legFilter === 'far') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX - 4, pY + 8, legW, 12);
+                drawSingleShoe(targetCtx, pX - 5, pY + 19, shoeType, skinColor, 0, false, f, isFemale);
+            }
 
-            targetCtx.fillStyle = legColor;
-            targetCtx.beginPath();
-            targetCtx.roundRect(pX - 5, pY + 6, 12, 6, [3, 4, 2, 2]);
-            targetCtx.fill();
-            targetCtx.fillRect(pX + 4, pY + 10, legW, 7);
-            drawSingleShoe(targetCtx, pX + 4, pY + 16, shoeType, skinColor, 0.22, true, f, isFemale);
+            // 2. Near Leg (bizden yakın bacak - sağ bacak)
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.beginPath();
+                targetCtx.roundRect(pX - 5, pY + 6, 12, 6, [3, 4, 2, 2]);
+                targetCtx.fill();
+                targetCtx.fillRect(pX + 4, pY + 10, legW, 7);
+                drawSingleShoe(targetCtx, pX + 4, pY + 16, shoeType, skinColor, 0.22, true, f, isFemale);
+            }
 
         } else if (f === 'left') {
             // SOLA DÖNÜK PROFİL OTURMA
-            targetCtx.fillStyle = legColor;
-            targetCtx.fillRect(pX - 1, pY + 8, legW, 12);
-            drawSingleShoe(targetCtx, pX - 2, pY + 19, shoeType, skinColor, 0, false, f, isFemale);
+            // 1. Far Leg (bizden uzak bacak - sağ bacak)
+            if (legFilter === 'all' || legFilter === 'far') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX - 1, pY + 8, legW, 12);
+                drawSingleShoe(targetCtx, pX - 2, pY + 19, shoeType, skinColor, 0, false, f, isFemale);
+            }
 
-            targetCtx.fillStyle = legColor;
-            targetCtx.beginPath();
-            targetCtx.roundRect(pX - 7, pY + 6, 12, 6, [4, 3, 2, 2]);
-            targetCtx.fill();
-            targetCtx.fillRect(pX - 9, pY + 10, legW, 7);
-            drawSingleShoe(targetCtx, pX - 11, pY + 16, shoeType, skinColor, -0.22, true, f, isFemale);
+            // 2. Near Leg (bizden yakın bacak - sol bacak)
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.beginPath();
+                targetCtx.roundRect(pX - 7, pY + 6, 12, 6, [4, 3, 2, 2]);
+                targetCtx.fill();
+                targetCtx.fillRect(pX - 9, pY + 10, legW, 7);
+                drawSingleShoe(targetCtx, pX - 11, pY + 16, shoeType, skinColor, -0.22, true, f, isFemale);
+            }
 
         } else if (f === 'up') {
             // TAM ARKAYA DÖNÜK OTURMA
-            targetCtx.fillStyle = legColor;
-            targetCtx.fillRect(pX - 7, pY + 8, legW, 8);
-            targetCtx.fillRect(pX + 2, pY + 8, legW, 8);
-            targetCtx.fillStyle = "#1e1e1e";
-            targetCtx.fillRect(pX - 7, pY + 16, legW, 4);
-            targetCtx.fillRect(pX + 2, pY + 16, legW, 4);
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX - 7, pY + 8, legW, 8);
+                targetCtx.fillRect(pX + 2, pY + 8, legW, 8);
+                targetCtx.fillStyle = "#1e1e1e";
+                targetCtx.fillRect(pX - 7, pY + 16, legW, 4);
+                targetCtx.fillRect(pX + 2, pY + 16, legW, 4);
+            }
 
         } else if (f === 'down-right') {
             // 3/4 SAĞ İLERİ OTURMA
-            targetCtx.fillStyle = shadowColor;
-            targetCtx.beginPath(); targetCtx.ellipse(pX + 2, pY + 10, 13, 5, 0.3, 0, Math.PI * 2); targetCtx.fill();
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = shadowColor;
+                targetCtx.beginPath(); targetCtx.ellipse(pX + 2, pY + 10, 13, 5, 0.3, 0, Math.PI * 2); targetCtx.fill();
+            }
 
-            targetCtx.fillStyle = legColor;
-            targetCtx.fillRect(pX - 4, pY + 8, legW, 11);
-            drawSingleShoe(targetCtx, pX - 4, pY + 18, shoeType, skinColor, 0.15, false, f, isFemale);
+            // Far leg
+            if (legFilter === 'all' || legFilter === 'far') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX - 4, pY + 8, legW, 11);
+                drawSingleShoe(targetCtx, pX - 4, pY + 18, shoeType, skinColor, 0.15, false, f, isFemale);
+            }
 
-            targetCtx.beginPath();
-            targetCtx.roundRect(pX - 2, pY + 6, 13, 7, [3, 4, 2, 2]);
-            targetCtx.fill();
-            drawSingleShoe(targetCtx, pX + 5, pY + 15, shoeType, skinColor, 0.35, true, f, isFemale);
+            // Near leg
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.beginPath();
+                targetCtx.roundRect(pX - 2, pY + 6, 13, 7, [3, 4, 2, 2]);
+                targetCtx.fill();
+                drawSingleShoe(targetCtx, pX + 5, pY + 15, shoeType, skinColor, 0.35, true, f, isFemale);
+            }
 
         } else if (f === 'down-left') {
             // 3/4 SOL İLERİ OTURMA
-            targetCtx.fillStyle = shadowColor;
-            targetCtx.beginPath(); targetCtx.ellipse(pX - 2, pY + 10, 13, 5, -0.3, 0, Math.PI * 2); targetCtx.fill();
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = shadowColor;
+                targetCtx.beginPath(); targetCtx.ellipse(pX - 2, pY + 10, 13, 5, -0.3, 0, Math.PI * 2); targetCtx.fill();
+            }
 
-            targetCtx.fillStyle = legColor;
-            targetCtx.fillRect(pX - 1, pY + 8, legW, 11);
-            drawSingleShoe(targetCtx, pX - 2, pY + 18, shoeType, skinColor, -0.15, false, f, isFemale);
+            // Far leg
+            if (legFilter === 'all' || legFilter === 'far') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX - 1, pY + 8, legW, 11);
+                drawSingleShoe(targetCtx, pX - 2, pY + 18, shoeType, skinColor, -0.15, false, f, isFemale);
+            }
 
-            targetCtx.beginPath();
-            targetCtx.roundRect(pX - 11, pY + 6, 13, 7, [4, 3, 2, 2]);
-            targetCtx.fill();
-            drawSingleShoe(targetCtx, pX - 12, pY + 15, shoeType, skinColor, -0.35, true, f, isFemale);
+            // Near leg
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.beginPath();
+                targetCtx.roundRect(pX - 11, pY + 6, 13, 7, [4, 3, 2, 2]);
+                targetCtx.fill();
+                drawSingleShoe(targetCtx, pX - 12, pY + 15, shoeType, skinColor, -0.35, true, f, isFemale);
+            }
 
         } else if (f === 'up-right') {
             // 3/4 SAĞ GERİ OTURMA
-            targetCtx.fillStyle = legColor;
-            targetCtx.fillRect(pX - 6, pY + 8, legW, 8);
-            targetCtx.fillRect(pX + 1, pY + 7, legW + 1, 9);
-            drawSingleShoe(targetCtx, pX + 2, pY + 15, shoeType, skinColor, 0.6, false, f, isFemale);
+            // Far leg
+            if (legFilter === 'all' || legFilter === 'far') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX - 6, pY + 8, legW, 8);
+            }
+
+            // Near leg
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX + 1, pY + 7, legW + 1, 9);
+                drawSingleShoe(targetCtx, pX + 2, pY + 15, shoeType, skinColor, 0.6, false, f, isFemale);
+            }
 
         } else if (f === 'up-left') {
             // 3/4 SOL GERİ OTURMA
-            targetCtx.fillStyle = legColor;
-            targetCtx.fillRect(pX + 1, pY + 8, legW, 8);
-            targetCtx.fillRect(pX - 7, pY + 7, legW + 1, 9);
-            drawSingleShoe(targetCtx, pX - 8, pY + 15, shoeType, skinColor, -0.6, false, f, isFemale);
+            // Far leg
+            if (legFilter === 'all' || legFilter === 'far') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX + 1, pY + 8, legW, 8);
+            }
+
+            // Near leg
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = legColor;
+                targetCtx.fillRect(pX - 7, pY + 7, legW + 1, 9);
+                drawSingleShoe(targetCtx, pX - 8, pY + 15, shoeType, skinColor, -0.6, false, f, isFemale);
+            }
 
         } else {
             // TAM ÖNE DÖNÜK OTURMA - ZARİF AYAK AYAK ÜSTÜNE ATMA
-            targetCtx.fillStyle = shadowColor;
-            targetCtx.beginPath();
-            targetCtx.ellipse(pX - 1, pY + 9, 12, 4, 0, 0, Math.PI * 2);
-            targetCtx.fill();
+            if (legFilter === 'all' || legFilter === 'near') {
+                targetCtx.fillStyle = shadowColor;
+                targetCtx.beginPath();
+                targetCtx.ellipse(pX - 1, pY + 9, 12, 4, 0, 0, Math.PI * 2);
+                targetCtx.fill();
 
-            targetCtx.fillStyle = legColor;
-            targetCtx.beginPath();
-            targetCtx.roundRect(pX - 9, pY + 7, legW + 1, 8, [2, 2, 0, 0]);
-            targetCtx.fill();
-            targetCtx.fillRect(pX - 9, pY + 14, legW, 7);
-            drawSingleShoe(targetCtx, pX - 10, pY + 20, shoeType, skinColor, 0, false, f, isFemale);
-
-            targetCtx.fillStyle = legColor;
-            targetCtx.beginPath();
-            targetCtx.moveTo(pX + 4, pY + 7);
-            targetCtx.lineTo(pX - 7, pY + 9);
-            targetCtx.quadraticCurveTo(pX - 10, pY + 11, pX - 7, pY + 14);
-            targetCtx.lineTo(pX + 1, pY + 12);
-            targetCtx.closePath();
-            targetCtx.fill();
-
-            targetCtx.strokeStyle = "rgba(0, 0, 0, 0.35)";
-            targetCtx.lineWidth = 1;
-            targetCtx.beginPath();
-            targetCtx.arc(pX - 5, pY + 11, 3.5, Math.PI * 0.6, Math.PI * 1.6);
-            targetCtx.stroke();
-
-            targetCtx.fillStyle = legColor;
-            targetCtx.beginPath();
-            targetCtx.moveTo(pX - 6, pY + 12);
-            targetCtx.lineTo(pX + 3, pY + 15);
-            targetCtx.lineTo(pX + 2, pY + 19);
-            targetCtx.lineTo(pX - 5, pY + 16);
-            targetCtx.closePath();
-            targetCtx.fill();
-
-            targetCtx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-            targetCtx.lineWidth = 1;
-            targetCtx.beginPath();
-            targetCtx.moveTo(pX - 4, pY + 13);
-            targetCtx.lineTo(pX + 2, pY + 16);
-            targetCtx.stroke();
-
-            drawSingleShoe(targetCtx, pX + 2, pY + 16, shoeType, skinColor, 0.24, true, f, isFemale);
-
-            if (isSkirt) {
                 targetCtx.fillStyle = legColor;
                 targetCtx.beginPath();
-                targetCtx.roundRect(pX - 11, pY + 6, 22, 6, [3, 3, 5, 5]);
+                targetCtx.roundRect(pX - 9, pY + 7, legW + 1, 8, [2, 2, 0, 0]);
                 targetCtx.fill();
-                targetCtx.strokeStyle = "rgba(0,0,0,0.15)";
-                targetCtx.lineWidth = 0.8;
+                targetCtx.fillRect(pX - 9, pY + 14, legW, 7);
+                drawSingleShoe(targetCtx, pX - 10, pY + 20, shoeType, skinColor, 0, false, f, isFemale);
+
+                targetCtx.fillStyle = legColor;
+                targetCtx.beginPath();
+                targetCtx.moveTo(pX + 4, pY + 7);
+                targetCtx.lineTo(pX - 7, pY + 9);
+                targetCtx.quadraticCurveTo(pX - 10, pY + 11, pX - 7, pY + 14);
+                targetCtx.lineTo(pX + 1, pY + 12);
+                targetCtx.closePath();
+                targetCtx.fill();
+
+                targetCtx.strokeStyle = "rgba(0, 0, 0, 0.35)";
+                targetCtx.lineWidth = 1;
+                targetCtx.beginPath();
+                targetCtx.arc(pX - 5, pY + 11, 3.5, Math.PI * 0.6, Math.PI * 1.6);
                 targetCtx.stroke();
+
+                targetCtx.fillStyle = legColor;
+                targetCtx.beginPath();
+                targetCtx.moveTo(pX - 6, pY + 12);
+                targetCtx.lineTo(pX + 3, pY + 15);
+                targetCtx.lineTo(pX + 2, pY + 19);
+                targetCtx.lineTo(pX - 5, pY + 16);
+                targetCtx.closePath();
+                targetCtx.fill();
+
+                targetCtx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+                targetCtx.lineWidth = 1;
+                targetCtx.beginPath();
+                targetCtx.moveTo(pX - 4, pY + 13);
+                targetCtx.lineTo(pX + 2, pY + 16);
+                targetCtx.stroke();
+
+                drawSingleShoe(targetCtx, pX + 2, pY + 16, shoeType, skinColor, 0.24, true, f, isFemale);
+
+                if (isSkirt) {
+                    targetCtx.fillStyle = legColor;
+                    targetCtx.beginPath();
+                    targetCtx.roundRect(pX - 11, pY + 6, 22, 6, [3, 3, 5, 5]);
+                    targetCtx.fill();
+                    targetCtx.strokeStyle = "rgba(0,0,0,0.15)";
+                    targetCtx.lineWidth = 0.8;
+                    targetCtx.stroke();
+                }
             }
         }
 
@@ -319,85 +369,113 @@ function drawAvatarLegsAndShoes(targetCtx, pX, pY, legSwing = 0, skinColor = "#f
 
     if (f === 'down') {
         // Tam Öne (Güney)
-        targetCtx.fillRect(pX - 8, pY + 12 - legSwing, legW, 8 + legSwing);
-        targetCtx.fillRect(pX + 3, pY + 12 + legSwing, legW, 8 - legSwing);
-        drawSingleShoe(targetCtx, pX - 9, pY + 18 - legSwing, shoeType, skinColor, 0, false, f, isFemale);
-        drawSingleShoe(targetCtx, pX + 2, pY + 18 + legSwing, shoeType, skinColor, 0, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'near') {
+            targetCtx.fillRect(pX - 8, pY + 12 - legSwing, legW, 8 + legSwing);
+            targetCtx.fillRect(pX + 3, pY + 12 + legSwing, legW, 8 - legSwing);
+            drawSingleShoe(targetCtx, pX - 9, pY + 18 - legSwing, shoeType, skinColor, 0, false, f, isFemale);
+            drawSingleShoe(targetCtx, pX + 2, pY + 18 + legSwing, shoeType, skinColor, 0, false, f, isFemale);
+        }
 
     } else if (f === 'up') {
         // Tam Arkaya (Kuzey)
-        targetCtx.fillRect(pX - 7, pY + 12 + legSwing, legW, 8 - legSwing);
-        targetCtx.fillRect(pX + 2, pY + 12 - legSwing, legW, 8 + legSwing);
-        drawSingleShoe(targetCtx, pX - 8, pY + 18 + legSwing, shoeType, skinColor, Math.PI, false, f, isFemale);
-        drawSingleShoe(targetCtx, pX + 1, pY + 18 - legSwing, shoeType, skinColor, Math.PI, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'near') {
+            targetCtx.fillRect(pX - 7, pY + 12 + legSwing, legW, 8 - legSwing);
+            targetCtx.fillRect(pX + 2, pY + 12 - legSwing, legW, 8 + legSwing);
+            drawSingleShoe(targetCtx, pX - 8, pY + 18 + legSwing, shoeType, skinColor, Math.PI, false, f, isFemale);
+            drawSingleShoe(targetCtx, pX + 1, pY + 18 - legSwing, shoeType, skinColor, Math.PI, false, f, isFemale);
+        }
 
     } else if (f === 'right') {
         // Sağa Profil (Doğu)
         let farX = pX - 5 - legSwing * 1.2;
         let nearX = pX - 1 + legSwing * 1.2;
-        targetCtx.fillStyle = "rgba(0,0,0,0.2)";
-        targetCtx.fillRect(farX, pY + 12, legW, 8);
-        drawSingleShoe(targetCtx, farX - 1, pY + 18, shoeType, skinColor, Math.PI * 0.5, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'far') {
+            targetCtx.fillStyle = "rgba(0,0,0,0.2)";
+            targetCtx.fillRect(farX, pY + 12, legW, 8);
+            drawSingleShoe(targetCtx, farX - 1, pY + 18, shoeType, skinColor, Math.PI * 0.5, false, f, isFemale);
+        }
 
-        targetCtx.fillStyle = legColor;
-        targetCtx.fillRect(nearX, pY + 12, legW, 8);
-        drawSingleShoe(targetCtx, nearX - 1, pY + 18, shoeType, skinColor, Math.PI * 0.5, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'near') {
+            targetCtx.fillStyle = legColor;
+            targetCtx.fillRect(nearX, pY + 12, legW, 8);
+            drawSingleShoe(targetCtx, nearX - 1, pY + 18, shoeType, skinColor, Math.PI * 0.5, false, f, isFemale);
+        }
 
     } else if (f === 'left') {
         // Sola Profil (Batı)
         let farX = pX + 0 + legSwing * 1.2;
         let nearX = pX - 4 - legSwing * 1.2;
-        targetCtx.fillStyle = "rgba(0,0,0,0.2)";
-        targetCtx.fillRect(farX, pY + 12, legW, 8);
-        drawSingleShoe(targetCtx, farX - 2, pY + 18, shoeType, skinColor, -Math.PI * 0.5, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'far') {
+            targetCtx.fillStyle = "rgba(0,0,0,0.2)";
+            targetCtx.fillRect(farX, pY + 12, legW, 8);
+            drawSingleShoe(targetCtx, farX - 2, pY + 18, shoeType, skinColor, -Math.PI * 0.5, false, f, isFemale);
+        }
 
-        targetCtx.fillStyle = legColor;
-        targetCtx.fillRect(nearX, pY + 12, legW, 8);
-        drawSingleShoe(targetCtx, nearX - 2, pY + 18, shoeType, skinColor, -Math.PI * 0.5, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'near') {
+            targetCtx.fillStyle = legColor;
+            targetCtx.fillRect(nearX, pY + 12, legW, 8);
+            drawSingleShoe(targetCtx, nearX - 2, pY + 18, shoeType, skinColor, -Math.PI * 0.5, false, f, isFemale);
+        }
 
     } else if (f === 'down-right') {
         // Sağ İleri (Güneydoğu - 3/4 İzometrik)
         let farX = pX - 8 - legSwing * 0.8;
         let nearX = pX + 1 + legSwing * 0.8;
-        targetCtx.fillStyle = "rgba(0,0,0,0.18)";
-        targetCtx.fillRect(farX, pY + 12 - legSwing * 0.4, legW, 8);
-        drawSingleShoe(targetCtx, farX - 1, pY + 18 - legSwing * 0.4, shoeType, skinColor, Math.PI * 0.25, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'far') {
+            targetCtx.fillStyle = "rgba(0,0,0,0.18)";
+            targetCtx.fillRect(farX, pY + 12 - legSwing * 0.4, legW, 8);
+            drawSingleShoe(targetCtx, farX - 1, pY + 18 - legSwing * 0.4, shoeType, skinColor, Math.PI * 0.25, false, f, isFemale);
+        }
 
-        targetCtx.fillStyle = legColor;
-        targetCtx.fillRect(nearX, pY + 12 + legSwing * 0.4, legW, 8);
-        drawSingleShoe(targetCtx, nearX - 1, pY + 18 + legSwing * 0.4, shoeType, skinColor, Math.PI * 0.25, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'near') {
+            targetCtx.fillStyle = legColor;
+            targetCtx.fillRect(nearX, pY + 12 + legSwing * 0.4, legW, 8);
+            drawSingleShoe(targetCtx, nearX - 1, pY + 18 + legSwing * 0.4, shoeType, skinColor, Math.PI * 0.25, false, f, isFemale);
+        }
 
     } else if (f === 'down-left') {
         // Sol İleri (Güneybatı - 3/4 İzometrik)
         let farX = pX + 3 + legSwing * 0.8;
         let nearX = pX - 6 - legSwing * 0.8;
-        targetCtx.fillStyle = "rgba(0,0,0,0.18)";
-        targetCtx.fillRect(farX, pY + 12 - legSwing * 0.4, legW, 8);
-        drawSingleShoe(targetCtx, farX - 1, pY + 18 - legSwing * 0.4, shoeType, skinColor, -Math.PI * 0.25, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'far') {
+            targetCtx.fillStyle = "rgba(0,0,0,0.18)";
+            targetCtx.fillRect(farX, pY + 12 - legSwing * 0.4, legW, 8);
+            drawSingleShoe(targetCtx, farX - 1, pY + 18 - legSwing * 0.4, shoeType, skinColor, -Math.PI * 0.25, false, f, isFemale);
+        }
 
-        targetCtx.fillStyle = legColor;
-        targetCtx.fillRect(nearX, pY + 12 + legSwing * 0.4, legW, 8);
-        drawSingleShoe(targetCtx, nearX - 1, pY + 18 + legSwing * 0.4, shoeType, skinColor, -Math.PI * 0.25, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'near') {
+            targetCtx.fillStyle = legColor;
+            targetCtx.fillRect(nearX, pY + 12 + legSwing * 0.4, legW, 8);
+            drawSingleShoe(targetCtx, nearX - 1, pY + 18 + legSwing * 0.4, shoeType, skinColor, -Math.PI * 0.25, false, f, isFemale);
+        }
 
     } else if (f === 'up-right') {
         // Sağ Geri (Kuzeydoğu - 3/4 İzometrik)
         let farX = pX - 7 - legSwing * 0.8;
         let nearX = pX + 1 + legSwing * 0.8;
-        targetCtx.fillRect(farX, pY + 12 + legSwing * 0.4, legW, 8);
-        drawSingleShoe(targetCtx, farX - 1, pY + 18 + legSwing * 0.4, shoeType, skinColor, Math.PI * 0.75, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'far') {
+            targetCtx.fillRect(farX, pY + 12 + legSwing * 0.4, legW, 8);
+            drawSingleShoe(targetCtx, farX - 1, pY + 18 + legSwing * 0.4, shoeType, skinColor, Math.PI * 0.75, false, f, isFemale);
+        }
 
-        targetCtx.fillRect(nearX, pY + 12 - legSwing * 0.4, legW, 8);
-        drawSingleShoe(targetCtx, nearX - 1, pY + 18 - legSwing * 0.4, shoeType, skinColor, Math.PI * 0.75, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'near') {
+            targetCtx.fillRect(nearX, pY + 12 - legSwing * 0.4, legW, 8);
+            drawSingleShoe(targetCtx, nearX - 1, pY + 18 - legSwing * 0.4, shoeType, skinColor, Math.PI * 0.75, false, f, isFemale);
+        }
 
     } else if (f === 'up-left') {
         // Sol Geri (Kuzeybatı - 3/4 İzometrik)
         let farX = pX + 2 + legSwing * 0.8;
         let nearX = pX - 6 - legSwing * 0.8;
-        targetCtx.fillRect(farX, pY + 12 + legSwing * 0.4, legW, 8);
-        drawSingleShoe(targetCtx, farX - 1, pY + 18 + legSwing * 0.4, shoeType, skinColor, -Math.PI * 0.75, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'far') {
+            targetCtx.fillRect(farX, pY + 12 + legSwing * 0.4, legW, 8);
+            drawSingleShoe(targetCtx, farX - 1, pY + 18 + legSwing * 0.4, shoeType, skinColor, -Math.PI * 0.75, false, f, isFemale);
+        }
 
-        targetCtx.fillRect(nearX, pY + 12 - legSwing * 0.4, legW, 8);
-        drawSingleShoe(targetCtx, nearX - 1, pY + 18 - legSwing * 0.4, shoeType, skinColor, -Math.PI * 0.75, false, f, isFemale);
+        if (legFilter === 'all' || legFilter === 'near') {
+            targetCtx.fillRect(nearX, pY + 12 - legSwing * 0.4, legW, 8);
+            drawSingleShoe(targetCtx, nearX - 1, pY + 18 - legSwing * 0.4, shoeType, skinColor, -Math.PI * 0.75, false, f, isFemale);
+        }
     }
 
     targetCtx.restore();
@@ -910,85 +988,6 @@ function drawAvatarBodyAndClothes(targetCtx, pX, pY, shirtColor = "#3b82f6", ski
             targetCtx.stroke();
         }
 
-    } else if (shirtColor === 'overalls_blue') {
-        // Mavi İşçi Tulumu (Klasik Denim / Kot Kumaş, Göğüs Önlüğü, Metal Tokalı Askılar ve Cepler)
-        let denimBlue = "#2563eb";
-        let darkDenim = "#1d4ed8";
-        let lightDenim = "#3b82f6";
-        let innerShirt = "#f8fafc"; // Tulumun altındaki beyaz pamuklu tişört
-        let brassColor = "#facc15"; // Metal ayar tokaları ve çıtçıtlar
-
-        // 1. Tulumun altındaki beyaz tişört tabanı (Kollara ve yakaya uzanan ferah içlik)
-        drawShapedTorso(innerShirt, "rgba(0,0,0,0.1)");
-
-        // 2. İşçi Tulumu Ön / Arka Gövdesi (Kot önlük)
-        targetCtx.fillStyle = denimBlue;
-        let bibW = isFemale ? 11 : 13;
-        let waistW = isFemale ? 12 : 15;
-
-        targetCtx.beginPath();
-        targetCtx.moveTo(pX - bibW / 2, pY - 7);
-        targetCtx.lineTo(pX + bibW / 2, pY - 7);
-        targetCtx.lineTo(pX + waistW / 2, pY + 2);
-        targetCtx.lineTo(pX + (isFemale ? 7 : 8.5), pY + 9);
-        targetCtx.lineTo(pX - (isFemale ? 7 : 8.5), pY + 9);
-        targetCtx.lineTo(pX - waistW / 2, pY + 2);
-        targetCtx.closePath();
-        targetCtx.fill();
-
-        // Yan bel derinlik dikişleri / kumaş gölgesi
-        targetCtx.fillStyle = darkDenim;
-        targetCtx.fillRect(pX - waistW / 2, pY + 2, 2.5, 7);
-        targetCtx.fillRect(pX + waistW / 2 - 2.5, pY + 2, 2.5, 7);
-
-        // 3. Omuz Askıları (Metal tokalarla önlüğe bağlanan denim askılar)
-        targetCtx.fillStyle = darkDenim;
-        let strapL = pX - (isFemale ? 5 : 6);
-        let strapR = pX + (isFemale ? 3 : 4);
-        targetCtx.fillRect(strapL, pY - 11, 2.4, 5);
-        targetCtx.fillRect(strapR, pY - 11, 2.4, 5);
-
-        // Metal ayar tokaları (Brass buckles)
-        targetCtx.fillStyle = brassColor;
-        targetCtx.fillRect(strapL - 0.5, pY - 7.5, 3.4, 2);
-        targetCtx.fillRect(strapR - 0.5, pY - 7.5, 3.4, 2);
-
-        if (!isBack) {
-            // 4. Göğüs Cebi (İşçi Tulumunun İkonik Ön Cebi)
-            targetCtx.fillStyle = darkDenim;
-            let pocketW = isFemale ? 6 : 7.5;
-            targetCtx.beginPath();
-            targetCtx.roundRect(pX - pocketW / 2, pY - 4.5, pocketW, 5, [1, 1, 2, 2]);
-            targetCtx.fill();
-
-            // Cep Dikişi & Sarı Kalem / Tornavida Vurgusu
-            targetCtx.strokeStyle = "rgba(250, 204, 21, 0.4)";
-            targetCtx.lineWidth = 0.6;
-            targetCtx.stroke();
-            // Cepte sarı iş kalemi detayı
-            targetCtx.fillStyle = "#eab308";
-            targetCtx.fillRect(pX + pocketW / 2 - 2, pY - 6.5, 1.2, 3);
-
-            // Bel Metal Perçinleri (Yan düğmeler)
-            targetCtx.fillStyle = "#cbd5e1";
-            targetCtx.beginPath();
-            targetCtx.arc(pX - waistW / 2 + 1.2, pY + 3, 1, 0, Math.PI * 2);
-            targetCtx.arc(pX + waistW / 2 - 1.2, pY + 3, 1, 0, Math.PI * 2);
-            targetCtx.fill();
-        } else {
-            // Arkadan görünüm: Çapraz askılar (Cross-Back suspenders)
-            targetCtx.strokeStyle = darkDenim;
-            targetCtx.lineWidth = 2.4;
-            targetCtx.beginPath();
-            targetCtx.moveTo(strapL + 1, pY - 11);
-            targetCtx.lineTo(pX, pY - 3);
-            targetCtx.lineTo(strapR + 1, pY - 11);
-            targetCtx.stroke();
-            // Arka deri etiket
-            targetCtx.fillStyle = "#b45309";
-            targetCtx.fillRect(pX - 2.5, pY - 4, 5, 2.5);
-        }
-
     } else {
         // Klasik Tişört (Gerçekçi omuz manşetleri, yaka ribanası ve bel kıvrımı)
         let mainCol = shirtColor || "#3b82f6";
@@ -1060,6 +1059,36 @@ function drawAvatarHairAndHats(targetCtx, pX, pY, hatType = "none", facing = "do
         targetCtx.beginPath(); targetCtx.ellipse(pX + vDir, pY - 23, vWidth, 3, 0, 0, Math.PI * 2); targetCtx.fill();
         targetCtx.fillStyle = "#64748b";
         targetCtx.beginPath(); targetCtx.arc(pX, pY - 26, 2, 0, Math.PI * 2); targetCtx.fill();
+
+    } else if (hatType === 'k2_skater_bucket') {
+        // K2 Sokak Kova Şapka (Bucket Hat)
+        const bShiftX = (effFacing === 'right') ? 2 : (effFacing === 'down-right' ? 1.5 : (effFacing === 'up' ? 0 : 0));
+        // Kumaş gövde
+        targetCtx.fillStyle = "#27272a";
+        targetCtx.beginPath();
+        targetCtx.roundRect(pX - 7.5 + bShiftX * 0.4, pY - 32, 15, 9, [4, 4, 1, 1]);
+        targetCtx.fill();
+
+        // Kova siperliği (Geniş salaş kavis)
+        targetCtx.fillStyle = "#18181b";
+        targetCtx.beginPath();
+        targetCtx.ellipse(pX + bShiftX, pY - 23, 12.5, 3.8, 0, 0, Math.PI * 2);
+        targetCtx.fill();
+
+        // Siperlik dikiş çizgisi
+        targetCtx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+        targetCtx.lineWidth = 0.8;
+        targetCtx.beginPath();
+        targetCtx.arc(pX + bShiftX, pY - 23, 10.5, 0.1 * Math.PI, 0.9 * Math.PI);
+        targetCtx.stroke();
+
+        // Ön neon pembe grafiti logo etiketi
+        if (!isBack) {
+            targetCtx.fillStyle = "#ec4899";
+            targetCtx.fillRect(pX - 2.0 + bShiftX, pY - 28.5, 4.0, 3.0);
+            targetCtx.fillStyle = "#ffffff";
+            targetCtx.fillRect(pX - 1.2 + bShiftX, pY - 27.5, 2.4, 1.0);
+        }
 
     } else if (hatType === 'cowboy') {
         // Kovboy Şapkası
@@ -1395,7 +1424,9 @@ function drawAvatarHairAndHats(targetCtx, pX, pY, hatType = "none", facing = "do
         targetCtx.beginPath(); targetCtx.arc(pX, pY - 23, 8, Math.PI * 1.15, Math.PI * 1.85); targetCtx.stroke();
         if (isBack) {
             targetCtx.fillStyle = "#451a03";
-            targetCtx.fillRect(pX - 7, pY - 22, 14, 6);
+            targetCtx.beginPath();
+            targetCtx.roundRect(pX - 7, pY - 22, 14, 6, [2, 2, 4, 4]);
+            targetCtx.fill();
         }
     }
 
@@ -1403,7 +1434,7 @@ function drawAvatarHairAndHats(targetCtx, pX, pY, hatType = "none", facing = "do
 }
 
 // --- 5. GÖZLER VE YÜZ AKSESUARLARI (8 AÇILI İZOMETRİK GÖZ, SUNGASSES, SAKAL, BIYIK) ---
-function drawAvatarFaceAndEyes(targetCtx, pX, pY, faceType = "none", eyeOffsetX = 0, eyeOffsetY = 0, facing = "down") {
+function drawAvatarFaceAndEyes(targetCtx, pX, pY, faceType = "none", eyeOffsetX = 0, eyeOffsetY = 0, facing = "down", isAfk = false) {
     let f = normalize8WayFacing(facing);
     if (f === 'up' || f === 'up-right' || f === 'up-left') {
         return;
@@ -1411,8 +1442,17 @@ function drawAvatarFaceAndEyes(targetCtx, pX, pY, faceType = "none", eyeOffsetX 
 
     targetCtx.save();
     if (f === 'right') {
-        targetCtx.fillStyle = "#0f172a";
-        targetCtx.fillRect(pX + 4, pY - 20, 2.5, 3);
+        if (isAfk && faceType !== 'sunglasses') {
+            targetCtx.strokeStyle = "#0f172a";
+            targetCtx.lineWidth = 1.3;
+            targetCtx.lineCap = "round";
+            targetCtx.beginPath();
+            targetCtx.arc(pX + 5.2, pY - 18.5, 1.4, 0.18 * Math.PI, 0.82 * Math.PI);
+            targetCtx.stroke();
+        } else {
+            targetCtx.fillStyle = "#0f172a";
+            targetCtx.fillRect(pX + 4, pY - 20, 2.5, 3);
+        }
         if (faceType === 'sunglasses') {
             targetCtx.fillStyle = "#0f172a";
             targetCtx.fillRect(pX + 2, pY - 21, 6, 4.5);
@@ -1427,8 +1467,17 @@ function drawAvatarFaceAndEyes(targetCtx, pX, pY, faceType = "none", eyeOffsetX 
         }
 
     } else if (f === 'left') {
-        targetCtx.fillStyle = "#0f172a";
-        targetCtx.fillRect(pX - 6.5, pY - 20, 2.5, 3);
+        if (isAfk && faceType !== 'sunglasses') {
+            targetCtx.strokeStyle = "#0f172a";
+            targetCtx.lineWidth = 1.3;
+            targetCtx.lineCap = "round";
+            targetCtx.beginPath();
+            targetCtx.arc(pX - 5.2, pY - 18.5, 1.4, 0.18 * Math.PI, 0.82 * Math.PI);
+            targetCtx.stroke();
+        } else {
+            targetCtx.fillStyle = "#0f172a";
+            targetCtx.fillRect(pX - 6.5, pY - 20, 2.5, 3);
+        }
         if (faceType === 'sunglasses') {
             targetCtx.fillStyle = "#0f172a";
             targetCtx.fillRect(pX - 8, pY - 21, 6, 4.5);
@@ -1443,9 +1492,21 @@ function drawAvatarFaceAndEyes(targetCtx, pX, pY, faceType = "none", eyeOffsetX 
         }
 
     } else if (f === 'down-right') {
-        targetCtx.fillStyle = "#0f172a";
-        targetCtx.fillRect(pX - 1, pY - 20, 2.5, 3);
-        targetCtx.fillRect(pX + 5, pY - 20, 2.5, 3);
+        if (isAfk && faceType !== 'sunglasses') {
+            targetCtx.strokeStyle = "#0f172a";
+            targetCtx.lineWidth = 1.3;
+            targetCtx.lineCap = "round";
+            targetCtx.beginPath();
+            targetCtx.arc(pX + 0.2, pY - 18.5, 1.4, 0.18 * Math.PI, 0.82 * Math.PI);
+            targetCtx.stroke();
+            targetCtx.beginPath();
+            targetCtx.arc(pX + 6.2, pY - 18.5, 1.4, 0.18 * Math.PI, 0.82 * Math.PI);
+            targetCtx.stroke();
+        } else {
+            targetCtx.fillStyle = "#0f172a";
+            targetCtx.fillRect(pX - 1, pY - 20, 2.5, 3);
+            targetCtx.fillRect(pX + 5, pY - 20, 2.5, 3);
+        }
         if (faceType === 'sunglasses') {
             targetCtx.fillStyle = "#0f172a";
             targetCtx.fillRect(pX - 3, pY - 21, 5, 4.5);
@@ -1463,9 +1524,21 @@ function drawAvatarFaceAndEyes(targetCtx, pX, pY, faceType = "none", eyeOffsetX 
         }
 
     } else if (f === 'down-left') {
-        targetCtx.fillStyle = "#0f172a";
-        targetCtx.fillRect(pX - 7.5, pY - 20, 2.5, 3);
-        targetCtx.fillRect(pX - 1.5, pY - 20, 2.5, 3);
+        if (isAfk && faceType !== 'sunglasses') {
+            targetCtx.strokeStyle = "#0f172a";
+            targetCtx.lineWidth = 1.3;
+            targetCtx.lineCap = "round";
+            targetCtx.beginPath();
+            targetCtx.arc(pX - 6.2, pY - 18.5, 1.4, 0.18 * Math.PI, 0.82 * Math.PI);
+            targetCtx.stroke();
+            targetCtx.beginPath();
+            targetCtx.arc(pX - 0.2, pY - 18.5, 1.4, 0.18 * Math.PI, 0.82 * Math.PI);
+            targetCtx.stroke();
+        } else {
+            targetCtx.fillStyle = "#0f172a";
+            targetCtx.fillRect(pX - 7.5, pY - 20, 2.5, 3);
+            targetCtx.fillRect(pX - 1.5, pY - 20, 2.5, 3);
+        }
         if (faceType === 'sunglasses') {
             targetCtx.fillStyle = "#0f172a";
             targetCtx.fillRect(pX - 8.5, pY - 21, 5, 4.5);
@@ -1484,9 +1557,21 @@ function drawAvatarFaceAndEyes(targetCtx, pX, pY, faceType = "none", eyeOffsetX 
 
     } else {
         // Tam Öne Dönük
-        targetCtx.fillStyle = "#0f172a";
-        targetCtx.fillRect(pX - 4 + eyeOffsetX, pY - 20 + eyeOffsetY, 2.5, 3);
-        targetCtx.fillRect(pX + 2 + eyeOffsetX, pY - 20 + eyeOffsetY, 2.5, 3);
+        if (isAfk && faceType !== 'sunglasses') {
+            targetCtx.strokeStyle = "#0f172a";
+            targetCtx.lineWidth = 1.3;
+            targetCtx.lineCap = "round";
+            targetCtx.beginPath();
+            targetCtx.arc(pX - 2.8 + eyeOffsetX, pY - 18.5 + eyeOffsetY, 1.4, 0.18 * Math.PI, 0.82 * Math.PI);
+            targetCtx.stroke();
+            targetCtx.beginPath();
+            targetCtx.arc(pX + 3.2 + eyeOffsetX, pY - 18.5 + eyeOffsetY, 1.4, 0.18 * Math.PI, 0.82 * Math.PI);
+            targetCtx.stroke();
+        } else {
+            targetCtx.fillStyle = "#0f172a";
+            targetCtx.fillRect(pX - 4 + eyeOffsetX, pY - 20 + eyeOffsetY, 2.5, 3);
+            targetCtx.fillRect(pX + 2 + eyeOffsetX, pY - 20 + eyeOffsetY, 2.5, 3);
+        }
 
         if (faceType === 'mustache') {
             targetCtx.fillStyle = "#1e1e1e";
@@ -1544,8 +1629,8 @@ function getAvatarSmokingState(p, isPreview = false) {
 
     let now = Date.now();
     if (!p._nextSmokeTime) {
-        // Dümdüz 35 saniye bekleme süresi
-        let delay = isPreview ? 8000 : 35000;
+        // Dümdüz 30 saniye bekleme süresi
+        let delay = isPreview ? 8000 : 30000;
         p._nextSmokeTime = now + delay;
     }
 
@@ -1560,7 +1645,7 @@ function getAvatarSmokingState(p, isPreview = false) {
 
     if (elapsed >= totalDuration) {
         p._smokeAnimStart = null;
-        p._nextSmokeTime = now + (isPreview ? 8000 : 35000);
+        p._nextSmokeTime = now + (isPreview ? 8000 : 30000);
         return null;
     }
 
@@ -1667,15 +1752,15 @@ function drawExhaleSmoke(ctx, pX, pY, facing, model, progress) {
 }
 
 // Konsoldan veya testlerden anında sigara dumanı animasyonunu tetikleme fonksiyonu
-window.triggerSmokeAnimation = function(targetPlayer) {
+window.triggerSmokeAnimation = function (targetPlayer) {
     let p = targetPlayer || (typeof myAvatar !== 'undefined' ? myAvatar : null);
     if (!p) return;
     p._smokeAnimStart = Date.now();
     p._nextSmokeTime = Date.now() + 4200 + 40000 + Math.random() * 80000;
 };
 
-// --- 6. EL EŞYALARI (8 AÇILI İZOMETRİK TÜM EL EŞYALARI VE SIRTKAPLAMA) ---
-function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = 'down', is25d = false, model = 'classic', p = null) {
+// --- 6. EL EŞYALARI (8 AÇILI TÜM EL EŞYALARI VE SIRTKAPLAMA) ---
+function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = 'down', _unused = false, model = 'classic_2', p = null) {
     if (!heldItem || heldItem === 'none') return;
 
     let f = normalize8WayFacing(facing);
@@ -1684,30 +1769,9 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
 
     targetCtx.save();
 
-    // Dinamik El Pozisyonu Çapaları (2.5D Gerçekçi Model vs Klasik 2 vs Klasik Chibi)
+    // Dinamik El Pozisyonu Çapaları (Klasik 2 vs Klasik Chibi)
     let handX, handY;
-    if (is25d || model === 'sanalika_v2') {
-        // 2.5D İzometrik Vücut Modeline (sY + handY) Tam Milimetrik Senkron El Koordinatları
-        if (f === 'down') {
-            handX = pX + 7.8; handY = pY - 1.2;
-        } else if (f === 'down-right') {
-            handX = pX + 7.2; handY = pY - 1.0;
-        } else if (f === 'right') {
-            handX = pX + 2.8; handY = pY - 1.2;
-        } else if (f === 'up-right') {
-            handX = pX + 6.0; handY = pY - 1.5;
-        } else if (f === 'up') {
-            handX = pX + 7.0; handY = pY - 1.5;
-        } else if (f === 'up-left') {
-            handX = pX - 6.0; handY = pY - 1.5;
-        } else if (f === 'left') {
-            handX = pX - 2.8; handY = pY - 1.2;
-        } else if (f === 'down-left') {
-            handX = pX - 7.2; handY = pY - 1.0;
-        } else {
-            handX = pX + 7.8; handY = pY - 1.2;
-        }
-    } else if (model === 'classic_2') {
+    if (model === 'classic_2') {
         // Klasik 2 Modeline (Sabit El Pozisyonu) Tam Milimetrik Senkron El Koordinatları
         if (f === 'down') {
             handX = pX + 9.0; handY = pY + 6.2;
@@ -1760,8 +1824,8 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
 
     // 1. GEZGİN SIRT ÇANTASI
     if (heldItem === 'sirtcantasi') {
-        let scale = is25d ? 0.88 : (isPreview ? 1.1 : 0.95);
-        let bpYOffset = is25d ? -7.0 : -2;
+        let scale = isPreview ? 1.1 : 0.95;
+        let bpYOffset = -2;
 
         if (f === 'up') {
             let bpX = pX;
@@ -1792,7 +1856,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
             targetCtx.fillStyle = "#facc15"; targetCtx.fillRect(bpX - 1.5, bpY - 2 * scale, 3, 2.5);
 
         } else if (f === 'right' || f === 'left') {
-            let bpX = (f === 'right') ? (pX - (is25d ? 6.5 : 9)) : (pX + (is25d ? 6.5 : 9));
+            let bpX = (f === 'right') ? (pX - 9) : (pX + 9);
             let bpY = pY + bpYOffset;
             targetCtx.fillStyle = "#854d0e";
             targetCtx.beginPath(); targetCtx.roundRect(bpX - 4 * scale, bpY - 7 * scale, 8 * scale, 16 * scale, 3); targetCtx.fill();
@@ -1803,9 +1867,9 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
 
         } else {
             // Önden görünüm omuz askıları (Omuz başlarından bele doğru oturur)
-            let strapShift = is25d ? 5.8 : 7;
-            let strapTopY = is25d ? (pY - 13.5) : (pY - 9);
-            let strapHeight = is25d ? 11.5 : 14;
+            let strapShift = 7;
+            let strapTopY = pY - 9;
+            let strapHeight = 14;
             targetCtx.fillStyle = "#854d0e";
             targetCtx.fillRect(pX - strapShift, strapTopY, 2.4, strapHeight);
             targetCtx.fillRect(pX + strapShift - 2.4, strapTopY, 2.4, strapHeight);
@@ -1821,10 +1885,10 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
 
     // 2. NOSTALJİK AKUSTİK GİTAR
     if (heldItem === 'gitar') {
-        let scale = is25d ? 0.75 : (isPreview ? 1.15 : 1.0);
+        let scale = isPreview ? 1.15 : 1.0;
 
         if (isBack) {
-            targetCtx.translate(pX + 1.5, is25d ? (pY - 7.0) : pY);
+            targetCtx.translate(pX + 1.5, pY);
             let gAngle = (f === 'up-right') ? 0.55 : (f === 'up-left') ? -0.55 : 0.45;
             targetCtx.rotate(gAngle);
 
@@ -1838,8 +1902,8 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
             targetCtx.fillRect(-2 * scale, -22 * scale, 4 * scale, 16 * scale);
 
         } else {
-            let gAnchorX = is25d ? (isLeft ? pX - 3.8 : pX + 3.8) : handX;
-            let gAnchorY = is25d ? (pY - 5.0) : handY;
+            let gAnchorX = handX;
+            let gAnchorY = handY;
             targetCtx.translate(gAnchorX, gAnchorY);
             let gRot = (isLeft) ? 0.55 : -0.55;
             targetCtx.rotate(gRot);
@@ -1866,203 +1930,48 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
         return;
     }
 
-    // 3. ANADOLU BAĞLAMASI / SAZ (2.5D & KLASİK KAPSAMLI UYARLAMA)
+    // 3. ANADOLU BAĞLAMASI / SAZ
     if (heldItem === 'baglama') {
-        if (is25d) {
-            // =========================================================================
-            // 2.5D İZOMETRİK ANADOLU BAĞLAMASI (OYMA DUT TEKNE & LADİN GÖĞÜS & İNCE SAP)
-            // =========================================================================
-            if (isBack) {
-                // Arkadan görünüm: Sırtta çapraz asılı duran bağlama
-                targetCtx.translate(pX + 2.0, pY - 6.5);
-                let sAngle = (f === 'up-right') ? 0.45 : (f === 'up-left') ? -0.45 : 0.40;
-                targetCtx.rotate(sAngle);
+        // KLASİK CHİBİ MODEL İÇİN UYUMLU BAĞLAMA ÇİZİMİ
+        let bodyW = isPreview ? 8.5 : 7.5;
+        let bodyH = isPreview ? 12 : 11;
+        let neckH = isPreview ? 20 : 18;
 
-                // Hakiki deri omuz askısı (sol omuzdan sağ bele)
-                targetCtx.strokeStyle = "#451a03"; targetCtx.lineWidth = 1.6;
-                targetCtx.beginPath(); targetCtx.moveTo(-10, -11); targetCtx.lineTo(10, 11); targetCtx.stroke();
+        if (isBack) {
+            targetCtx.translate(pX, pY);
+            let sAngle = (f === 'up-right') ? 0.45 : (f === 'up-left') ? -0.45 : 0.40;
+            targetCtx.rotate(sAngle);
 
-                // Oyma tekne gövdesi (Dut ağacı dilimli arka kavis)
-                let bGrad = targetCtx.createLinearGradient(-4, -4, 4, 8);
-                bGrad.addColorStop(0, "#78350f");
-                bGrad.addColorStop(0.5, "#9a3412");
-                bGrad.addColorStop(1, "#451a03");
-                targetCtx.fillStyle = bGrad;
-                targetCtx.beginPath();
-                targetCtx.ellipse(0, 3.0, 4.4, 6.8, 0, 0, Math.PI * 2);
-                targetCtx.fill();
-                targetCtx.strokeStyle = "#451a03"; targetCtx.lineWidth = 0.8; targetCtx.stroke();
+            targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 1.8;
+            targetCtx.beginPath(); targetCtx.moveTo(-9, -11); targetCtx.lineTo(9, 11); targetCtx.stroke();
 
-                // Tekne dilimleri dikiş çizgileri
-                targetCtx.strokeStyle = "rgba(0,0,0,0.35)"; targetCtx.lineWidth = 0.5;
-                targetCtx.beginPath();
-                targetCtx.moveTo(0, -3.8); targetCtx.lineTo(0, 9.8);
-                targetCtx.moveTo(-2.0, -2.5); targetCtx.quadraticCurveTo(-2.8, 3, -1.5, 8.5);
-                targetCtx.moveTo(2.0, -2.5); targetCtx.quadraticCurveTo(2.8, 3, 1.5, 8.5);
-                targetCtx.stroke();
-
-                // İnce uzun sap (Omuz üstünden yukarı uzanır)
-                targetCtx.strokeStyle = "#532e08"; targetCtx.lineWidth = 1.8;
-                targetCtx.beginPath(); targetCtx.moveTo(0, -3.8); targetCtx.lineTo(0, -16.5); targetCtx.stroke();
-
-                // Burguluk ve fildişi burgular
-                targetCtx.fillStyle = "#78350f"; targetCtx.fillRect(-1.4, -19.5, 2.8, 3.2);
-                targetCtx.fillStyle = "#ffffff";
-                targetCtx.fillRect(-2.2, -19.0, 0.9, 0.7); targetCtx.fillRect(1.3, -19.0, 0.9, 0.7);
-                targetCtx.fillRect(-2.2, -17.8, 0.9, 0.7); targetCtx.fillRect(1.3, -17.8, 0.9, 0.7);
-
-            } else if (f === 'right' || f === 'left') {
-                // Tam profil görünüm: Göğüste/kucakta tutulan saz
-                let bagX = (f === 'right') ? (pX - 1.5) : (pX + 1.5);
-                let bagY = pY - 4.5;
-                targetCtx.translate(bagX, bagY);
-                let pRot = (f === 'right') ? -0.55 : 0.55;
-                targetCtx.rotate(pRot);
-
-                // Profilde derin oyma tekne silueti
-                let bGrad = targetCtx.createLinearGradient(-3, 0, 3, 6);
-                bGrad.addColorStop(0, "#b45309");
-                bGrad.addColorStop(1, "#451a03");
-                targetCtx.fillStyle = bGrad;
-                targetCtx.beginPath();
-                targetCtx.ellipse(f === 'right' ? -1.0 : 1.0, 2.5, 3.4, 6.2, f === 'right' ? -0.15 : 0.15, 0, Math.PI * 2);
-                targetCtx.fill();
-                targetCtx.strokeStyle = "#451a03"; targetCtx.lineWidth = 0.8; targetCtx.stroke();
-
-                // Ladin ön kapak profili
-                targetCtx.strokeStyle = "#fde68a"; targetCtx.lineWidth = 1.0;
-                targetCtx.beginPath();
-                targetCtx.moveTo(f === 'right' ? 1.2 : -1.2, -3.0);
-                targetCtx.lineTo(f === 'right' ? 1.2 : -1.2, 7.0);
-                targetCtx.stroke();
-
-                // İnce sap
-                targetCtx.strokeStyle = "#532e08"; targetCtx.lineWidth = 1.8;
-                targetCtx.beginPath(); targetCtx.moveTo(0, -3.0); targetCtx.lineTo(0, -15.5); targetCtx.stroke();
-
-                // Burguluk
-                targetCtx.fillStyle = "#78350f"; targetCtx.fillRect(-1.3, -18.8, 2.6, 3.4);
-                targetCtx.fillStyle = "#ffffff";
-                targetCtx.fillRect(f === 'right' ? 1.3 : -2.2, -18.0, 0.9, 0.7);
-                targetCtx.fillRect(f === 'right' ? 1.3 : -2.2, -16.8, 0.9, 0.7);
-
-            } else {
-                // Önden & 3/4 İzometrik Görünüm: Karakter göğsünde çapraz çalınır pozisyonda
-                // Tekne sağ böbrek/karın hizasında, sap sol omuza doğru uzanır
-                let bagX = isLeft ? (pX - 3.8) : (pX + 3.8);
-                let bagY = pY - 5.0;
-                targetCtx.translate(bagX, bagY);
-                let rot = isLeft ? 0.62 : -0.62;
-                targetCtx.rotate(rot);
-
-                // 0. Deri Omuz Askısı
-                targetCtx.strokeStyle = "#451a03"; targetCtx.lineWidth = 1.4;
-                targetCtx.beginPath();
-                targetCtx.moveTo(0, 3.0);
-                targetCtx.lineTo(isLeft ? 8 : -8, -10);
-                targetCtx.stroke();
-
-                // 1. Tekne Gövdesi (Oyma Dut/Ceviz Ağacı)
-                let bGrad = targetCtx.createLinearGradient(-4, 0, 4, 8);
-                bGrad.addColorStop(0, "#b45309");
-                bGrad.addColorStop(0.5, "#9a3412");
-                bGrad.addColorStop(1, "#451a03");
-                targetCtx.fillStyle = bGrad;
-                targetCtx.beginPath();
-                targetCtx.ellipse(0, 2.8, 4.4, 6.8, 0, 0, Math.PI * 2);
-                targetCtx.fill();
-                targetCtx.strokeStyle = "#451a03"; targetCtx.lineWidth = 0.8; targetCtx.stroke();
-
-                // 2. Ladin Ağacı Ses Tahtası (Göğüs)
-                let soundGrad = targetCtx.createLinearGradient(0, -3.0, 0, 8.5);
-                soundGrad.addColorStop(0, "#fef08a");
-                soundGrad.addColorStop(0.6, "#f59e0b");
-                soundGrad.addColorStop(1, "#d97706");
-                targetCtx.fillStyle = soundGrad;
-                targetCtx.beginPath();
-                targetCtx.ellipse(0, 2.8, 3.6, 5.8, 0, 0, Math.PI * 2);
-                targetCtx.fill();
-
-                // 3. Ses Deliği & Sedef Kakma Rozet
-                targetCtx.fillStyle = "#271206";
-                targetCtx.beginPath(); targetCtx.arc(0, 2.2, 1.3, 0, Math.PI * 2); targetCtx.fill();
-                targetCtx.strokeStyle = "#facc15"; targetCtx.lineWidth = 0.5; targetCtx.stroke();
-
-                // 4. Alt Eşik (Bridge)
-                targetCtx.fillStyle = "#1e1b4b";
-                targetCtx.fillRect(-1.8, 6.2, 3.6, 1.0);
-
-                // 5. İnce Uzun Sap (Uzun Sap Bağlama Anatomisi)
-                let neckH = 15.5;
-                targetCtx.strokeStyle = "#532e08"; targetCtx.lineWidth = 1.8;
-                targetCtx.beginPath(); targetCtx.moveTo(0, -3.0); targetCtx.lineTo(0, -neckH); targetCtx.stroke();
-
-                // 6. Perdeler (Tied Frets)
-                targetCtx.strokeStyle = "rgba(255, 255, 255, 0.75)"; targetCtx.lineWidth = 0.5;
-                for (let fy = -4.0; fy >= -neckH + 2; fy -= 2.2) {
-                    targetCtx.beginPath(); targetCtx.moveTo(-0.9, fy); targetCtx.lineTo(0.9, fy); targetCtx.stroke();
-                }
-
-                // 7. Burguluk & Fildişi Burgular
-                targetCtx.fillStyle = "#78350f";
-                targetCtx.fillRect(-1.3, -neckH - 4.0, 2.6, 4.0);
-                targetCtx.fillStyle = "#f8fafc";
-                [-neckH - 3.4, -neckH - 2.0, -neckH - 0.7].forEach(py => {
-                    targetCtx.fillRect(-2.2, py, 1.0, 0.7);
-                    targetCtx.fillRect(1.3, py, 1.0, 0.7);
-                });
-
-                // 8. Parlayan Çelik Teller
-                targetCtx.strokeStyle = "rgba(255, 255, 255, 0.9)"; targetCtx.lineWidth = 0.5;
-                targetCtx.beginPath();
-                targetCtx.moveTo(-0.6, 6.2); targetCtx.lineTo(-0.6, -neckH - 1);
-                targetCtx.moveTo(0, 6.2); targetCtx.lineTo(0, -neckH - 1);
-                targetCtx.moveTo(0.6, 6.2); targetCtx.lineTo(0.6, -neckH - 1);
-                targetCtx.stroke();
-            }
+            targetCtx.fillStyle = "#b45309";
+            targetCtx.beginPath(); targetCtx.ellipse(0, 4, bodyW, bodyH, 0, 0, Math.PI * 2); targetCtx.fill();
+            targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 1; targetCtx.stroke();
+            targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 2.6;
+            targetCtx.beginPath(); targetCtx.moveTo(0, -bodyH + 5); targetCtx.lineTo(0, -neckH); targetCtx.stroke();
 
         } else {
-            // KLASİK CHİBİ MODEL İÇİN UYUMLU BAĞLAMA ÇİZİMİ
-            let bodyW = isPreview ? 8.5 : 7.5;
-            let bodyH = isPreview ? 12 : 11;
-            let neckH = isPreview ? 20 : 18;
+            targetCtx.translate(handX, handY);
+            let rot = isLeft ? 0.50 : -0.50;
+            targetCtx.rotate(rot);
 
-            if (isBack) {
-                targetCtx.translate(pX, pY);
-                let sAngle = (f === 'up-right') ? 0.45 : (f === 'up-left') ? -0.45 : 0.40;
-                targetCtx.rotate(sAngle);
+            targetCtx.fillStyle = "#b45309";
+            targetCtx.beginPath(); targetCtx.ellipse(0, 4, bodyW, bodyH, 0, 0, Math.PI * 2); targetCtx.fill();
+            targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 1; targetCtx.stroke();
 
-                targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 1.8;
-                targetCtx.beginPath(); targetCtx.moveTo(-9, -11); targetCtx.lineTo(9, 11); targetCtx.stroke();
+            targetCtx.fillStyle = "#451a03";
+            targetCtx.beginPath(); targetCtx.arc(0, 4, isPreview ? 2.5 : 2.0, 0, Math.PI * 2); targetCtx.fill();
 
-                targetCtx.fillStyle = "#b45309";
-                targetCtx.beginPath(); targetCtx.ellipse(0, 4, bodyW, bodyH, 0, 0, Math.PI * 2); targetCtx.fill();
-                targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 1; targetCtx.stroke();
-                targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 2.6;
-                targetCtx.beginPath(); targetCtx.moveTo(0, -bodyH + 5); targetCtx.lineTo(0, -neckH); targetCtx.stroke();
+            targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 2.4;
+            targetCtx.beginPath(); targetCtx.moveTo(0, -bodyH + 5); targetCtx.lineTo(0, -neckH); targetCtx.stroke();
+            targetCtx.fillStyle = "#f8fafc"; targetCtx.fillRect(-2.5, -neckH - 3, 5, 3.5);
 
-            } else {
-                targetCtx.translate(handX, handY);
-                let rot = isLeft ? 0.50 : -0.50;
-                targetCtx.rotate(rot);
-
-                targetCtx.fillStyle = "#b45309";
-                targetCtx.beginPath(); targetCtx.ellipse(0, 4, bodyW, bodyH, 0, 0, Math.PI * 2); targetCtx.fill();
-                targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 1; targetCtx.stroke();
-
-                targetCtx.fillStyle = "#451a03";
-                targetCtx.beginPath(); targetCtx.arc(0, 4, isPreview ? 2.5 : 2.0, 0, Math.PI * 2); targetCtx.fill();
-
-                targetCtx.strokeStyle = "#78350f"; targetCtx.lineWidth = 2.4;
-                targetCtx.beginPath(); targetCtx.moveTo(0, -bodyH + 5); targetCtx.lineTo(0, -neckH); targetCtx.stroke();
-                targetCtx.fillStyle = "#f8fafc"; targetCtx.fillRect(-2.5, -neckH - 3, 5, 3.5);
-
-                targetCtx.strokeStyle = "rgba(255,255,255,0.8)"; targetCtx.lineWidth = 0.6;
-                targetCtx.beginPath();
-                targetCtx.moveTo(-0.8, 8); targetCtx.lineTo(-0.8, -neckH);
-                targetCtx.moveTo(0.8, 8); targetCtx.lineTo(0.8, -neckH);
-                targetCtx.stroke();
-            }
+            targetCtx.strokeStyle = "rgba(255,255,255,0.8)"; targetCtx.lineWidth = 0.6;
+            targetCtx.beginPath();
+            targetCtx.moveTo(-0.8, 8); targetCtx.lineTo(-0.8, -neckH);
+            targetCtx.moveTo(0.8, 8); targetCtx.lineTo(0.8, -neckH);
+            targetCtx.stroke();
         }
 
         targetCtx.restore();
@@ -2072,7 +1981,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 4. BALIKÇI OLTASI
     if (heldItem === 'olta') {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
 
         let rodAngle = 0.35;
@@ -2089,7 +1998,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
         targetCtx.fillStyle = "#d97706"; targetCtx.fillRect(-1.5, -2, 3, 9); // Mantar sap
         targetCtx.fillStyle = "#64748b"; targetCtx.fillRect(-2.5, 3, 5, 3.5); // Makine
         targetCtx.strokeStyle = "#1e293b"; targetCtx.lineWidth = 1.8;
-        let rodLen = (is25d || isPreview) ? -28 : -26;
+        let rodLen = isPreview ? -28 : -26;
         targetCtx.beginPath(); targetCtx.moveTo(0, -2); targetCtx.lineTo(0, rodLen); targetCtx.stroke();
         targetCtx.strokeStyle = "rgba(255, 255, 255, 0.75)"; targetCtx.lineWidth = 0.8;
         targetCtx.beginPath();
@@ -2105,26 +2014,26 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     if (heldItem === 'tespih') {
         let swing = Math.sin(Date.now() / 170) * 0.30;
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
         targetCtx.rotate(swing);
 
         targetCtx.strokeStyle = "#b45309"; targetCtx.lineWidth = 0.6; targetCtx.fillStyle = "#f59e0b";
-        let beadRadius = is25d ? 1.2 : 1.6;
-        let ringR = is25d ? 3.2 : 4.8;
+        let beadRadius = 1.6;
+        let ringR = 4.8;
         for (let i = 0; i < 9; i++) {
             let angle = (i * 2 * Math.PI) / 9;
             let bx = Math.cos(angle) * ringR;
-            let by = Math.sin(angle) * ringR + (is25d ? 3.2 : 5);
+            let by = Math.sin(angle) * ringR + 5;
             targetCtx.beginPath(); targetCtx.arc(bx, by, beadRadius, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
         }
         targetCtx.strokeStyle = "#94a3b8"; targetCtx.lineWidth = 1.0;
         targetCtx.beginPath();
-        targetCtx.moveTo(0, ringR + (is25d ? 3.2 : 5) + beadRadius);
-        targetCtx.lineTo(0, ringR + (is25d ? 7.0 : 11));
+        targetCtx.moveTo(0, ringR + 5 + beadRadius);
+        targetCtx.lineTo(0, ringR + 11);
         targetCtx.stroke();
         targetCtx.fillStyle = "#cbd5e1";
-        targetCtx.beginPath(); targetCtx.arc(0, ringR + (is25d ? 7.8 : 12), is25d ? 1.2 : 1.5, 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.arc(0, ringR + 12, 1.5, 0, Math.PI * 2); targetCtx.fill();
 
         targetCtx.restore();
         return;
@@ -2133,18 +2042,18 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     if (heldItem === 'tespih2') {
         let swing = Math.sin(Date.now() / 120) * 0.45; // Hızlı ve dinamik kehribar salınımı
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
         targetCtx.rotate(swing);
 
         targetCtx.strokeStyle = "#b45309"; targetCtx.lineWidth = 0.6; targetCtx.fillStyle = "#f59e0b";
-        let beadRadius = is25d ? 1.2 : 1.6;
-        let ringR = is25d ? 3.2 : 4.8;
+        let beadRadius = 1.6;
+        let ringR = 4.8;
         // Dış katman kehribar taneleri
         for (let i = 0; i < 9; i++) {
             let angle = (i * 2 * Math.PI) / 9;
             let bx = Math.cos(angle) * ringR;
-            let by = Math.sin(angle) * ringR + (is25d ? 3.2 : 5);
+            let by = Math.sin(angle) * ringR + 5;
             targetCtx.beginPath(); targetCtx.arc(bx, by, beadRadius, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
             // İç katman parlak gümüş/inci taneleri
             targetCtx.beginPath(); targetCtx.arc(bx, by, beadRadius * 0.55, 0, Math.PI * 2); targetCtx.fillStyle = "#f8fafc"; targetCtx.fill();
@@ -2153,11 +2062,11 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
         // Gümüş imame & püskül
         targetCtx.strokeStyle = "#cbd5e1"; targetCtx.lineWidth = 1.0;
         targetCtx.beginPath();
-        targetCtx.moveTo(0, ringR + (is25d ? 3.2 : 5) + beadRadius);
-        targetCtx.lineTo(0, ringR + (is25d ? 7.2 : 11));
+        targetCtx.moveTo(0, ringR + 5 + beadRadius);
+        targetCtx.lineTo(0, ringR + 11);
         targetCtx.stroke();
         targetCtx.fillStyle = "#94a3b8";
-        targetCtx.beginPath(); targetCtx.arc(0, ringR + (is25d ? 8.0 : 12), is25d ? 1.3 : 1.7, 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.arc(0, ringR + 12, 1.7, 0, Math.PI * 2); targetCtx.fill();
         targetCtx.restore();
         return;
     }
@@ -2165,12 +2074,12 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 6. UÇAN KIRMIZI BALON
     if (heldItem === 'balon') {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
 
         let balloonSway = Math.sin(Date.now() / 320) * 3.8;
         let stringEndX = balloonSway;
-        let stringEndY = is25d ? -38 : (isPreview ? -36 : -32);
+        let stringEndY = isPreview ? -36 : -32;
 
         // İp
         targetCtx.strokeStyle = "rgba(255, 255, 255, 0.85)"; targetCtx.lineWidth = 1.0;
@@ -2179,8 +2088,8 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
         targetCtx.quadraticCurveTo(balloonSway * 0.4, stringEndY * 0.5, stringEndX, stringEndY);
         targetCtx.stroke();
 
-        let bW = is25d ? 7.5 : (isPreview ? 9 : 8);
-        let bH = is25d ? 9.5 : (isPreview ? 12 : 10);
+        let bW = isPreview ? 9 : 8;
+        let bH = isPreview ? 12 : 10;
         // Balon gövdesi
         targetCtx.fillStyle = "#ef4444";
         targetCtx.beginPath(); targetCtx.ellipse(stringEndX, stringEndY - bH, bW, bH, 0, 0, Math.PI * 2); targetCtx.fill();
@@ -2208,7 +2117,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
         targetCtx.translate(handX, handY);
         let rot = isLeft ? -0.25 : 0.25;
         if (isBack) rot += (isLeft ? 0.35 : -0.35);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
         targetCtx.rotate(rot);
 
@@ -2246,7 +2155,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
         targetCtx.translate(handX, handY);
         let rotCar = isLeft ? -0.25 : 0.25;
         if (isBack) rotCar += (isLeft ? 0.35 : -0.35);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.90 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.90 : 1.0);
         targetCtx.scale(scale, scale);
         targetCtx.rotate(rotCar);
 
@@ -2277,7 +2186,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 7. İNCE BELLİ ÇAY BARDAĞI
     if (heldItem === 'cay') {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
 
         // Altın/kırmızı porselen çay tabağı
@@ -2320,7 +2229,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 7.1 SICAK ORALET KUPASI
     if (heldItem === 'oralet') {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
 
         targetCtx.fillStyle = '#b45309';
@@ -2380,7 +2289,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 7.1. TÜTEN SİGARA (10.000 TL Özel Karizmatik El Eşyası & Periyodik Duman Çekme/Üfleme)
     if (heldItem === 'sigara') {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.95 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.95 : 1.0);
         targetCtx.scale(scale, scale);
 
         // Parmakların arasından hafif yukarı/öne doğru karizmatik açı
@@ -2489,10 +2398,147 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
         return;
     }
 
+    // 7.2. K2 SİBER ENERJİ İÇECEĞİ (Neon Mavi / Siber Kutu İçecek)
+    if (heldItem === 'k2_energy_drink') {
+        targetCtx.translate(handX, handY);
+        let scale = isBack ? 0.82 : (model === 'classic_2' ? 0.95 : 1.0);
+        targetCtx.scale(scale, scale);
+        let rot = isLeft ? -0.18 : 0.18;
+        if (isBack) rot = isLeft ? 0.14 : -0.14;
+        targetCtx.rotate(rot);
+
+        // Kutu metalik gövde
+        targetCtx.fillStyle = "#0284c7";
+        targetCtx.beginPath();
+        targetCtx.roundRect(-2.6, -5.5, 5.2, 10.5, [1.5, 1.5, 1.2, 1.2]);
+        targetCtx.fill();
+        targetCtx.strokeStyle = "#0369a1";
+        targetCtx.lineWidth = 0.6;
+        targetCtx.stroke();
+
+        // Neon Mavi & Cyan Siber Enerji Şeridi
+        targetCtx.fillStyle = "#38bdf8";
+        targetCtx.fillRect(-2.6, -2.5, 5.2, 4.5);
+
+        // Parlayan Şimşek / Yıldırım Simgesi ⚡
+        targetCtx.fillStyle = "#facc15";
+        targetCtx.beginPath();
+        targetCtx.moveTo(0.5, -2.0);
+        targetCtx.lineTo(-1.2, 0);
+        targetCtx.lineTo(0.2, 0);
+        targetCtx.lineTo(-0.5, 1.8);
+        targetCtx.lineTo(1.2, -0.2);
+        targetCtx.lineTo(-0.2, -0.2);
+        targetCtx.closePath();
+        targetCtx.fill();
+
+        // Üst gümüş kapak ve açma halkası (Pull-tab)
+        targetCtx.fillStyle = "#e2e8f0";
+        targetCtx.beginPath();
+        targetCtx.ellipse(0, -5.5, 2.5, 0.9, 0, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.strokeStyle = "#94a3b8";
+        targetCtx.lineWidth = 0.5;
+        targetCtx.stroke();
+
+        // Soğuk buz pırıltısı
+        targetCtx.fillStyle = "rgba(255, 255, 255, 0.75)";
+        targetCtx.fillRect(-1.8, -4.5, 0.8, 6.0);
+
+        targetCtx.restore();
+        return;
+    }
+
+    // 7.3. K2 GRAFİTİ SOKAK KAYKAYI (Skateboard)
+    if (heldItem === 'k2_skateboard') {
+        targetCtx.translate(handX, handY);
+        let scale = isBack ? 0.90 : (model === 'classic_2' ? 1.05 : 1.0);
+        targetCtx.scale(scale, scale);
+        let rot = isLeft ? -0.22 : 0.22;
+        if (isBack) rot = isLeft ? 0.18 : -0.18;
+        targetCtx.rotate(rot);
+
+        // Kaykay Tahtası (Deck): Uzunluk 22px, Genişlik 6.4px (Çift Kavisli Kicktail)
+        const deckW = 6.4;
+        const deckH = 22.0;
+
+        // Katmanlı ahşap kenar çizgisi (7-ply maple)
+        targetCtx.fillStyle = "#d97706";
+        targetCtx.beginPath();
+        targetCtx.roundRect(-deckW / 2 - 0.3, -deckH / 2, deckW + 0.6, deckH, [2.5, 2.5, 2.5, 2.5]);
+        targetCtx.fill();
+
+        if (isBack) {
+            // ARKADAN BAKIŞ: Kaykayın alt grafiti yüzeyi sergilenir
+            targetCtx.fillStyle = "#18181b"; // Mat antrasit zemin
+            targetCtx.beginPath();
+            targetCtx.roundRect(-deckW / 2, -deckH / 2 + 0.3, deckW, deckH - 0.6, [2.2, 2.2, 2.2, 2.2]);
+            targetCtx.fill();
+
+            // Neon Pembe & Yeşil Grafiti Sprey Deseni
+            targetCtx.fillStyle = "#ec4899";
+            targetCtx.beginPath();
+            targetCtx.moveTo(-deckW / 2, -4); targetCtx.lineTo(deckW / 2, -1);
+            targetCtx.lineTo(deckW / 2, 6); targetCtx.lineTo(-deckW / 2, 3);
+            targetCtx.closePath(); targetCtx.fill();
+
+            targetCtx.fillStyle = "#22c55e";
+            targetCtx.beginPath();
+            targetCtx.moveTo(-deckW / 2, 2); targetCtx.lineTo(deckW / 2, 5);
+            targetCtx.lineTo(deckW / 2, 8); targetCtx.lineTo(-deckW / 2, 6);
+            targetCtx.closePath(); targetCtx.fill();
+
+            // Sarı Grafiti Tag
+            targetCtx.fillStyle = "#facc15";
+            targetCtx.fillRect(-1.6, -1.5, 3.2, 1.2);
+            targetCtx.fillRect(-1.6, 1.5, 3.2, 1.2);
+
+            // Metalik Dingiller (Trucks) & Vidalar
+            targetCtx.fillStyle = "#94a3b8";
+            targetCtx.fillRect(-deckW / 2 - 0.8, -deckH / 2 + 3.8, deckW + 1.6, 1.6);
+            targetCtx.fillRect(-deckW / 2 - 0.8, deckH / 2 - 5.4, deckW + 1.6, 1.6);
+
+            // 4 Neon Yeşil Kaykay Tekerleği
+            targetCtx.fillStyle = "#a3e635";
+            targetCtx.fillRect(-deckW / 2 - 1.8, -deckH / 2 + 3.2, 1.4, 2.8);
+            targetCtx.fillRect(deckW / 2 + 0.4, -deckH / 2 + 3.2, 1.4, 2.8);
+            targetCtx.fillRect(-deckW / 2 - 1.8, deckH / 2 - 6.0, 1.4, 2.8);
+            targetCtx.fillRect(deckW / 2 + 0.4, deckH / 2 - 6.0, 1.4, 2.8);
+
+        } else {
+            // ÖNDEN BAKIŞ: Siyah Zımpara (Grip Tape) ve ortadan geçen neon turuncu çizgi
+            targetCtx.fillStyle = "#1e293b";
+            targetCtx.beginPath();
+            targetCtx.roundRect(-deckW / 2, -deckH / 2 + 0.3, deckW, deckH - 0.6, [2.2, 2.2, 2.2, 2.2]);
+            targetCtx.fill();
+
+            // Zımpara orta neon turuncu çizgisi
+            targetCtx.fillStyle = "#ea580c";
+            targetCtx.fillRect(-0.4, -deckH / 2 + 2, 0.8, deckH - 4);
+
+            // Gümüş Deste Vidaları (Hardware)
+            targetCtx.fillStyle = "#e2e8f0";
+            targetCtx.fillRect(-1.8, -deckH / 2 + 3.8, 0.8, 0.8);
+            targetCtx.fillRect(1.0, -deckH / 2 + 3.8, 0.8, 0.8);
+            targetCtx.fillRect(-1.8, deckH / 2 - 4.6, 0.8, 0.8);
+            targetCtx.fillRect(1.0, deckH / 2 - 4.6, 0.8, 0.8);
+
+            // Kenarlardan görünen tekerlek profilleri
+            targetCtx.fillStyle = "#a3e635";
+            targetCtx.fillRect(-deckW / 2 - 1.2, -deckH / 2 + 3.4, 1.0, 2.4);
+            targetCtx.fillRect(deckW / 2 + 0.2, -deckH / 2 + 3.4, 1.0, 2.4);
+            targetCtx.fillRect(-deckW / 2 - 1.2, deckH / 2 - 5.8, 1.0, 2.4);
+            targetCtx.fillRect(deckW / 2 + 0.2, deckH / 2 - 5.8, 1.0, 2.4);
+        }
+
+        targetCtx.restore();
+        return;
+    }
+
     // 8. NOSTALJİK YEŞİL CAM GAZOZ
     if (heldItem === 'gazoz') {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
         let rot = isLeft ? -0.16 : 0.16;
         if (isBack) rot = isLeft ? 0.14 : -0.14;
@@ -2512,7 +2558,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 9. KÖZDE TÜRK KAHVESİ
     if (heldItem === 'kahve') {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
 
         // Altın tepsi / fincan tabağı
@@ -2542,7 +2588,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 10. ŞAMPİYONLUK ALTIN KUPASI
     if (heldItem === 'kupa') {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
 
         // Siyah mermer kaide
@@ -2574,25 +2620,25 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     if (heldItem === 'asagold') {
         let now = Date.now();
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
         let aRot = isLeft ? 0.25 : -0.25;
         if (isBack) aRot = isLeft ? 0.18 : -0.18;
         targetCtx.rotate(aRot);
 
-        let staffH = is25d ? 24 : (isPreview ? 32 : 27);
-        targetCtx.strokeStyle = "#d97706"; targetCtx.lineWidth = is25d ? 2.0 : (isPreview ? 3.5 : 2.8);
+        let staffH = isPreview ? 32 : 27;
+        targetCtx.strokeStyle = "#d97706"; targetCtx.lineWidth = isPreview ? 3.5 : 2.8;
         targetCtx.beginPath(); targetCtx.moveTo(0, 5); targetCtx.lineTo(0, -staffH); targetCtx.stroke();
 
         let starGlow = Math.sin(now / 140) * 0.2 + 0.8;
         targetCtx.fillStyle = `rgba(56, 189, 248, ${starGlow})`;
-        targetCtx.beginPath(); targetCtx.arc(0, -staffH, is25d ? 4.5 : (isPreview ? 6.5 : 5.5), 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.arc(0, -staffH, isPreview ? 6.5 : 5.5, 0, Math.PI * 2); targetCtx.fill();
         targetCtx.fillStyle = "#ffffff";
-        targetCtx.beginPath(); targetCtx.arc(0, -staffH, is25d ? 2.0 : (isPreview ? 3 : 2.5), 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.arc(0, -staffH, isPreview ? 3 : 2.5, 0, Math.PI * 2); targetCtx.fill();
 
         for (let s = 0; s < 3; s++) {
             let sAngle = (now / 200) + (s * (Math.PI * 2 / 3));
-            let sDist = is25d ? 6.0 : (isPreview ? 9 : 7.5);
+            let sDist = isPreview ? 9 : 7.5;
             let spX = Math.cos(sAngle) * sDist;
             let spY = -staffH + Math.sin(sAngle) * sDist;
             targetCtx.fillStyle = "#facc15";
@@ -2606,10 +2652,10 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 12. GELENEKSEL DUMANLI NARGİLE
     if (heldItem === 'nargile') {
         let now = Date.now();
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
-        let nX = is25d ? (handX + (isLeft ? -7.5 : 7.5)) : (model === 'classic_2' ? (pX + (isLeft ? -11 : 11)) : (handX + (isLeft ? -7 : 7)));
-        let nY = is25d ? (pY + 20.0) : (model === 'classic_2' ? (pY + 18.0) : (handY + (isPreview ? 12 : 10)));
-        let vaseR = (is25d ? 5.8 : (isPreview ? 8.5 : 7)) * scale;
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
+        let nX = (model === 'classic_2' ? (pX + (isLeft ? -11 : 11)) : (handX + (isLeft ? -7 : 7)));
+        let nY = (model === 'classic_2' ? (pY + 18.0) : (handY + (isPreview ? 12 : 10)));
+        let vaseR = (isPreview ? 8.5 : 7) * scale;
 
         // Zemin gölgesi
         targetCtx.fillStyle = "rgba(0, 0, 0, 0.35)";
@@ -2620,23 +2666,23 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
         targetCtx.beginPath(); targetCtx.arc(nX, nY - vaseR * 0.7, vaseR, 0, Math.PI * 2); targetCtx.fill();
         targetCtx.strokeStyle = "rgba(255, 255, 255, 0.75)"; targetCtx.lineWidth = 1.0; targetCtx.stroke();
 
-        let stemTopY = (nY - vaseR * 0.7) - ((is25d ? 15 : (isPreview ? 24 : 20)) * scale);
-        targetCtx.strokeStyle = "#eab308"; targetCtx.lineWidth = (is25d ? 2.0 : (isPreview ? 3 : 2.5)) * scale;
+        let stemTopY = (nY - vaseR * 0.7) - ((isPreview ? 24 : 20) * scale);
+        targetCtx.strokeStyle = "#eab308"; targetCtx.lineWidth = (isPreview ? 3 : 2.5) * scale;
         targetCtx.beginPath(); targetCtx.moveTo(nX, nY - vaseR * 1.5); targetCtx.lineTo(nX, stemTopY); targetCtx.stroke();
 
         targetCtx.fillStyle = "#ca8a04";
-        targetCtx.beginPath(); targetCtx.ellipse(nX, stemTopY, (is25d ? 5.5 : (isPreview ? 8.5 : 7)) * scale, (is25d ? 1.8 : (isPreview ? 2.8 : 2.2)) * scale, 0, 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.ellipse(nX, stemTopY, (isPreview ? 8.5 : 7) * scale, (isPreview ? 2.8 : 2.2) * scale, 0, 0, Math.PI * 2); targetCtx.fill();
 
-        let headH = (is25d ? 4.5 : (isPreview ? 6.5 : 5.5)) * scale;
+        let headH = (isPreview ? 6.5 : 5.5) * scale;
         targetCtx.fillStyle = "#9a3412";
-        targetCtx.fillRect(nX - (is25d ? 2.5 : (isPreview ? 4 : 3.5)) * scale, stemTopY - headH, (is25d ? 5.0 : (isPreview ? 8 : 7)) * scale, headH);
+        targetCtx.fillRect(nX - (isPreview ? 4 : 3.5) * scale, stemTopY - headH, (isPreview ? 8 : 7) * scale, headH);
 
         let coalGlow = Math.sin(now / 150) * 0.25 + 0.75;
         targetCtx.fillStyle = `rgba(239, 68, 68, ${coalGlow})`;
         targetCtx.beginPath(); targetCtx.arc(nX - 1.2 * scale, stemTopY - headH - 1, 1.5 * scale, 0, Math.PI * 2); targetCtx.fill();
 
         // Hortum bağlantısı (şişenin üst boğazından ele doğru zarif kavisle yükselir)
-        targetCtx.strokeStyle = "#991b1b"; targetCtx.lineWidth = (is25d ? 1.5 : (isPreview ? 2.2 : 1.8)) * scale;
+        targetCtx.strokeStyle = "#991b1b"; targetCtx.lineWidth = (isPreview ? 2.2 : 1.8) * scale;
         targetCtx.beginPath();
         let hoseStartX = nX - (isLeft ? -vaseR * 0.6 : vaseR * 0.6);
         let hoseStartY = nY - vaseR * 1.2;
@@ -2646,14 +2692,14 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
 
         // Elde tutulan altın marpuç
         targetCtx.fillStyle = "#facc15";
-        targetCtx.beginPath(); targetCtx.arc(handX, handY, (is25d ? 2.0 : (isPreview ? 3 : 2.5)) * scale, 0, Math.PI * 2); targetCtx.fill();
+        targetCtx.beginPath(); targetCtx.arc(handX, handY, (isPreview ? 3 : 2.5) * scale, 0, Math.PI * 2); targetCtx.fill();
 
         // Közden yükselen duman bulutları
         for (let i = 0; i < 4; i++) {
             let cycle = ((now / (650 + i * 160)) + (i * 0.25)) % 1;
             let smX = nX + Math.sin((now / 260) + i * 1.5) * (2.0 + cycle * 4);
-            let smY = (stemTopY - headH - 3) - (cycle * ((is25d ? 18 : (isPreview ? 28 : 22)) * scale));
-            let smR = ((is25d ? 1.6 : 2.2) + cycle * (is25d ? 4.5 : 6.0)) * scale;
+            let smY = (stemTopY - headH - 3) - (cycle * ((isPreview ? 28 : 22) * scale));
+            let smR = (2.2 + cycle * 6.0) * scale;
             let smA = Math.sin(cycle * Math.PI) * 0.40;
             targetCtx.fillStyle = `rgba(241, 245, 249, ${smA})`;
             targetCtx.beginPath(); targetCtx.arc(smX, smY, smR, 0, Math.PI * 2); targetCtx.fill();
@@ -2666,7 +2712,7 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     // 13. LİMONATA & SAHİL KOKTEYLLERİ
     if (heldItem === 'limonata' || heldItem === 'lemonade' || heldItem.startsWith('cocktail_')) {
         targetCtx.translate(handX, handY);
-        let scale = isBack ? 0.85 : (is25d || model === 'classic_2' ? 0.92 : 1.0);
+        let scale = isBack ? 0.85 : (model === 'classic_2' ? 0.92 : 1.0);
         targetCtx.scale(scale, scale);
         let rot = isLeft ? -0.12 : 0.12;
         if (isBack) rot = isLeft ? 0.10 : -0.10;
@@ -2676,12 +2722,12 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
 
         if (cType === 'coconut') {
             targetCtx.fillStyle = "#5c3317";
-            targetCtx.beginPath(); targetCtx.arc(0, 0.5, is25d ? 4.5 : (isPreview ? 6.5 : 5.5), 0, Math.PI * 2); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.arc(0, 0.5, isPreview ? 6.5 : 5.5, 0, Math.PI * 2); targetCtx.fill();
             targetCtx.strokeStyle = "#38200f"; targetCtx.lineWidth = 1; targetCtx.stroke();
             targetCtx.fillStyle = "#f8fafc";
-            targetCtx.beginPath(); targetCtx.ellipse(0, -2.5, is25d ? 3.2 : (isPreview ? 4.5 : 3.8), is25d ? 1.5 : (isPreview ? 2.2 : 1.8), 0, 0, Math.PI * 2); targetCtx.fill();
+            targetCtx.beginPath(); targetCtx.ellipse(0, -2.5, isPreview ? 4.5 : 3.8, isPreview ? 2.2 : 1.8, 0, 0, Math.PI * 2); targetCtx.fill();
             targetCtx.strokeStyle = "#ef4444"; targetCtx.lineWidth = 1.2;
-            targetCtx.beginPath(); targetCtx.moveTo(0, -2.5); targetCtx.lineTo(is25d ? 3 : 3.5, -(is25d ? 7.5 : 8.5)); targetCtx.stroke();
+            targetCtx.beginPath(); targetCtx.moveTo(0, -2.5); targetCtx.lineTo(3.5, -8.5); targetCtx.stroke();
             targetCtx.fillStyle = "#ec4899";
             targetCtx.beginPath(); targetCtx.arc(-2, -4.5, 2.5, Math.PI, 0); targetCtx.fill();
         } else {
@@ -2697,8 +2743,8 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
                 liquidColor = "#f97316"; strawColor = "#a855f7"; fruitColor = "#dc2626";
             }
 
-            let gW = is25d ? 3.0 : (isPreview ? 4.5 : 3.8);
-            let gH = is25d ? 6.5 : (isPreview ? 9 : 7.5);
+            let gW = isPreview ? 4.5 : 3.8;
+            let gH = isPreview ? 9 : 7.5;
             targetCtx.fillStyle = "rgba(255, 255, 255, 0.4)";
             targetCtx.beginPath();
             targetCtx.moveTo(-gW, -gH);
@@ -2735,1292 +2781,6 @@ function drawHeldItem(targetCtx, pX, pY, heldItem, isPreview = false, facing = '
     }
 
     targetCtx.restore();
-}
-
-// =========================================================================
-// === 6.9 YENİ 2.5D İZOMETRİK GERÇEKÇİ KARAKTER MOTORU ===
-// =========================================================================
-
-function getRealisticSkinPalette(colorStr) {
-    if (colorStr === '#ffd1a4' || !colorStr) {
-        return {
-            base: '#ffd1a4',
-            light: '#ffe9d6',
-            shadow: '#e2a374',
-            darkShadow: '#b06f40',
-            blush: 'rgba(244, 114, 182, 0.28)'
-        };
-    } else if (colorStr === '#d2996c') {
-        return {
-            base: '#d2996c',
-            light: '#e2b38b',
-            shadow: '#b37648',
-            darkShadow: '#844c26',
-            blush: 'rgba(225, 29, 72, 0.22)'
-        };
-    } else if (colorStr === '#8d5524') {
-        return {
-            base: '#8d5524',
-            light: '#a96b34',
-            shadow: '#6a3c14',
-            darkShadow: '#442208',
-            blush: 'rgba(190, 24, 93, 0.20)'
-        };
-    } else if (colorStr === '#facc15') {
-        // Klasik sarı seçilmişse daha doğal ve sıcak bir ten rengi tonu ver
-        return {
-            base: '#f5c596',
-            light: '#ffe4c4',
-            shadow: '#d49660',
-            darkShadow: '#a46535',
-            blush: 'rgba(251, 146, 60, 0.26)'
-        };
-    }
-    return {
-        base: colorStr,
-        light: '#ffffff',
-        shadow: '#888888',
-        darkShadow: '#444444',
-        blush: 'rgba(244, 114, 182, 0.2)'
-    };
-}
-
-// 1. Ayakkabılar (2.5D Beyaz Sokak Sneaker & Kalın Taban)
-function drawRealisticSneaker(ctx, fX, fY, angle, isLeft, facing, shoeId) {
-    ctx.save();
-    ctx.translate(fX, fY);
-    ctx.rotate(angle);
-
-    let isBack = (facing === 'up' || facing === 'up-left' || facing === 'up-right');
-    let isSkate = (shoeId === 'sanalika_skate_shoes');
-    let baseColor = isSkate ? '#dc2626' : '#ffffff';
-    let soleColor = '#f8fafc';
-    let soleLine = '#94a3b8';
-
-    if (isBack) {
-        // Tam arkadan görünüm (Fotoğraf 2'deki gibi)
-        // Taban
-        ctx.fillStyle = soleColor;
-        ctx.beginPath();
-        ctx.roundRect(-4, -1, 8, 3.8, 1.5);
-        ctx.fill();
-        ctx.strokeStyle = soleLine; ctx.lineWidth = 0.8; ctx.stroke();
-
-        // Topuk arkası (Heel counter)
-        ctx.fillStyle = baseColor;
-        ctx.beginPath();
-        ctx.roundRect(-3.5, -4.5, 7, 4.2, [2, 2, 0, 0]);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,0.25)"; ctx.lineWidth = 0.8; ctx.stroke();
-
-        // Arka dikey şerit ve çekme dili
-        ctx.fillStyle = isSkate ? '#18181b' : '#cbd5e1';
-        ctx.fillRect(-0.8, -5.2, 1.6, 4.5);
-    } else {
-        // Ön ve 3/4 izometrik görünüm (Fotoğraf 1'deki gibi)
-        let dir = (facing === 'left' || facing === 'down-left') ? -1 : 1;
-        if (facing === 'down') dir = isLeft ? -0.4 : 0.4;
-
-        // 3D Kalın Kauçuk Taban
-        ctx.fillStyle = soleColor;
-        ctx.beginPath();
-        ctx.roundRect(-4.5, 0.2, 9, 3.2, 1.4);
-        ctx.fill();
-        ctx.strokeStyle = soleLine; ctx.lineWidth = 0.8; ctx.stroke();
-        // Alt taban diş çizgisi
-        ctx.fillStyle = "#64748b";
-        ctx.fillRect(-3.8, 2.6, 7.6, 0.7);
-
-        // Sneaker Gövdesi & Burun
-        ctx.fillStyle = baseColor;
-        ctx.beginPath();
-        ctx.roundRect(-4, -3.8, 8, 4.2, [2, 3, 1, 1]);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,0.2)"; ctx.lineWidth = 0.8; ctx.stroke();
-
-        // Ön burun yuvarlak kavis
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(dir * 2.2, -0.6, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Bağcıklar (Çapraz detay)
-        ctx.strokeStyle = isSkate ? '#18181b' : '#94a3b8';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(-1.8, -2.8); ctx.lineTo(1.8, -2.2);
-        ctx.moveTo(-1.8, -1.8); ctx.lineTo(1.8, -1.2);
-        ctx.stroke();
-
-        // Ayakkabı dili (Tongue)
-        ctx.fillStyle = isSkate ? '#991b1b' : '#e2e8f0';
-        ctx.beginPath();
-        ctx.ellipse(0, -3.8, 1.8, 1.2, 0, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    ctx.restore();
-}
-
-// 2. Bacaklar, Pantolon / Şort / Etek ve Ayakkabılar
-function drawRealistic25dLegs(ctx, pX, pY, p, facing, isSitting, legSwing, skin) {
-    let isBack = (facing === 'up' || facing === 'up-left' || facing === 'up-right');
-    let swingL = isSitting ? 0 : legSwing;
-    let swingR = isSitting ? 0 : -legSwing;
-
-    let leftLegX = pX - 4.2;
-    let rightLegX = pX + 4.2;
-    let hipY = pY - 2;
-
-    // Pantolon / Kıyafet Tipi
-    let pantsId = (p.outfit) ? p.outfit : (p.pants || 'pants_camo_cargo');
-
-    let isCamo = (pantsId === 'pants_camo_cargo' || pantsId === 'sanalika_camo_cargo' || pantsId === 'outfit_camo_set');
-    let isStreetJeans = (pantsId === 'pants_jeans_street');
-    let isChino = (pantsId === 'pants_chino_beige');
-    let isJogger = (pantsId === 'pants_jogger_black');
-    let isSkirt = (pantsId === 'pants_skirt_crop' || pantsId === 'pants_skirt_denim' || pantsId === 'skirt_crop' || pantsId === 'skirt_denim');
-    let isDress = (pantsId.startsWith('dress_') || pantsId === 'outfit_goth' || pantsId === 'outfit_bridal');
-
-    let pantsBase = '#4d6b2c'; // Zeytin yeşili varsayılan
-    let camo1 = '#384c20';
-    let camo2 = '#658332';
-    let camo3 = '#7d8a4f';
-
-    if (isStreetJeans) {
-        pantsBase = '#2563eb'; // Sokak Denim Mavisi
-    } else if (isChino) {
-        pantsBase = '#d4b483'; // Bej Chino
-    } else if (isJogger) {
-        pantsBase = '#18181b'; // Siyah Jogger
-    } else if (isSkirt) {
-        pantsBase = pantsId.includes('denim') ? '#38bdf8' : '#f43f5e';
-    } else if (isDress) {
-        pantsBase = (pantsId === 'dress_pink') ? '#ec4899' : (pantsId === 'outfit_goth' ? '#581c87' : '#18181b');
-    }
-
-    // --- BEL VE KALÇA BÖLGESİ ---
-    ctx.save();
-    ctx.fillStyle = pantsBase;
-    ctx.beginPath();
-    ctx.roundRect(pX - 7.5, hipY, 15, isSkirt ? 8 : 6, [2, 2, 0, 0]);
-    ctx.fill();
-
-    // Kemer & Bel Dikişi
-    ctx.strokeStyle = "rgba(0,0,0,0.3)"; ctx.lineWidth = 0.9;
-    ctx.beginPath(); ctx.moveTo(pX - 7.5, hipY + 1.5); ctx.lineTo(pX + 7.5, hipY + 1.5); ctx.stroke();
-
-    if (isBack) {
-        // Arkadan Görünüm Cepler & Orta Dikiş
-        ctx.fillStyle = isCamo ? camo1 : "rgba(0,0,0,0.2)";
-        ctx.fillRect(pX - 6.2, hipY + 2.5, 4.2, 3.5);
-        ctx.strokeRect(pX - 6.2, hipY + 2.5, 4.2, 3.5);
-        ctx.fillRect(pX + 2, hipY + 2.5, 4.2, 3.5);
-        ctx.strokeRect(pX + 2, hipY + 2.5, 4.2, 3.5);
-        ctx.beginPath(); ctx.moveTo(pX, hipY); ctx.lineTo(pX, hipY + 7); ctx.stroke();
-    } else {
-        // Önden Fermuar Patı & Metal Düğme
-        ctx.beginPath(); ctx.moveTo(pX, hipY + 1.5); ctx.lineTo(pX, hipY + 5.5); ctx.stroke();
-        ctx.fillStyle = isStreetJeans ? "#f59e0b" : "#cbd5e1";
-        ctx.beginPath(); ctx.arc(pX, hipY + 1.5, 0.9, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.restore();
-
-    // --- BACAKLAR VE PAÇALAR ---
-    const drawSingleLeg = (isLeft, legX, swing) => {
-        let ankleY = isSitting ? hipY + 13 : hipY + 19;
-        let footX = legX + (isSitting ? (isLeft ? -1 : 1) : swing * 0.45);
-        let footY = ankleY + 1.5;
-
-        let paçaY = hipY + 4;
-        let paçaH = isSitting ? 5 : 7;
-        let paçaW = 6.2;
-        let paçaOffset = isLeft ? -paçaW + 1.2 : -1.2;
-
-        if (isStreetJeans || isChino || isJogger) {
-            // UZUN PANTOLON: Bele kadar inen tam bacak formu
-            ctx.save();
-            let pantLegTopY = hipY + 4;
-            let pantLegBottomY = ankleY;
-
-            let legGrad = ctx.createLinearGradient(legX - 3, pantLegTopY, legX + 3, pantLegBottomY);
-            if (isStreetJeans) {
-                legGrad.addColorStop(0, '#1d4ed8');
-                legGrad.addColorStop(0.4, '#3b82f6');
-                legGrad.addColorStop(0.7, '#60a5fa'); // Yıkanmış denim parlaması
-                legGrad.addColorStop(1, '#1e40af');
-            } else if (isChino) {
-                legGrad.addColorStop(0, '#d4b483');
-                legGrad.addColorStop(0.5, '#e2c69b');
-                legGrad.addColorStop(1, '#b08e5a');
-            } else {
-                legGrad.addColorStop(0, '#27272a');
-                legGrad.addColorStop(0.7, '#18181b');
-                legGrad.addColorStop(1, '#09090b');
-            }
-
-            ctx.fillStyle = legGrad;
-            ctx.beginPath();
-            ctx.moveTo(legX + paçaOffset, pantLegTopY);
-            ctx.lineTo(legX + paçaOffset + (isLeft ? -0.5 : 0.5), pantLegBottomY);
-            ctx.lineTo(legX + paçaOffset + paçaW, pantLegBottomY);
-            ctx.lineTo(legX + paçaOffset + paçaW, pantLegTopY);
-            ctx.closePath();
-            ctx.fill();
-            ctx.strokeStyle = "rgba(0,0,0,0.3)"; ctx.lineWidth = 0.7; ctx.stroke();
-
-            // Yırtık Jean Detayları (Diz yırtığı ve ten görünümü)
-            if (isStreetJeans && !isBack) {
-                let ripY = pantLegTopY + 7;
-                ctx.fillStyle = skin.base;
-                ctx.fillRect(legX - 1.6, ripY, 3.2, 1.6);
-                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 0.5;
-                ctx.beginPath();
-                ctx.moveTo(legX - 2.0, ripY); ctx.lineTo(legX + 2.0, ripY);
-                ctx.moveTo(legX - 2.0, ripY + 1.6); ctx.lineTo(legX + 2.0, ripY + 1.6);
-                ctx.stroke();
-            }
-
-            // Siyah Jogger Beyaz Yan Şeridi
-            if (isJogger) {
-                let stripeX = isLeft ? legX + paçaOffset + 0.6 : legX + paçaOffset + paçaW - 0.6;
-                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.0;
-                ctx.beginPath();
-                ctx.moveTo(stripeX, pantLegTopY);
-                ctx.lineTo(stripeX, pantLegBottomY);
-                ctx.stroke();
-            }
-
-            // Paça kıvrımı / Manşet dikişi
-            ctx.strokeStyle = "rgba(0,0,0,0.4)"; ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(legX + paçaOffset, pantLegBottomY - 1);
-            ctx.lineTo(legX + paçaOffset + paçaW, pantLegBottomY - 1);
-            ctx.stroke();
-
-            ctx.restore();
-        } else {
-            // ŞORT VEYA ETEK: Şort paçası + açıkta kalan baldır & ten
-            ctx.save();
-            ctx.fillStyle = pantsBase;
-            ctx.beginPath();
-            ctx.roundRect(legX + paçaOffset, paçaY, paçaW, paçaH, [1, 1, 2, 2]);
-            ctx.fill();
-            ctx.strokeStyle = "rgba(0,0,0,0.25)"; ctx.lineWidth = 0.8; ctx.stroke();
-
-            // Kamuflaj Desenleri
-            if (isCamo) {
-                ctx.fillStyle = camo1;
-                ctx.beginPath(); ctx.arc(legX + paçaOffset + 2, paçaY + 2.5, 1.4, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = camo2;
-                ctx.beginPath(); ctx.arc(legX + paçaOffset + 4.2, paçaY + 5, 1.6, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = camo3;
-                ctx.beginPath(); ctx.arc(legX + paçaOffset + 1.8, paçaY + 5.2, 1.1, 0, Math.PI * 2); ctx.fill();
-
-                // Dış körüklü kapaklı kargo cep
-                let pocketX = isLeft ? legX + paçaOffset - 1.2 : legX + paçaOffset + paçaW - 0.6;
-                ctx.fillStyle = camo1;
-                ctx.fillRect(pocketX, paçaY + 2, 1.8, 3.6);
-                ctx.fillStyle = pantsBase;
-                ctx.fillRect(pocketX - 0.2, paçaY + 1.5, 2.2, 1.2);
-            }
-            ctx.restore();
-
-            // Açıkta kalan kaslı baldır ve diz
-            ctx.save();
-            let calfTopY = paçaY + paçaH - 0.5;
-            let calfBottomY = ankleY;
-
-            let legGrad = ctx.createLinearGradient(legX - 2.5, calfTopY, legX + 2.5, calfBottomY);
-            legGrad.addColorStop(0, skin.light);
-            legGrad.addColorStop(0.7, skin.base);
-            legGrad.addColorStop(1, skin.shadow);
-
-            ctx.fillStyle = legGrad;
-            ctx.beginPath();
-            ctx.moveTo(legX - 2.2, calfTopY);
-            ctx.quadraticCurveTo(legX - 3.2, (calfTopY + calfBottomY) / 2, legX - 1.8, calfBottomY);
-            ctx.lineTo(legX + 1.8, calfBottomY);
-            ctx.quadraticCurveTo(legX + 3.0, (calfTopY + calfBottomY) / 2, legX + 2.2, calfTopY);
-            ctx.closePath();
-            ctx.fill();
-            ctx.strokeStyle = skin.darkShadow; ctx.lineWidth = 0.6; ctx.stroke();
-
-            if (!isBack && !isSitting) {
-                // Diz kapağı ışığı & gölgesi
-                ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-                ctx.beginPath();
-                ctx.ellipse(legX, calfTopY + 1.2, 1.4, 1.0, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.6;
-                ctx.beginPath();
-                ctx.arc(legX, calfTopY + 2.2, 1.5, 0.2, Math.PI - 0.2);
-                ctx.stroke();
-            } else if (isBack) {
-                // Aşil tendonu kavis çizgisi
-                ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.7;
-                ctx.beginPath();
-                ctx.moveTo(legX, calfTopY + 3);
-                ctx.lineTo(legX, calfBottomY - 1);
-                ctx.stroke();
-            }
-            ctx.restore();
-        }
-
-        // Ayakkabı / Sneaker
-        let footAngle = isSitting ? 0 : (swing * 0.05);
-        drawRealisticSneaker(ctx, footX, footY, footAngle, isLeft, facing, p.shoes);
-    };
-
-    if (swingL < swingR) {
-        drawSingleLeg(true, leftLegX, swingL);
-        drawSingleLeg(false, rightLegX, swingR);
-    } else {
-        drawSingleLeg(false, rightLegX, swingR);
-        drawSingleLeg(true, leftLegX, swingL);
-    }
-}
-
-// 3. Gövde & Üst Kıyafet (Tişört / Hoodie / Polo / Divalar Baskısı)
-function drawRealistic25dTorsoAndArms(ctx, pX, pY, p, facing, isSitting, legSwing, skin) {
-    let isBack = (facing === 'up' || facing === 'up-left' || facing === 'up-right');
-    let shoulderY = pY - 13.5;
-    let waistY = pY - 2;
-
-    let shirtId = (p.outfit) ? p.outfit : (p.shirt || p.color || 'tshirt_divalar');
-
-    let isDivalar = (shirtId === 'tshirt_divalar');
-    let isHoodie = (shirtId === 'tshirt_hoodie_purple' || shirtId === 'sanalika_hoodie_street');
-    let isPolo = (shirtId === 'tshirt_polo_striped' || shirtId === 'sanalika_striped_polo');
-    let isLeather = (shirtId === 'tshirt_leather_jacket' || shirtId === 'leather');
-    let isTracksuit = (shirtId === 'outfit_street_tracksuit');
-
-    let shirtBase = '#18181b'; // Standart Fitted Siyah
-    let shirtHighlight = '#27272a';
-    let shirtShadow = '#09090b';
-
-    if (isDivalar) {
-        shirtBase = '#ffffff'; shirtHighlight = '#f8fafc'; shirtShadow = '#cbd5e1';
-    } else if (isHoodie) {
-        shirtBase = '#581c87'; shirtHighlight = '#7e22ce'; shirtShadow = '#3b0764';
-    } else if (isPolo) {
-        shirtBase = '#f8fafc'; shirtHighlight = '#ffffff'; shirtShadow = '#cbd5e1';
-    } else if (isLeather) {
-        shirtBase = '#09090b'; shirtHighlight = '#27272a'; shirtShadow = '#000000';
-    } else if (isTracksuit) {
-        shirtBase = '#312e81'; shirtHighlight = '#4338ca'; shirtShadow = '#1e1b4b';
-    } else if (p.color && p.color.startsWith('#') && p.color !== '#0f172a') {
-        shirtBase = p.color; shirtHighlight = '#ffffff'; shirtShadow = 'rgba(0,0,0,0.35)';
-    }
-
-    // --- KOLLAR ---
-    let armSwingL = isSitting ? 0 : -legSwing * 0.4;
-    let armSwingR = isSitting ? 0 : legSwing * 0.4;
-
-    const drawRealisticArm = (isLeft, swing) => {
-        let shoulderX = isLeft ? pX - 6.5 : pX + 6.5;
-        let sY = shoulderY + 1.5;
-
-        ctx.save();
-        ctx.translate(shoulderX, sY);
-
-        let armAngle = isSitting ? 0.4 : swing * 0.08;
-        if (isSitting) armAngle = isLeft ? 0.35 : -0.35;
-        ctx.rotate(armAngle);
-
-        // 1. Tişört Kolu
-        ctx.fillStyle = shirtBase;
-        ctx.beginPath();
-        ctx.roundRect(isLeft ? -3.2 : -0.8, -1, 4.0, 5.5, [2, 2, 1, 1]);
-        ctx.fill();
-        ctx.strokeStyle = shirtShadow; ctx.lineWidth = 0.7; ctx.stroke();
-
-        ctx.strokeStyle = shirtHighlight; ctx.lineWidth = 0.6;
-        ctx.beginPath();
-        ctx.moveTo(isLeft ? -3.2 : -0.8, 4.2);
-        ctx.lineTo(isLeft ? 0.8 : 3.2, 4.2);
-        ctx.stroke();
-
-        // 2. Önkol & Dirsek (Kaslı ten anatomisi)
-        let forearmGrad = ctx.createLinearGradient(0, 4.5, 0, 11);
-        forearmGrad.addColorStop(0, skin.light);
-        forearmGrad.addColorStop(0.7, skin.base);
-        forearmGrad.addColorStop(1, skin.shadow);
-
-        ctx.fillStyle = forearmGrad;
-        ctx.beginPath();
-        ctx.moveTo(isLeft ? -2.2 : -0.4, 4.5);
-        ctx.lineTo(isLeft ? -1.8 : 0.2, 10.5);
-        ctx.lineTo(isLeft ? 0.4 : 2.4, 10.5);
-        ctx.lineTo(isLeft ? 1.4 : 2.8, 4.5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = skin.darkShadow; ctx.lineWidth = 0.6; ctx.stroke();
-
-        ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.7;
-        ctx.beginPath(); ctx.arc(isLeft ? -0.5 : 1.2, 5.5, 1.2, 0.4, Math.PI - 0.4); ctx.stroke();
-
-        // 3. Parmakları Belirgin 3D El
-        let handY = 10.8;
-        let handX = isLeft ? -0.7 : 1.3;
-
-        ctx.fillStyle = skin.base;
-        ctx.beginPath();
-        ctx.ellipse(handX, handY + 1.4, 1.8, 2.2, isLeft ? -0.15 : 0.15, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = skin.darkShadow; ctx.lineWidth = 0.5; ctx.stroke();
-
-        ctx.fillStyle = skin.light;
-        let thumbDir = isLeft ? 1 : -1;
-        ctx.beginPath();
-        ctx.arc(handX + thumbDir * 1.5, handY + 1.2, 0.9, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(handX - 0.8, handY + 2.4); ctx.lineTo(handX - 0.8, handY + 3.4);
-        ctx.moveTo(handX, handY + 2.5); ctx.lineTo(handX, handY + 3.6);
-        ctx.moveTo(handX + 0.8, handY + 2.4); ctx.lineTo(handX + 0.8, handY + 3.4);
-        ctx.stroke();
-
-        ctx.restore();
-    };
-
-    drawRealisticArm(true, armSwingL);
-
-    // --- GÖVDE & TİŞÖRT GÖĞÜS ---
-    ctx.save();
-    ctx.fillStyle = shirtBase;
-    ctx.beginPath();
-    ctx.moveTo(pX - 7.2, shoulderY);
-    ctx.lineTo(pX + 7.2, shoulderY);
-    ctx.lineTo(pX + 6.2, waistY);
-    ctx.lineTo(pX - 6.2, waistY);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = shirtShadow; ctx.lineWidth = 0.8; ctx.stroke();
-
-    if (isBack) {
-        // Arkadan Görünüm Sırt Çizgileri
-        ctx.strokeStyle = isDivalar ? "rgba(0,0,0,0.12)" : "rgba(255, 255, 255, 0.08)";
-        ctx.lineWidth = 1.0;
-        ctx.beginPath(); ctx.arc(pX - 3.2, shoulderY + 4, 3, 0.2, Math.PI * 0.7); ctx.stroke();
-        ctx.beginPath(); ctx.arc(pX + 3.2, shoulderY + 4, 3, Math.PI * 0.3, Math.PI * 0.8); ctx.stroke();
-
-        if (isDivalar) {
-            // Sırtta minik pembe taç amblemi
-            ctx.fillStyle = "#e11d48";
-            ctx.beginPath();
-            ctx.arc(pX, shoulderY + 3.5, 1.2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    } else {
-        // Önden Görünüm: Yaka ribana ve göğüs ışığı
-        ctx.fillStyle = isDivalar ? "rgba(0,0,0,0.03)" : "rgba(255, 255, 255, 0.06)";
-        ctx.beginPath();
-        ctx.ellipse(pX, shoulderY + 4.5, 4.5, 2.8, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = isDivalar ? "#cbd5e1" : "#3f3f46";
-        ctx.lineWidth = 1.1;
-        ctx.beginPath();
-        ctx.arc(pX, shoulderY, 3.2, 0.1, Math.PI - 0.1);
-        ctx.stroke();
-
-        // Boyun köprücük kemiği açıklığı
-        ctx.fillStyle = skin.base;
-        ctx.beginPath();
-        ctx.arc(pX, shoulderY - 0.5, 2.6, 0.2, Math.PI - 0.2);
-        ctx.fill();
-
-        // =========================================================================
-        // "DİVALAR YEMEK YAPMAZ" ÖZEL BASKILI BEYAZ TİŞÖRT GRAFİĞİ
-        // =========================================================================
-        if (isDivalar) {
-            let isProfile = (facing === 'right' || facing === 'left');
-            let graphicX = pX + (facing === 'right' ? 2.6 : (facing === 'left' ? -2.6 : (facing === 'down-right' ? 1.6 : (facing === 'down-left' ? -1.6 : 0))));
-            let graphicY = shoulderY + 5.0;
-            let graphicScaleX = isProfile ? 0.65 : (facing === 'down-right' || facing === 'down-left' ? 0.85 : 1.0);
-
-            ctx.save();
-            ctx.translate(graphicX, graphicY);
-            ctx.scale(graphicScaleX, 1.0);
-
-            // 1. Minik Altın Taç İkonu
-            ctx.fillStyle = "#f59e0b";
-            ctx.beginPath();
-            ctx.moveTo(-3.2, -3.2);
-            ctx.lineTo(-4.0, -5.2);
-            ctx.lineTo(-1.8, -4.2);
-            ctx.lineTo(0, -6.0);
-            ctx.lineTo(1.8, -4.2);
-            ctx.lineTo(4.0, -5.2);
-            ctx.lineTo(3.2, -3.2);
-            ctx.closePath();
-            ctx.fill();
-
-            // Taç sivri uçlarındaki elmas ışıltıları
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(-0.4, -6.0, 0.8, 0.8);
-            ctx.fillRect(-4.2, -5.2, 0.7, 0.7);
-            ctx.fillRect(3.5, -5.2, 0.7, 0.7);
-
-            // 2. "DİVALAR" Başlığı (Canlı Fuşya Pembe)
-            ctx.font = "bold 3.8px 'Segoe UI', Arial, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillStyle = "#e11d48";
-            ctx.fillText("DİVALAR", 0, -0.6);
-
-            // 3. "YEMEK YAPMAZ" Sloganı (Zarif Koyu Füme)
-            ctx.font = "800 2.5px 'Segoe UI', Arial, sans-serif";
-            ctx.fillStyle = "#0f172a";
-            ctx.fillText("YEMEK YAPMAZ", 0, 3.2);
-
-            // 4. Yıldız Parıltıları ✨
-            ctx.fillStyle = "#fbbf24";
-            ctx.fillRect(-5.2, -1.0, 0.8, 0.8);
-            ctx.fillRect(4.4, 1.8, 0.8, 0.8);
-
-            ctx.restore();
-        }
-    }
-
-    if (isPolo) {
-        // Çizgili polo çizgileri
-        ctx.strokeStyle = "#1e3a8a"; ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.moveTo(pX - 6.8, shoulderY + 3); ctx.lineTo(pX + 6.8, shoulderY + 3);
-        ctx.moveTo(pX - 6.5, shoulderY + 6); ctx.lineTo(pX + 6.5, shoulderY + 6);
-        ctx.moveTo(pX - 6.3, shoulderY + 9); ctx.lineTo(pX + 6.3, shoulderY + 9);
-        ctx.stroke();
-    }
-
-    ctx.restore();
-    drawRealisticArm(false, armSwingR);
-}
-
-// 4. Kafa, Boyun, Kulaklar ve Gerçekçi Yüz Hatları (8 Açılı İyileştirilmiş Sistem)
-function drawRealistic25dHeadAndFace(ctx, pX, pY, p, facing, skin) {
-    let isBack = (facing === 'up' || facing === 'up-left' || facing === 'up-right');
-    let headCenterY = pY - 19;
-    let neckY = pY - 13.5;
-
-    // --- 1. BOYUN & KÖPRÜCÜK KEMİĞİ ---
-    ctx.save();
-    let neckGrad = ctx.createLinearGradient(pX - 3, headCenterY + 4, pX + 3, neckY);
-    neckGrad.addColorStop(0, skin.shadow);
-    neckGrad.addColorStop(0.6, skin.base);
-    neckGrad.addColorStop(1, skin.light);
-
-    ctx.fillStyle = neckGrad;
-    ctx.beginPath();
-    ctx.moveTo(pX - 3.0, headCenterY + 4);
-    ctx.lineTo(pX - 3.8, neckY);
-    ctx.lineTo(pX + 3.8, neckY);
-    ctx.lineTo(pX + 3.0, headCenterY + 4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = skin.darkShadow; ctx.lineWidth = 0.6; ctx.stroke();
-
-    ctx.fillStyle = skin.shadow;
-    ctx.beginPath();
-    ctx.ellipse(pX, headCenterY + 5.2, 3.4, 1.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // --- 2. KAFA KAFATASI TABANI ---
-    ctx.save();
-    let headGrad = ctx.createRadialGradient(pX - 2.5, headCenterY - 2.5, 2, pX, headCenterY, 10.5);
-    headGrad.addColorStop(0, skin.light);
-    headGrad.addColorStop(0.7, skin.base);
-    headGrad.addColorStop(1, skin.shadow);
-
-    ctx.fillStyle = headGrad;
-    ctx.beginPath();
-    ctx.ellipse(pX, headCenterY, 9.2, 10.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = skin.darkShadow; ctx.lineWidth = 0.8; ctx.stroke();
-
-    // --- 3. KULAKLAR (8 AÇIYA GÖRE TAM ANATOMİK KONUMLANDIRMA) ---
-    const drawRealisticEar = (earX, earY, rx, ry, angle, isBackView) => {
-        ctx.save();
-        ctx.fillStyle = skin.base;
-        ctx.beginPath();
-        ctx.ellipse(earX, earY, rx, ry, angle, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = skin.darkShadow; ctx.lineWidth = 0.55; ctx.stroke();
-
-        if (!isBackView) {
-            ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.65;
-            ctx.beginPath();
-            ctx.arc(earX, earY - 0.3, rx * 0.55, 0.3, Math.PI * 1.5);
-            ctx.stroke();
-
-            ctx.fillStyle = skin.light;
-            ctx.beginPath();
-            ctx.arc(earX, earY + ry * 0.55, rx * 0.45, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.6;
-            ctx.beginPath();
-            ctx.arc(earX, earY, rx * 0.6, Math.PI * 0.4, Math.PI * 1.6);
-            ctx.stroke();
-        }
-        ctx.restore();
-    };
-
-    let hairId = p.hat || 'hair_sanalika_dreadlocks';
-    let hairCoversEars = (hairId === 'hair_sanalika_dreadlocks' || hairId === 'hair_sanalika_street' || hairId === 'hair_sanalika_wavy');
-
-    if (!hairCoversEars) {
-        if (facing === 'down') {
-            // Önden tam görünüm: İki kulak da dengeli ve kafatasının yanında
-            drawRealisticEar(pX - 7.6, headCenterY + 0.5, 1.5, 2.3, -0.1, false);
-            drawRealisticEar(pX + 7.6, headCenterY + 0.5, 1.5, 2.3, 0.1, false);
-        } else if (facing === 'down-right') {
-            // 3/4 Sağ Ön: Sol kulak arkada görünür, sağ kulak perspektifle daralır
-            drawRealisticEar(pX - 6.6, headCenterY + 0.5, 1.3, 2.2, -0.15, false);
-            drawRealisticEar(pX + 5.2, headCenterY + 0.5, 1.1, 2.0, 0.1, false);
-        } else if (facing === 'down-left') {
-            // 3/4 Sol Ön: Sağ kulak arkada görünür, sol kulak perspektifle daralır
-            drawRealisticEar(pX + 6.6, headCenterY + 0.5, 1.3, 2.2, 0.15, false);
-            drawRealisticEar(pX - 5.2, headCenterY + 0.5, 1.1, 2.0, -0.1, false);
-        } else if (facing === 'right') {
-            // Tam Sağ Profil
-            drawRealisticEar(pX - 1.2, headCenterY + 0.5, 1.8, 2.6, 0.05, false);
-        } else if (facing === 'left') {
-            // Tam Sol Profil
-            drawRealisticEar(pX + 1.2, headCenterY + 0.5, 1.8, 2.6, -0.05, false);
-        } else if (facing === 'up-right') {
-            // 3/4 Sağ Arka
-            drawRealisticEar(pX + 5.8, headCenterY + 0.5, 1.3, 2.2, 0.15, true);
-        } else if (facing === 'up-left') {
-            // 3/4 Sol Arka
-            drawRealisticEar(pX - 5.8, headCenterY + 0.5, 1.3, 2.2, -0.15, true);
-        } else if (facing === 'up') {
-            // Tam Arka: İki kulağın da arkası
-            drawRealisticEar(pX - 7.5, headCenterY + 0.5, 1.4, 2.2, -0.1, true);
-            drawRealisticEar(pX + 7.5, headCenterY + 0.5, 1.4, 2.2, 0.1, true);
-        }
-    }
-
-    // --- 4. YÜZ DETAYLARI: GÖZLER, KAŞLAR, BURUN, DUDAKLAR ---
-    if (!isBack) {
-        let isRightProfile = (facing === 'right');
-        let isLeftProfile = (facing === 'left');
-        let is34Right = (facing === 'down-right');
-        let is34Left = (facing === 'down-left');
-
-        const drawRealisticEye = (eyeX, eyeY, width, height) => {
-            ctx.save();
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.ellipse(eyeX, eyeY, width, height, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = "rgba(0,0,0,0.3)"; ctx.lineWidth = 0.6; ctx.stroke();
-
-            ctx.fillStyle = "rgba(0, 0, 0, 0.16)";
-            ctx.beginPath();
-            ctx.arc(eyeX, eyeY - 0.4, width * 0.85, Math.PI, 0);
-            ctx.fill();
-
-            // İris: Bal köpüğü ela gradyan
-            let irisGrad = ctx.createRadialGradient(eyeX, eyeY, 0.4, eyeX, eyeY, width * 0.65);
-            irisGrad.addColorStop(0, "#d97706");
-            irisGrad.addColorStop(0.6, "#92400e");
-            irisGrad.addColorStop(1, "#451a03");
-
-            ctx.fillStyle = irisGrad;
-            ctx.beginPath();
-            ctx.arc(eyeX, eyeY, width * 0.62, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "#09090b";
-            ctx.beginPath();
-            ctx.arc(eyeX, eyeY, width * 0.32, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Çifte Işık Parıltısı
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(eyeX - width * 0.22, eyeY - height * 0.25, width * 0.24, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-            ctx.beginPath();
-            ctx.arc(eyeX + width * 0.24, eyeY + height * 0.26, width * 0.12, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Üst kirpik çizgisi
-            ctx.strokeStyle = "#18181b"; ctx.lineWidth = 1.0;
-            ctx.beginPath();
-            ctx.arc(eyeX, eyeY, width, Math.PI + 0.3, -0.3);
-            ctx.stroke();
-            ctx.restore();
-        };
-
-        if (isRightProfile) {
-            // =====================================================================
-            // TAM SAĞ PROFİL YÜZ ÇİZİMİ (Fotoğraf 1: Sevimli kalkık burun & tebessüm)
-            // =====================================================================
-            let pEyeX = pX + 3.2;
-            let eyeY = headCenterY - 0.4;
-
-            // Tek göz
-            drawRealisticEye(pEyeX, eyeY, 2.4, 2.0);
-
-            // Tek kaş
-            ctx.strokeStyle = "#7f1d1d"; ctx.lineWidth = 1.1;
-            ctx.beginPath();
-            ctx.moveTo(pEyeX - 2.0, eyeY - 3.2);
-            ctx.quadraticCurveTo(pEyeX + 0.5, eyeY - 4.2, pEyeX + 3.0, eyeY - 3.0);
-            ctx.stroke();
-
-            // Yanak allığı
-            ctx.fillStyle = skin.blush;
-            ctx.beginPath();
-            ctx.ellipse(pX + 2.5, headCenterY + 2.2, 2.2, 1.4, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Profil Burun (Fotoğraf 1'deki kalkık sevimli üçgen burun)
-            ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(pX + 5.5, headCenterY - 1.0);
-            ctx.lineTo(pX + 8.2, headCenterY + 1.8);
-            ctx.lineTo(pX + 6.2, headCenterY + 2.8);
-            ctx.stroke();
-
-            // Burun ucu parlama ışığı
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(pX + 7.8, headCenterY + 1.6, 0.7, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Profil Dudak (Yukarı kavisli gülüş)
-            ctx.fillStyle = "#b9554d";
-            ctx.beginPath();
-            ctx.moveTo(pX + 5.8, headCenterY + 4.8);
-            ctx.lineTo(pX + 7.6, headCenterY + 5.1);
-            ctx.lineTo(pX + 5.8, headCenterY + 5.8);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.fillRect(pX + 5.8, headCenterY + 4.9, 1.3, 0.8);
-
-            ctx.fillStyle = "#d97067";
-            ctx.beginPath();
-            ctx.moveTo(pX + 5.8, headCenterY + 5.8);
-            ctx.lineTo(pX + 7.2, headCenterY + 6.2);
-            ctx.lineTo(pX + 5.8, headCenterY + 6.7);
-            ctx.closePath();
-            ctx.fill();
-
-            if (p.face === 'sunglasses') {
-                ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
-                ctx.beginPath();
-                ctx.roundRect(pEyeX - 2.0, eyeY - 2.2, 6.0, 4.4, 2);
-                ctx.fill();
-                ctx.strokeStyle = "#facc15"; ctx.lineWidth = 0.8; ctx.stroke();
-                ctx.strokeStyle = "#facc15"; ctx.lineWidth = 0.8;
-                ctx.beginPath(); ctx.moveTo(pEyeX - 2.0, eyeY - 0.5); ctx.lineTo(pX - 1.2, headCenterY + 0.5); ctx.stroke();
-            }
-        } else if (isLeftProfile) {
-            // =====================================================================
-            // TAM SOL PROFİL YÜZ ÇİZİMİ (Fotoğraf 4: Sevimli kalkık burun & tebessüm)
-            // =====================================================================
-            let pEyeX = pX - 3.2;
-            let eyeY = headCenterY - 0.4;
-
-            drawRealisticEye(pEyeX, eyeY, 2.4, 2.0);
-
-            ctx.strokeStyle = "#7f1d1d"; ctx.lineWidth = 1.1;
-            ctx.beginPath();
-            ctx.moveTo(pEyeX + 2.0, eyeY - 3.2);
-            ctx.quadraticCurveTo(pEyeX - 0.5, eyeY - 4.2, pEyeX - 3.0, eyeY - 3.0);
-            ctx.stroke();
-
-            ctx.fillStyle = skin.blush;
-            ctx.beginPath();
-            ctx.ellipse(pX - 2.5, headCenterY + 2.2, 2.2, 1.4, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(pX - 5.5, headCenterY - 1.0);
-            ctx.lineTo(pX - 8.2, headCenterY + 1.8);
-            ctx.lineTo(pX - 6.2, headCenterY + 2.8);
-            ctx.stroke();
-
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(pX - 7.8, headCenterY + 1.6, 0.7, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = "#b9554d";
-            ctx.beginPath();
-            ctx.moveTo(pX - 5.8, headCenterY + 4.8);
-            ctx.lineTo(pX - 7.6, headCenterY + 5.1);
-            ctx.lineTo(pX - 5.8, headCenterY + 5.8);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.fillRect(pX - 7.1, headCenterY + 4.9, 1.3, 0.8);
-
-            ctx.fillStyle = "#d97067";
-            ctx.beginPath();
-            ctx.moveTo(pX - 5.8, headCenterY + 5.8);
-            ctx.lineTo(pX - 7.2, headCenterY + 6.2);
-            ctx.lineTo(pX - 5.8, headCenterY + 6.7);
-            ctx.closePath();
-            ctx.fill();
-
-            if (p.face === 'sunglasses') {
-                ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
-                ctx.beginPath();
-                ctx.roundRect(pEyeX - 4.0, eyeY - 2.2, 6.0, 4.4, 2);
-                ctx.fill();
-                ctx.strokeStyle = "#facc15"; ctx.lineWidth = 0.8; ctx.stroke();
-                ctx.strokeStyle = "#facc15"; ctx.lineWidth = 0.8;
-                ctx.beginPath(); ctx.moveTo(pEyeX + 2.0, eyeY - 0.5); ctx.lineTo(pX + 1.2, headCenterY + 0.5); ctx.stroke();
-            }
-        } else {
-            // =====================================================================
-            // ÖN VE 3/4 AÇILI ÇİZİM (down, down-right, down-left)
-            // =====================================================================
-            let eyeShiftX = is34Right ? 1.6 : (is34Left ? -1.6 : 0);
-
-            ctx.fillStyle = skin.blush;
-            ctx.beginPath();
-            ctx.ellipse(pX - 4.5 + eyeShiftX * 0.5, headCenterY + 2.2, 2.6, 1.6, 0, 0, Math.PI * 2);
-            ctx.ellipse(pX + 4.5 + eyeShiftX * 0.5, headCenterY + 2.2, 2.6, 1.6, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            let leftEyeX = pX - 3.4 + eyeShiftX;
-            let rightEyeX = pX + 3.4 + eyeShiftX;
-            let eyeY = headCenterY - 0.4;
-
-            if (is34Right) {
-                drawRealisticEye(leftEyeX, eyeY, 2.8, 2.2);
-                drawRealisticEye(rightEyeX, eyeY, 2.3, 1.9);
-            } else if (is34Left) {
-                drawRealisticEye(leftEyeX, eyeY, 2.3, 1.9);
-                drawRealisticEye(rightEyeX, eyeY, 2.8, 2.2);
-            } else {
-                drawRealisticEye(leftEyeX, eyeY, 2.7, 2.2);
-                drawRealisticEye(rightEyeX, eyeY, 2.7, 2.2);
-            }
-
-            // Kaşlar
-            ctx.strokeStyle = "#7f1d1d"; ctx.lineWidth = 1.1;
-            ctx.beginPath();
-            ctx.moveTo(leftEyeX - 2.8, eyeY - 3.0);
-            ctx.quadraticCurveTo(leftEyeX, eyeY - 4.4, leftEyeX + 2.6, eyeY - 3.4);
-            ctx.moveTo(rightEyeX - 2.6, eyeY - 3.4);
-            ctx.quadraticCurveTo(rightEyeX, eyeY - 4.4, rightEyeX + 2.8, eyeY - 3.0);
-            ctx.stroke();
-
-            // Burun
-            let noseX = pX + eyeShiftX * 0.8;
-            let noseY = headCenterY + 2.6;
-
-            ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(noseX - 0.4, headCenterY - 1.0);
-            ctx.lineTo(noseX + (is34Right ? 0.6 : (is34Left ? -0.6 : 0)), noseY);
-            ctx.stroke();
-
-            ctx.strokeStyle = skin.darkShadow; ctx.lineWidth = 0.7;
-            ctx.beginPath();
-            ctx.arc(noseX, noseY, 1.3, 0.2, Math.PI - 0.2);
-            ctx.stroke();
-
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(noseX, noseY - 0.4, 0.8, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Dudaklar & Sanalika Neşeli Gülümsemesi (Fotoğraf 2 & 3: Beyaz diş çizgisi)
-            let mouthX = pX + eyeShiftX * 0.7;
-            let mouthY = headCenterY + 5.5;
-
-            // Dudak tabanı
-            ctx.fillStyle = "#b9554d";
-            ctx.beginPath();
-            ctx.moveTo(mouthX - 3.4, mouthY);
-            ctx.quadraticCurveTo(mouthX, mouthY - 0.8, mouthX + 3.4, mouthY);
-            ctx.quadraticCurveTo(mouthX, mouthY + 2.2, mouthX - 3.4, mouthY);
-            ctx.fill();
-
-            // Beyaz Dişler (Fotoğraf 2 & 3'teki açık gülüş)
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.moveTo(mouthX - 2.6, mouthY);
-            ctx.lineTo(mouthX + 2.6, mouthY);
-            ctx.lineTo(mouthX + 2.2, mouthY + 1.2);
-            ctx.lineTo(mouthX - 2.2, mouthY + 1.2);
-            ctx.closePath();
-            ctx.fill();
-
-            // Sıcak mercan alt dudak
-            ctx.fillStyle = "#d97067";
-            ctx.beginPath();
-            ctx.moveTo(mouthX - 3.2, mouthY + 1.0);
-            ctx.quadraticCurveTo(mouthX, mouthY + 2.5, mouthX + 3.2, mouthY + 1.0);
-            ctx.quadraticCurveTo(mouthX, mouthY + 1.4, mouthX - 3.2, mouthY + 1.0);
-            ctx.fill();
-
-            // Dudak parlama ışığı
-            ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-            ctx.beginPath();
-            ctx.ellipse(mouthX, mouthY + 1.6, 1.2, 0.4, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            if (p.face === 'sunglasses') {
-                ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
-                ctx.beginPath();
-                ctx.roundRect(leftEyeX - 3.4, eyeY - 2.2, 6.2, 4.4, 2);
-                ctx.roundRect(rightEyeX - 2.8, eyeY - 2.2, 6.2, 4.4, 2);
-                ctx.fill();
-                ctx.strokeStyle = "#facc15"; ctx.lineWidth = 0.8; ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(leftEyeX + 2.8, eyeY - 0.5); ctx.lineTo(rightEyeX - 2.8, eyeY - 0.5); ctx.stroke();
-            }
-
-            if (p.face === 'mustache') {
-                ctx.fillStyle = "#451a03";
-                ctx.beginPath();
-                ctx.ellipse(mouthX - 1.6, mouthY - 0.8, 2.2, 1.2, -0.2, 0, Math.PI * 2);
-                ctx.ellipse(mouthX + 1.6, mouthY - 0.8, 2.2, 1.2, 0.2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            if (p.face === 'beard') {
-                ctx.fillStyle = "rgba(69, 26, 3, 0.35)";
-                ctx.beginPath();
-                ctx.ellipse(pX, headCenterY + 6.8, 5.5, 3.2, 0, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-    } else {
-        // Ense çizgisi (Arkadan görünüm)
-        ctx.strokeStyle = skin.shadow; ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(pX, headCenterY + 3.0);
-        ctx.lineTo(pX, neckY);
-        ctx.stroke();
-    }
-
-    ctx.restore();
-}
-
-// 5. Saç Modeli: 2.5D Kızıl Rasta & Bandana
-function drawRealistic25dHair(ctx, pX, pY, p, facing) {
-    let isBack = (facing === 'up' || facing === 'up-left' || facing === 'up-right');
-    let headCenterY = pY - 19;
-    let hairId = p.hat || 'hair_sanalika_dreadlocks';
-
-    // Eğer varsayılan veya dreadlocks ise:
-    if (hairId === 'hair_sanalika_dreadlocks' || hairId === 'none' || hairId === 'bere') {
-        let redBase = '#dc2626';     // Ana kızıl kırmızısı
-        let redDark = '#7f1d1d';     // Derin gölge ayrım çizgileri
-        let redMid = '#991b1b';      // Orta gölge
-        let redLight = '#ef4444';    // Canlı açık kızıl
-        let redGlint = '#f87171';    // Saç teli parlama ışığı
-        let bandColor = '#f43f5e';   // Bandana pembe/kırmızı rengi
-
-        ctx.save();
-
-        if (isBack) {
-            // =========================================================================
-            // FOTOĞRAF 5: ARKADAN GÖRÜNÜM - ŞELALE GİBİ DÖKÜLEN KIZIL RASTA LÜLELERİ
-            // =========================================================================
-
-            let crownX = pX;
-            let crownY = headCenterY - 7.5;
-
-            // Arka derin gölge tabanı
-            ctx.fillStyle = redDark;
-            ctx.beginPath();
-            ctx.arc(crownX, headCenterY - 2, 11, 0, Math.PI * 2);
-            ctx.fill();
-
-            // 11 Adet Ayrı Ayrık Rasta Lülesi (Tepeden sırt üzerine dökülen kalın burgular)
-            const dreadStrands = [
-                { startX: -1.0, startY: -6.0, endX: -7.5, endY: 7.5, width: 3.4 },
-                { startX: -2.0, startY: -5.0, endX: -5.0, endY: 9.0, width: 3.6 },
-                { startX: -1.0, startY: -4.0, endX: -2.5, endY: 10.0, width: 3.8 },
-                { startX: 0.0,  startY: -4.0, endX: 0.0,  endY: 10.5, width: 4.0 }, // Orta ana lüle
-                { startX: 1.0,  startY: -4.0, endX: 2.5,  endY: 10.0, width: 3.8 },
-                { startX: 2.0,  startY: -5.0, endX: 5.0,  endY: 9.0, width: 3.6 },
-                { startX: 1.0,  startY: -6.0, endX: 7.5,  endY: 7.5, width: 3.4 },
-                // Üst katman hacim lüleleri
-                { startX: -3.0, startY: -7.0, endX: -8.5, endY: 2.5, width: 3.2 },
-                { startX: 3.0,  startY: -7.0, endX: 8.5,  endY: 2.5, width: 3.2 },
-                { startX: -4.0, startY: -8.0, endX: -9.5, endY: -1.0, width: 3.0 },
-                { startX: 4.0,  startY: -8.0, endX: 9.5,  endY: -1.0, width: 3.0 }
-            ];
-
-            dreadStrands.forEach((strand, idx) => {
-                let sx = crownX + strand.startX;
-                let sy = crownY + strand.startY;
-                let ex = crownX + strand.endX;
-                let ey = crownY + strand.endY;
-
-                // Burgu silindir gövdesi
-                let dGrad = ctx.createLinearGradient(sx, sy, ex, ey);
-                dGrad.addColorStop(0, redDark);
-                dGrad.addColorStop(0.3, redBase);
-                dGrad.addColorStop(0.7, redLight);
-                dGrad.addColorStop(1, redDark);
-
-                ctx.strokeStyle = dGrad;
-                ctx.lineWidth = strand.width;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(sx, sy);
-                ctx.quadraticCurveTo((sx + ex) / 2 + (idx % 2 === 0 ? 1.0 : -1.0), (sy + ey) / 2, ex, ey);
-                ctx.stroke();
-
-                // Lüle arası derin gölge çizgisi
-                ctx.strokeStyle = redDark;
-                ctx.lineWidth = 0.9;
-                ctx.stroke();
-
-                // Lüle üstü parlak ışık vurgusu (Silindirik parlama)
-                ctx.strokeStyle = redGlint;
-                ctx.lineWidth = 0.8;
-                ctx.beginPath();
-                ctx.moveTo(sx + 0.5, sy + 1);
-                ctx.quadraticCurveTo((sx + ex) / 2, (sy + ey) / 2 - 1, ex - 0.5, ey - 2);
-                ctx.stroke();
-            });
-
-            // Tepe tacı birleşim noktası
-            ctx.fillStyle = redMid;
-            ctx.beginPath();
-            ctx.ellipse(crownX, crownY + 2, 4.5, 3.2, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-        } else if (facing === 'right' || facing === 'left') {
-            // =========================================================================
-            // FOTOĞRAF 1 & 4: TAM PROFİL GÖRÜNÜM (Sağ ve Sol Profil Geriye Dökülen Rasta Manesi)
-            // =========================================================================
-            let isR = (facing === 'right');
-            let dir = isR ? 1 : -1;
-
-            // 1. Geriye Doğru Kavis Yapan Üst Diken Rasta Tutamları
-            const profileDreads = [
-                { sx: pX - dir * 2.0, sy: headCenterY - 8.0, ex: pX - dir * 11.0, ey: headCenterY - 14.0, w: 4.0 },
-                { sx: pX - dir * 4.0, sy: headCenterY - 6.0, ex: pX - dir * 13.0, ey: headCenterY - 10.0, w: 3.8 },
-                { sx: pX - dir * 5.0, sy: headCenterY - 3.0, ex: pX - dir * 14.5, ey: headCenterY - 5.0,  w: 3.6 },
-                { sx: pX - dir * 6.0, sy: headCenterY,       ex: pX - dir * 15.0, ey: headCenterY + 1.0,  w: 3.5 },
-                { sx: pX - dir * 5.0, sy: headCenterY + 3.0, ex: pX - dir * 13.5, ey: headCenterY + 7.0,  w: 3.4 },
-                { sx: pX - dir * 3.0, sy: headCenterY + 5.0, ex: pX - dir * 11.0, ey: headCenterY + 12.0, w: 3.6 },
-                { sx: pX - dir * 1.0, sy: headCenterY + 6.0, ex: pX - dir * 7.5,  ey: headCenterY + 14.0, w: 3.8 }
-            ];
-
-            profileDreads.forEach(d => {
-                let grad = ctx.createLinearGradient(d.sx, d.sy, d.ex, d.ey);
-                grad.addColorStop(0, redDark);
-                grad.addColorStop(0.4, redBase);
-                grad.addColorStop(0.8, redLight);
-                grad.addColorStop(1, redDark);
-
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = d.w;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(d.sx, d.sy);
-                ctx.quadraticCurveTo((d.sx + d.ex) / 2 - dir * 1.5, (d.sy + d.ey) / 2, d.ex, d.ey);
-                ctx.stroke();
-
-                ctx.strokeStyle = redDark; ctx.lineWidth = 0.8;
-                ctx.beginPath();
-                ctx.moveTo((d.sx + d.ex) / 2 - 1.0, (d.sy + d.ey) / 2 - 0.5);
-                ctx.lineTo((d.sx + d.ex) / 2 + 1.0, (d.sy + d.ey) / 2 + 0.5);
-                ctx.stroke();
-
-                ctx.strokeStyle = redGlint; ctx.lineWidth = 0.7;
-                ctx.beginPath();
-                ctx.moveTo(d.sx, d.sy);
-                ctx.lineTo((d.sx + d.ex) / 2, (d.sy + d.ey) / 2);
-                ctx.stroke();
-            });
-
-            // 2. Profil Alın Bandanası (Fotoğraf 1 & 4)
-            ctx.fillStyle = bandColor;
-            ctx.beginPath();
-            ctx.ellipse(pX + dir * 1.5, headCenterY - 4.5, 7.8, 3.8, dir * 0.18, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = redDark; ctx.lineWidth = 0.8; ctx.stroke();
-
-            // Bandana üzerindeki pembe hilal / daire amblemi
-            ctx.fillStyle = "#fbcfe8";
-            ctx.beginPath();
-            ctx.ellipse(pX + dir * 2.8, headCenterY - 5.2, 3.2, 1.8, dir * 0.18, 0, Math.PI * 2);
-            ctx.fill();
-
-        } else {
-            // =========================================================================
-            // FOTOĞRAF 2 & 3: ÖNDEN & 3/4 GÖRÜNÜM - DİKEN TEPELİ RASTA & BANDANA & YAN LÜLELER
-            // =========================================================================
-
-            // 1. Tepe Diken Rasta Tutamları (Yukarı ve yana fışkıran hacimli saç)
-            const topSpikes = [
-                { x: pX - 9.0, y: headCenterY - 4, ex: pX - 12.0, ey: headCenterY - 8, w: 3.5 },
-                { x: pX - 7.0, y: headCenterY - 7, ex: pX - 9.5, ey: headCenterY - 13, w: 3.8 },
-                { x: pX - 4.0, y: headCenterY - 9, ex: pX - 5.0, ey: headCenterY - 16, w: 4.0 },
-                { x: pX - 0.5, y: headCenterY - 10, ex: pX - 0.5, ey: headCenterY - 17, w: 4.2 },
-                { x: pX + 3.0, y: headCenterY - 9, ex: pX + 4.5, ey: headCenterY - 16, w: 4.0 },
-                { x: pX + 6.5, y: headCenterY - 7, ex: pX + 9.0, ey: headCenterY - 13, w: 3.8 },
-                { x: pX + 8.5, y: headCenterY - 4, ex: pX + 11.5, ey: headCenterY - 8, w: 3.5 }
-            ];
-
-            topSpikes.forEach(sp => {
-                let sGrad = ctx.createLinearGradient(sp.x, sp.y, sp.ex, sp.ey);
-                sGrad.addColorStop(0, redDark);
-                sGrad.addColorStop(0.5, redBase);
-                sGrad.addColorStop(1, redLight);
-
-                ctx.strokeStyle = sGrad;
-                ctx.lineWidth = sp.w;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(sp.x, sp.y);
-                ctx.lineTo(sp.ex, sp.ey);
-                ctx.stroke();
-
-                // Diken ucu açık kızıl highlight
-                ctx.strokeStyle = redGlint;
-                ctx.lineWidth = 1.0;
-                ctx.beginPath();
-                ctx.moveTo((sp.x + sp.ex) / 2, (sp.y + sp.ey) / 2);
-                ctx.lineTo(sp.ex, sp.ey);
-                ctx.stroke();
-            });
-
-            // 2. Yanaklardan ve Omuzlardan Aşağı Dökülen Yan Rasta Lüleleri (Kulakları kapatır)
-            const sideDreads = [
-                // Sol taraf lüleleri
-                { sx: pX - 8.0, sy: headCenterY - 1, ex: pX - 9.5, ey: headCenterY + 9, w: 3.4 },
-                { sx: pX - 6.5, sy: headCenterY + 1, ex: pX - 8.0, ey: headCenterY + 11, w: 3.6 },
-                { sx: pX - 5.0, sy: headCenterY + 3, ex: pX - 6.5, ey: headCenterY + 8, w: 3.2 },
-                // Sağ taraf lüleleri
-                { sx: pX + 5.0, sy: headCenterY + 3, ex: pX + 6.5, ey: headCenterY + 8, w: 3.2 },
-                { sx: pX + 6.5, sy: headCenterY + 1, ex: pX + 8.0, ey: headCenterY + 11, w: 3.6 },
-                { sx: pX + 8.0, sy: headCenterY - 1, ex: pX + 9.5, ey: headCenterY + 9, w: 3.4 }
-            ];
-
-            sideDreads.forEach(sd => {
-                let dGrad = ctx.createLinearGradient(sd.sx, sd.sy, sd.ex, sd.ey);
-                dGrad.addColorStop(0, redDark);
-                dGrad.addColorStop(0.4, redBase);
-                dGrad.addColorStop(1, redDark);
-
-                ctx.strokeStyle = dGrad;
-                ctx.lineWidth = sd.w;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(sd.sx, sd.sy);
-                ctx.quadraticCurveTo((sd.sx + sd.ex) / 2 + 1.2, (sd.sy + sd.ey) / 2, sd.ex, sd.ey);
-                ctx.stroke();
-
-                // Lüle boğum çizgileri (Twisted cord)
-                ctx.strokeStyle = redDark; ctx.lineWidth = 0.8;
-                for (let t = 0.2; t <= 0.8; t += 0.25) {
-                    let mx = sd.sx + (sd.ex - sd.sx) * t;
-                    let my = sd.sy + (sd.ey - sd.sy) * t;
-                    ctx.beginPath();
-                    ctx.moveTo(mx - 1.2, my - 0.6);
-                    ctx.lineTo(mx + 1.2, my + 0.6);
-                    ctx.stroke();
-                }
-            });
-
-            // 3. Alın Bandanası (Fotoğraf 2 & 3)
-            ctx.fillStyle = bandColor;
-            ctx.beginPath();
-            ctx.ellipse(pX, headCenterY - 4.5, 9.4, 4.0, 0, Math.PI, 0);
-            ctx.lineTo(pX + 9.2, headCenterY - 2.8);
-            ctx.ellipse(pX, headCenterY - 2.8, 9.2, 3.8, 0, 0, Math.PI);
-            ctx.closePath();
-            ctx.fill();
-            ctx.strokeStyle = redDark; ctx.lineWidth = 0.8; ctx.stroke();
-
-            // Bandana üzerindeki pembe/beyaz hilal deseni (Fotoğraf 2 & 3)
-            ctx.fillStyle = "#fbcfe8";
-            ctx.beginPath();
-            ctx.ellipse(pX, headCenterY - 4.2, 4.0, 1.8, 0, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        ctx.restore();
-
-    } else if (hairId === 'hair_sanalika_street') {
-        // Sokak Diken Saç
-        ctx.save();
-        ctx.fillStyle = "#18181b";
-        ctx.beginPath();
-        ctx.arc(pX, headCenterY - 3, 9.5, Math.PI, 0);
-        ctx.fill();
-        // Dikenler
-        ctx.fillStyle = "#d97706";
-        for (let i = -7; i <= 7; i += 3.5) {
-            ctx.beginPath();
-            ctx.moveTo(pX + i - 1.5, headCenterY - 5);
-            ctx.lineTo(pX + i, headCenterY - 14);
-            ctx.lineTo(pX + i + 1.5, headCenterY - 5);
-            ctx.fill();
-        }
-        ctx.restore();
-    } else if (hairId === 'hair_sanalika_wavy') {
-        // Dalgalı Salaş Saç
-        ctx.save();
-        ctx.fillStyle = "#451a03";
-        ctx.beginPath();
-        ctx.arc(pX, headCenterY - 2, 10.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#78350f"; ctx.lineWidth = 2.0;
-        ctx.beginPath();
-        ctx.arc(pX - 4, headCenterY + 4, 5, 0, Math.PI);
-        ctx.arc(pX + 4, headCenterY + 4, 5, 0, Math.PI);
-        ctx.stroke();
-        ctx.restore();
-    } else {
-        // Klasik saç/şapkalar ile uyumluluk
-        drawAvatarHairAndHats(ctx, pX, pY - 1, hairId, facing);
-    }
-}
-
-// 6. ANA 2.5D İZOMETRİK GERÇEKÇİ AVATAR BİRLEŞTİRİCİSİ
-function drawRealistic25dAvatar(ctx, pX, pY, p, facing, isSitting, legSwing, isPreview) {
-    let skinPalette = getRealisticSkinPalette(p.skinColor);
-
-    // 1. Zemin Gölgesi (Canlı ambient occlusion - Kuğu veya binek atı varken binek kendi gölgesini çizer)
-    if (!p.hasSwanBoat && !p.hasHorse) {
-        ctx.save();
-        ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-        ctx.beginPath();
-        ctx.ellipse(pX, pY + (isSitting ? 16 : 21.5), isSitting ? 14 : 12, isSitting ? 5.5 : 5, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    }
-
-    // 2. Bacaklar, Kamuflaj Kargo Şort ve Sneaker Ayakkabılar
-    drawRealistic25dLegs(ctx, pX, pY, p, facing, isSitting, legSwing, skinPalette);
-
-    // 3. Gövde, Siyah Fitted Tişört ve Kollar
-    drawRealistic25dTorsoAndArms(ctx, pX, pY, p, facing, isSitting, legSwing, skinPalette);
-
-    // 4. Kafa, Boyun, Kulaklar ve Gerçekçi Yüz Hatları
-    drawRealistic25dHeadAndFace(ctx, pX, pY, p, facing, skinPalette);
-
-    // 5. Saç Modeli & Kızıl Rasta / Bandana
-    drawRealistic25dHair(ctx, pX, pY, p, facing);
 }
 
 // --- 6.1 KLASİK 2 VÜCUT MODELİ (GELİŞMİŞ KLASİK AVATAR, 8 YÖNLÜ SALINAN KOLLAR & SAATLER & ÖZEL SETLER) ---
@@ -4309,7 +3069,7 @@ function drawClassic2Torso(targetCtx, pX, pY, p, facing, isFemale) {
     }
 }
 
-function drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerWalkCycle, isMoving, isPreview) {
+function drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerWalkCycle, isMoving, isPreview, legFilter = 'all') {
     facing = normalize8WayFacing(facing || 'down');
     let isFemale = isFemaleAvatar(p, p.color, p.hat, p.shoes);
     let skinColor = p.skinColor || "#ffd1a4";
@@ -4338,14 +3098,13 @@ function drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerW
         else if (p.pants === 'pants_classic_beige') pantsColor = '#d4b996';
         else if (p.pants === 'pants_classic_cargo_olive') pantsColor = '#4d5d3b';
         else if (p.pants === 'pants_classic_white_skirt') { pantsColor = '#ffffff'; isSkirt = true; }
-        else if (p.pants === 'pants_camo_cargo') pantsColor = '#4b5563';
     }
 
     // 8 Yönlü Yürüme Salınımı (Bacakların tersine senkronize doğal salınım)
     let hasHeldItem = (p.heldItem && p.heldItem !== 'none') || p.hasTea;
     let armSwingAngle = 0;
     if (hasHeldItem) {
-        armSwingAngle = 0; // El eşyası varken kollar sabit (2.5D gibi)
+        armSwingAngle = 0; // El eşyası varken kollar sabit
     } else if (isSitting) {
         armSwingAngle = 0;
     } else if (isMoving) {
@@ -4434,7 +3193,7 @@ function drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerW
     }
 
     // 2. Bacaklar & Ayakkabılar (Kadın/Erkek Anatomisiyle)
-    drawAvatarLegsAndShoes(ctx, pX, pY, legSwing, skinColor, p.shoes, isSkirt, isSitting, facing, isFemale, pantsColor);
+    drawAvatarLegsAndShoes(ctx, pX, pY, legSwing, skinColor, p.shoes, isSkirt, isSitting, facing, isFemale, pantsColor, legFilter);
 
     // 3. Gövde & Kıyafet / Özel Takım Seti
     drawClassic2Torso(ctx, pX, pY, p, facing, isFemale);
@@ -4446,17 +3205,19 @@ function drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerW
         });
     }
 
+    let headNodY = (p.action === 'afk') ? ((Math.sin(Date.now() / 1150) * 0.5 + 0.5) * 1.5) : 0;
+
     // 5. Kafa
     ctx.fillStyle = skinColor;
     ctx.beginPath();
-    ctx.arc(pX, pY - 18, 10, 0, Math.PI * 2);
+    ctx.arc(pX, pY - 18 + headNodY, 10, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "rgba(0,0,0,0.2)";
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
     // 6. Şapkalar & Saç Modelleri
-    drawAvatarHairAndHats(ctx, pX, pY, p.hat || 'none', facing);
+    drawAvatarHairAndHats(ctx, pX, pY + headNodY, p.hat || 'none', facing);
 
     // 7. Gözler ve Yüz Aksesuarları
     let eyeOffsetX = 0, eyeOffsetY = 0;
@@ -4464,7 +3225,7 @@ function drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerW
     else if (facing === 'right') eyeOffsetX = 3;
     else if (facing === 'up') eyeOffsetY = -2;
     else eyeOffsetY = 1;
-    drawAvatarFaceAndEyes(ctx, pX, pY, p.face || 'none', eyeOffsetX, eyeOffsetY, facing);
+    drawAvatarFaceAndEyes(ctx, pX, pY + headNodY, p.face || 'none', eyeOffsetX, eyeOffsetY, facing, (p.action === 'afk'));
 
     // 8. Ön ve yan açılarda (veya sırtta taşınan eşyalarda) eşya gövdenin önünde çizilir
     if (!drawItemUnder && heldItem && heldItem !== 'none') {
@@ -4526,17 +3287,44 @@ function drawAvatarPreview() {
     let isFemale = isFemaleAvatar(activeAv, activeAv.color, activeAv.hat, activeAv.shoes);
     let facing = (typeof window !== 'undefined' && window.previewFacing) ? window.previewFacing : 'down';
 
-    if (activeAv.model === 'sanalika_v2') {
-        drawRealistic25dAvatar(pCtx, 0, 0, activeAv, facing, false, 0, true);
-        drawHeldItem(pCtx, 0, 0, activeAv.heldItem, true, facing, true, 'sanalika_v2', activeAv);
-        pCtx.restore();
-        return;
+    let previewCycle = Date.now() / 250;
+    let isK2Preview = (activeAv.model === 'karakter_2' || (typeof window !== 'undefined' && window.selectedModelId === 'karakter_2'));
+    if (isK2Preview && typeof Karakter2Renderer !== 'undefined') {
+        Karakter2Renderer.draw(pCtx, 0, 0, activeAv, facing, false, 0, previewCycle, false, true);
     } else {
-        let previewCycle = Date.now() / 250;
         drawClassic2Avatar(pCtx, 0, 0, activeAv, facing, false, 0, previewCycle, false, true);
-        pCtx.restore();
-        return;
     }
+    pCtx.restore();
+    return;
+}
+
+function drawAvatarFarLegMounted(ctx, pX, pY, p, facing, legSwing) {
+    let isFemale = isFemaleAvatar(p, p.color, p.hat, p.shoes);
+    let skinColor = p.skinColor || "#ffd1a4";
+    let isSkirt = false;
+    let pantsColor = '#2563eb';
+    let out = p.outfit;
+    if (out === 'outfit_c2_gentleman') {
+        pantsColor = '#1e293b';
+    } else if (out === 'outfit_c2_street_cool') {
+        pantsColor = '#1d4ed8';
+    } else if (out === 'outfit_c2_casual_polo') {
+        pantsColor = '#d4b996';
+    } else if (out === 'outfit_c2_femme_chic') {
+        pantsColor = '#db2777';
+        isSkirt = true;
+    } else if (out && out.startsWith('dress_')) {
+        isSkirt = true;
+        pantsColor = skinColor;
+    } else if (p.pants) {
+        if (p.pants === 'pants_classic_jeans') pantsColor = '#2563eb';
+        else if (p.pants === 'pants_classic_black') pantsColor = '#1e293b';
+        else if (p.pants === 'pants_classic_beige') pantsColor = '#d4b996';
+        else if (p.pants === 'pants_classic_cargo_olive') pantsColor = '#4d5d3b';
+        else if (p.pants === 'pants_classic_white_skirt') { pantsColor = '#ffffff'; isSkirt = true; }
+    }
+
+    drawAvatarLegsAndShoes(ctx, pX, pY, legSwing, skinColor, p.shoes, isSkirt, true, facing, isFemale, pantsColor, 'far');
 }
 
 // --- 8. ANİMASYONLU VE ÇOK OYUNCULU OYUNCU ÇİZİM MOTORU ---
@@ -4567,10 +3355,11 @@ function drawAnimatedPlayer(p, id) {
     let pY = p.y + (isSitting && !isRidingSwan && !isMounted ? 7 : (isRidingSwan ? -3 + swanBob : (isMounted ? -10 + gallopBob : bob)));
 
     let isDancing = (p.action === 'dance');
-    let danceTilt = isDancing ? Math.sin(Date.now() / 140) * 0.15 : 0;
+    let isK2Pre = (p.model === 'karakter_2' || (id === myId && myAvatar && myAvatar.model === 'karakter_2'));
+    let danceTilt = (isDancing && !isK2Pre) ? Math.sin(Date.now() / 140) * 0.15 : 0;
 
     ctx.save();
-    if (isDancing) {
+    if (isDancing && !isK2Pre) {
         ctx.translate(pX, pY);
         ctx.rotate(danceTilt);
         ctx.translate(-pX, -pY);
@@ -4583,17 +3372,20 @@ function drawAnimatedPlayer(p, id) {
         ctx.fill();
     }
 
-    const model = p.model === 'sanalika_v2' ? 'sanalika_v2' : 'classic_2';
+    const model = 'classic_2';
     let rawFacing = (id === myId) ? myFacing : (p.facing || 'down');
     let facing = normalize8WayFacing(rawFacing);
     let isFemale = isFemaleAvatar(p, p.color, p.hat, p.shoes);
 
     // BİNEK ATI - Katman 1: Gövde, Arka Bacaklar, Kuyruk ve Eyer (Karakterin arkasında çizilir)
     if (isMounted && typeof HorseMountRenderer !== 'undefined') {
+        // At üstündeyken karakterin bizden uzak bacağı atın arkasında kalmalı
+        drawAvatarFarLegMounted(ctx, pX, pY, p, facing, legSwing);
+
         ctx.save();
         ctx.translate(pX, p.y + 12);
         ctx.scale(1.15, 1.15);
-        HorseMountRenderer.drawGroundShadow(ctx, isMoving, playerWalkCycle);
+        HorseMountRenderer.drawGroundShadow(ctx, isMoving, playerWalkCycle, facing);
         HorseMountRenderer.drawHorseBase(ctx, facing, isMoving, playerWalkCycle);
         ctx.restore();
     }
@@ -4612,10 +3404,12 @@ function drawAnimatedPlayer(p, id) {
         ctx.restore();
     }
 
-    if (model === 'sanalika_v2') {
-        drawRealistic25dAvatar(ctx, pX, pY, p, facing, isSitting, legSwing, false);
+    let isK2 = (p.model === 'karakter_2' || (id === myId && myAvatar && myAvatar.model === 'karakter_2'));
+    if (isK2 && typeof Karakter2Renderer !== 'undefined') {
+        if (!p.id && id) p.id = id;
+        Karakter2Renderer.draw(ctx, pX, pY, p, facing, isSitting, legSwing, playerWalkCycle, isMoving, false, isMounted ? 'near' : 'all');
     } else {
-        drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerWalkCycle, isMoving, false);
+        drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerWalkCycle, isMoving, false, isMounted ? 'near' : 'all');
     }
 
     // 7. Elde Taşınan Eşyalar & Balık Tutma
@@ -4657,42 +3451,52 @@ function drawAnimatedPlayer(p, id) {
 
         ctx.restore();
     } else {
-        if (model !== 'classic_2') {
+        if (!isK2 && p && p.model && p.model !== 'classic_2') {
             let activeHeld = p.heldItem || (p.hasTea ? 'cay' : 'none');
-            drawHeldItem(ctx, pX, pY, activeHeld, false, facing, (model === 'sanalika_v2'), model, p);
+            drawHeldItem(ctx, pX, pY, activeHeld, false, facing, false, 'classic', p);
         }
     }
 
-    // 8. El Sallama Animasyonu
-    if (p.action === 'wave') {
-        let waveArmAngle = Math.sin(Date.now() / 90) * 0.4 - 0.7;
-        ctx.save();
-        ctx.translate(pX + 10, pY - 5);
-        ctx.rotate(waveArmAngle);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(0, -12, 4, 12);
-        ctx.fillStyle = "#facc15";
-        ctx.beginPath(); ctx.arc(2, -14, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-    }
+    // Karakter 1 (Klasik) için eski overlay emotelar (Karakter 2 kendi eklemli kollarıyla yapar!)
+    if (!isK2) {
+        // 8. El Sallama Animasyonu
+        if (p.action === 'wave') {
+            let waveArmAngle = Math.sin(Date.now() / 90) * 0.4 - 0.7;
+            ctx.save();
+            ctx.translate(pX + 10, pY - 5);
+            ctx.rotate(waveArmAngle);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(0, -12, 4, 12);
+            ctx.fillStyle = "#facc15";
+            ctx.beginPath(); ctx.arc(2, -14, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
 
-    // 9. Alkış Animasyonu
-    if (p.action === 'clap') {
-        let clapOffset = Math.abs(Math.sin(Date.now() / 80)) * 4;
-        ctx.fillStyle = "#facc15";
-        ctx.beginPath(); ctx.arc(pX - 4 + clapOffset, pY + 2, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(pX + 4 - clapOffset, pY + 2, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#facc15";
-        ctx.font = "10px sans-serif";
-        ctx.fillText("✨", pX + 8, pY);
-    }
+        // 9. Alkış Animasyonu
+        if (p.action === 'clap') {
+            let clapOffset = Math.abs(Math.sin(Date.now() / 80)) * 4;
+            ctx.fillStyle = "#facc15";
+            ctx.beginPath(); ctx.arc(pX - 4 + clapOffset, pY + 2, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(pX + 4 - clapOffset, pY + 2, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#facc15";
+            ctx.font = "10px sans-serif";
+            ctx.fillText("✨", pX + 8, pY);
+        }
 
-    // 10. Dans Eden Nota Simgeleri
-    if (isDancing) {
-        let noteY = pY - 38 - ((Date.now() / 50) % 12);
-        ctx.fillStyle = "#ec4899";
-        ctx.font = "bold 12px sans-serif";
-        ctx.fillText("♪ ♫", pX + 10, noteY);
+        // 10. Dans Eden Nota Simgeleri
+        if (isDancing) {
+            let noteY = pY - 44 - ((Date.now() / 50) % 12);
+            ctx.fillStyle = "#ec4899";
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillText("♪ ♫", pX + 10, noteY);
+        }
+
+        // 10.5 AFK / Uyuklama Süzülen Zzz Efekti 💤
+        if (p.action === 'afk') {
+            if (typeof Karakter2Renderer !== 'undefined' && typeof Karakter2Renderer.drawAfkSleepBubbles === 'function') {
+                Karakter2Renderer.drawAfkSleepBubbles(ctx, pX, pY);
+            }
+        }
     }
 
     ctx.restore();
@@ -4730,7 +3534,7 @@ function drawAnimatedPlayer(p, id) {
         }
     }
 
-    // 11. OYUNCU İSMİ ROZETİ
+    // 11. OYUNCU İSMİ ROZETİ (K2 1px aşağı, K1 aynı saç-isim aralığıyla dengelendi)
     ctx.font = "bold 11px sans-serif";
     if (p._cachedNameWidth === undefined || p._cachedName !== p.name) {
         p._cachedName = p.name || '';
@@ -4738,48 +3542,35 @@ function drawAnimatedPlayer(p, id) {
     }
     let nameWidth = p._cachedNameWidth;
 
+    let nameBoxY = isK2 ? (pY - 55) : (pY - 50);
+    let nameTextY = isK2 ? (pY - 43) : (pY - 38);
+
     ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
     ctx.beginPath();
-    ctx.roundRect(pX - nameWidth / 2 - 6, pY - 42, nameWidth + 12, 16, 6);
+    ctx.roundRect(pX - nameWidth / 2 - 6, nameBoxY, nameWidth + 12, 16, 6);
     ctx.fill();
     ctx.fillStyle = id === myId ? "#38bdf8" : "#ffffff";
     ctx.textAlign = "center";
-    ctx.fillText(p.name, pX, pY - 30);
+    ctx.fillText(p.name, pX, nameTextY);
 
-    // 11.1 Oturma & Kalkma İpucu
-    if (id === myId) {
-        if (isSitting) {
-            let hintText = "[E] / Yön: Kalk";
+    // 11.1 Oturma İpucu (Kalkma yazısı kullanıcı isteğiyle kaldırıldı)
+    if (id === myId && !isSitting) {
+        let nearbySeat = (typeof findNearestSittableSeat === 'function') ? findNearestSittableSeat() : null;
+        if (nearbySeat) {
+            let pulse = Math.sin(Date.now() / 180) * 2;
+            let promptText = `🛋️ [E] Otur`;
             ctx.save();
-            ctx.font = "bold 9px sans-serif";
-            let hintW = ctx.measureText(hintText).width + 12;
-            let hintY = pY + 28;
-            ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+            ctx.font = "bold 10px sans-serif";
+            let promptW = ctx.measureText(promptText).width + 14;
+            let promptY = nameBoxY - 20 + pulse;
+            ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
             ctx.beginPath();
-            ctx.roundRect(pX - hintW / 2, hintY, hintW, 15, 6);
+            ctx.roundRect(pX - promptW / 2, promptY, promptW, 17, 7);
             ctx.fill();
-            ctx.strokeStyle = "rgba(56, 189, 248, 0.7)"; ctx.lineWidth = 1; ctx.stroke();
-            ctx.fillStyle = "#38bdf8"; ctx.textAlign = "center";
-            ctx.fillText(hintText, pX, hintY + 11);
+            ctx.strokeStyle = "#facc15"; ctx.lineWidth = 1.2; ctx.stroke();
+            ctx.fillStyle = "#facc15"; ctx.textAlign = "center";
+            ctx.fillText(promptText, pX, promptY + 12);
             ctx.restore();
-        } else {
-            let nearbySeat = (typeof findNearestSittableSeat === 'function') ? findNearestSittableSeat() : null;
-            if (nearbySeat) {
-                let pulse = Math.sin(Date.now() / 180) * 2;
-                let promptText = `🛋️ [E] Otur`;
-                ctx.save();
-                ctx.font = "bold 10px sans-serif";
-                let promptW = ctx.measureText(promptText).width + 14;
-                let promptY = pY - 60 + pulse;
-                ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
-                ctx.beginPath();
-                ctx.roundRect(pX - promptW / 2, promptY, promptW, 17, 7);
-                ctx.fill();
-                ctx.strokeStyle = "#facc15"; ctx.lineWidth = 1.2; ctx.stroke();
-                ctx.fillStyle = "#facc15"; ctx.textAlign = "center";
-                ctx.fillText(promptText, pX, promptY + 12);
-                ctx.restore();
-            }
         }
     }
 
@@ -4792,14 +3583,14 @@ function drawAnimatedPlayer(p, id) {
         ctx.arc(pX, pY - 14, pulseRadius, 0, Math.PI * 2);
         ctx.stroke();
         ctx.font = "12px sans-serif";
-        ctx.fillText("🎙️", pX + nameWidth / 2 + 12, pY - 30);
+        ctx.fillText("🎙️", pX + nameWidth / 2 + 12, nameTextY);
         ctx.restore();
     }
 
     // 12. Konuşma Baloncukları
     if (typeof activeChatBubbles !== 'undefined' && activeChatBubbles[id] && activeChatBubbles[id].length > 0) {
         let bubbles = activeChatBubbles[id];
-        let bubbleY = pY - 54;
+        let bubbleY = nameBoxY - 10;
 
         for (let i = bubbles.length - 1; i >= 0; i--) {
             let bObj = bubbles[i];
@@ -4846,7 +3637,7 @@ function drawAnimatedPlayer(p, id) {
         if (elapsed < 3000) {
             let progress = elapsed / 3000;
             let alpha = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) : 1;
-            let floatY = pY - 56 - (progress * 28);
+            let floatY = (nameBoxY - 12) - (progress * 28);
             ctx.save();
             ctx.globalAlpha = Math.max(0, alpha);
             ctx.fillStyle = "rgba(255, 255, 255, 0.95)";

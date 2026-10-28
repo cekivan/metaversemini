@@ -89,7 +89,7 @@ function registerAdminHandlers(io, socket, players, helpers) {
         let updatedMoney = dataManager.persistentData.users[targetKey].money;
 
         for (let sid in players) {
-            if (players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
+            if (players[sid]?.name && players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
                 players[sid].money = updatedMoney;
                 io.to(sid).emit('moneyUpdate', updatedMoney);
                 let noteMsg = (data.mode === 'set')
@@ -134,7 +134,7 @@ function registerAdminHandlers(io, socket, players, helpers) {
     socket.on('adminTeleportTo', (data) => {
         if (!requireStaff()) return;
         if (!data || !data.targetUsername) return;
-        let targetSid = Object.keys(players).find(sid => players[sid]?.name?.toLowerCase() === data.targetUsername.toLowerCase());
+        let targetSid = Object.keys(players).find(sid => !sid.startsWith('bot_') && !players[sid]?.isBot && players[sid]?.name?.toLowerCase() === data.targetUsername.toLowerCase());
         if (!targetSid || !players[targetSid]) {
             socket.emit('gameError', "Oyuncu çevrimdışı veya bulunamadı!");
             return;
@@ -173,7 +173,7 @@ function registerAdminHandlers(io, socket, players, helpers) {
     socket.on('adminSummon', (data) => {
         if (!requireStaff()) return;
         if (!data || !data.targetUsername) return;
-        let targetSid = Object.keys(players).find(sid => players[sid]?.name?.toLowerCase() === data.targetUsername.toLowerCase());
+        let targetSid = Object.keys(players).find(sid => !sid.startsWith('bot_') && !players[sid]?.isBot && players[sid]?.name?.toLowerCase() === data.targetUsername.toLowerCase());
         if (!targetSid || !players[targetSid]) {
             socket.emit('gameError', "Oyuncu çevrimdışı veya bulunamadı!");
             return;

@@ -150,7 +150,7 @@ function registerSlotHandlers(io, socket, players) {
             if (ownerData) {
                 ownerData.money = (ownerData.money || 0) + commission;
                 // Ev sahibi online ise anlık bakiye güncelle ve bildirim gönder
-                let ownerSocketId = Object.keys(players).find(sid => players[sid].name && players[sid].name.toLowerCase() === ownerKeyClean.toLowerCase());
+                let ownerSocketId = Object.keys(players).find(sid => players[sid]?.name && players[sid].name.toLowerCase() === ownerKeyClean.toLowerCase());
                 if (ownerSocketId) {
                     players[ownerSocketId].money = ownerData.money;
                     io.to(ownerSocketId).emit('moneyUpdate', ownerData.money);

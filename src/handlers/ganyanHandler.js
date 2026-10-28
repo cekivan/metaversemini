@@ -392,6 +392,27 @@ function registerGanyanHandlers(io, socket, players) {
             socket.emit('horse_rent_result', { success: false, message: "Giriş yapmalısınız." });
             return;
         }
+
+        // KONTROL 1: Kuğu deniz bisikletindeyken ata binemez!
+        if (players[socket.id].hasSwanBoat) {
+            socket.emit('horse_rent_result', {
+                success: false,
+                message: "⚠️ Kuğu deniz bisikletindeyken ata binemezsiniz! Önce kuğudan inmelisiniz."
+            });
+            return;
+        }
+
+        // KONTROL 2: Zaten aktif kiralık atı var mı?
+        const uKey = dataManager.findUserKey ? dataManager.findUserKey(username) : username.toLowerCase();
+        const userData = (uKey && dataManager.persistentData.users[uKey]) || null;
+        if (userData && userData.horseExpiresAt && userData.horseExpiresAt > Date.now()) {
+            socket.emit('horse_rent_result', {
+                success: false,
+                message: "⚠️ Zaten aktif bir binek atınız bulunuyor! Süreniz bittiğinde tekrar kiralayabilirsiniz."
+            });
+            return;
+        }
+
         const COST = 200;
         const DURATION_MS = 5 * 60 * 1000;
 
@@ -408,42 +429,39 @@ function registerGanyanHandlers(io, socket, players) {
         if (players[socket.id]) players[socket.id].money = newBalance;
         socket.emit('moneyUpdate', newBalance);
 
-        const expiresAt = Date.now() + DURATION_MS;
-        players[socket.id].hasHorse = true;
-        players[socket.id].horseExpiresAt = expiresAt;
+        givePlayerHorseWithTimer(io, players, socket.id, username, DURATION_MS, true);
+    });
 
-        if (horseMountTimers[socket.id]) {
-            clearTimeout(horseMountTimers[socket.id]);
-        }
+    socket.on('toggle_horse_mount', (data) => {
+        if (!players[socket.id]) return;
+        const wantMount = !!(data && data.mounted);
+        const pObj = players[socket.id];
+        const username = pObj ? (pObj.name || pObj.username) : null;
+        const uKey = dataManager.findUserKey ? dataManager.findUserKey(username) : (username ? username.toLowerCase() : null);
+        const userData = (uKey && dataManager.persistentData.users[uKey]) || null;
 
-        horseMountTimers[socket.id] = setTimeout(() => {
-            if (players[socket.id]) {
-                players[socket.id].hasHorse = false;
-                delete players[socket.id].horseExpiresAt;
-                
-                const curSocket = io.sockets.sockets.get(socket.id);
-                if (curSocket) {
-                    curSocket.emit('horse_mount_expired');
-                    io.to(players[socket.id].room).emit('playerHorseUpdate', {
-                        id: socket.id,
-                        hasHorse: false
-                    });
-                }
+        if (wantMount) {
+            // Kuğu kontrolü
+            if (players[socket.id].hasSwanBoat) {
+                socket.emit('ganyan_error', "⚠️ Kuğu deniz bisikletindeyken ata binemezsiniz! Önce kuğudan inmelisiniz.");
+                return;
             }
-            delete horseMountTimers[socket.id];
-        }, DURATION_MS);
-
-        socket.emit('horse_rent_result', {
-            success: true,
-            durationSeconds: 300,
-            expiresAt: expiresAt,
-            message: "🐎 Şahlanan Asil Binek Atını 5 dakikalığına kiraladın! Yürüme hızın 2 katına çıktı!"
-        });
-
-        io.to(players[socket.id].room).emit('playerHorseUpdate', {
-            id: socket.id,
-            hasHorse: true
-        });
+            if (!userData || !userData.horseExpiresAt || userData.horseExpiresAt <= Date.now()) {
+                socket.emit('ganyan_error', "⚠️ Binek atı kiralama süreniz dolmuş!");
+                return;
+            }
+            players[socket.id].hasHorse = true;
+            io.to(players[socket.id].room).emit('playerHorseUpdate', { id: socket.id, hasHorse: true });
+            const remSec = Math.ceil((userData.horseExpiresAt - Date.now()) / 1000);
+            socket.emit('horse_mount_state', { isMounted: true, remainingSeconds: remSec });
+        } else {
+            players[socket.id].hasHorse = false;
+            io.to(players[socket.id].room).emit('playerHorseUpdate', { id: socket.id, hasHorse: false });
+            const remSec = (userData && userData.horseExpiresAt && userData.horseExpiresAt > Date.now())
+                ? Math.ceil((userData.horseExpiresAt - Date.now()) / 1000)
+                : 0;
+            socket.emit('horse_mount_state', { isMounted: false, remainingSeconds: remSec });
+        }
     });
 
     socket.on('disconnect', () => {
@@ -454,9 +472,67 @@ function registerGanyanHandlers(io, socket, players) {
     });
 }
 
+function givePlayerHorseWithTimer(io, players, socketId, username, durationMs = 300000, startMounted = true) {
+    if (!players || !players[socketId]) return;
+    const expiresAt = Date.now() + durationMs;
+    players[socketId].hasHorse = startMounted;
+    players[socketId].horseExpiresAt = expiresAt;
+
+    const uKey = dataManager.findUserKey ? dataManager.findUserKey(username) : (username ? username.toLowerCase() : null);
+    if (uKey && dataManager.persistentData.users[uKey]) {
+        dataManager.persistentData.users[uKey].horseExpiresAt = expiresAt;
+        dataManager.savePersistentData();
+    }
+
+    if (horseMountTimers[socketId]) {
+        clearTimeout(horseMountTimers[socketId]);
+        delete horseMountTimers[socketId];
+    }
+
+    horseMountTimers[socketId] = setTimeout(() => {
+        if (players[socketId]) {
+            players[socketId].hasHorse = false;
+            delete players[socketId].horseExpiresAt;
+            
+            const curSocket = io.sockets.sockets.get(socketId);
+            if (curSocket) {
+                curSocket.emit('horse_mount_expired');
+            }
+            io.to(players[socketId].room).emit('playerHorseUpdate', {
+                id: socketId,
+                hasHorse: false
+            });
+        }
+        if (uKey && dataManager.persistentData.users[uKey]) {
+            dataManager.persistentData.users[uKey].horseExpiresAt = null;
+            dataManager.savePersistentData();
+        }
+        delete horseMountTimers[socketId];
+    }, durationMs);
+
+    const remainingSec = Math.ceil(durationMs / 1000);
+    const curSocket = io.sockets.sockets.get(socketId);
+    if (curSocket) {
+        curSocket.emit('horse_rent_result', {
+            success: true,
+            durationSeconds: remainingSec,
+            expiresAt: expiresAt,
+            isMounted: startMounted,
+            message: "🐎 Şahlanan Asil Kraliyet Binek Atını 5 dakikalığına kiraladın! Yürüme hızın 2 katına çıktı!"
+        });
+    }
+
+    io.to(players[socketId].room).emit('playerHorseUpdate', {
+        id: socketId,
+        hasHorse: startMounted
+    });
+}
+
 module.exports = {
     initGanyanEngine,
     registerGanyanHandlers,
+    givePlayerHorseWithTimer,
+    horseMountTimers,
     ganyanState,
     HORSES
 };

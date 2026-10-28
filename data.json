@@ -110,18 +110,19 @@
       },
       "avatar": {
         "model": "classic_2",
-        "hat": "kasket",
+        "hat": "none",
         "face": "mustache",
-        "skinColor": "#8d5524",
-        "shirtColor": "hoodie",
-        "color": "hoodie",
-        "heldItem": "sigara",
-        "shoes": "sneakers",
-        "shirt": "hoodie",
-        "outfit": null
+        "skinColor": "#ffd1a4",
+        "shirtColor": "#ef4444",
+        "color": "#ef4444",
+        "heldItem": "k2_skateboard",
+        "shoes": "shoes_k2_skate_pro",
+        "shirt": "#ef4444",
+        "outfit": null,
+        "pants": "pants_k2_skater_cargo"
       },
       "dailyQuests": {
-        "date": "2026-10-20",
+        "date": "2026-10-28",
         "quests": [
           {
             "id": "okey101_play",
@@ -130,8 +131,7 @@
             "target": 1,
             "reward": 180,
             "current": 0,
-            "claimed": false,
-            "_id": "6ad7d17d49c6cf723a5559ac"
+            "claimed": false
           },
           {
             "id": "batak_play",
@@ -139,9 +139,8 @@
             "desc": "Batak masasında 1 el tamamla",
             "target": 1,
             "reward": 150,
-            "current": 1,
-            "claimed": false,
-            "_id": "6ad7d17d49c6cf723a5559ad"
+            "current": 0,
+            "claimed": false
           },
           {
             "id": "tavla_play",
@@ -150,8 +149,7 @@
             "target": 1,
             "reward": 120,
             "current": 0,
-            "claimed": false,
-            "_id": "6ad7d17d49c6cf723a5559ae"
+            "claimed": false
           },
           {
             "id": "drink_tea",
@@ -160,8 +158,7 @@
             "target": 1,
             "reward": 60,
             "current": 0,
-            "claimed": false,
-            "_id": "6ad7d17d49c6cf723a5559af"
+            "claimed": false
           },
           {
             "id": "go_fishing",
@@ -169,15 +166,14 @@
             "desc": "Göl kenarında 1 kez olta atıp balık tut",
             "target": 1,
             "reward": 90,
-            "current": 0,
-            "claimed": false,
-            "_id": "6ad7d17d49c6cf723a5559b0"
+            "current": 1,
+            "claimed": false
           }
         ]
       },
       "_id": "6ad3debb1552c02d3989a159",
       "username": "yasin",
-      "money": 209075,
+      "money": 162985,
       "gender": "male",
       "role": "admin",
       "isAdmin": true,
@@ -197,7 +193,6 @@
         "props_nargile",
         "props_cay",
         "props_tespih",
-        "pants_pants_jeans_street",
         "props_balon",
         "props_olta",
         "props_kahve",
@@ -214,12 +209,8 @@
         "tshirts_#f59e0b",
         "pants_pants_classic_black",
         "faces_sunglasses",
-        "shoes_sanalika_skate_shoes",
-        "pants_pants_jogger_black",
         "faces_mustache",
-        "tshirts_tshirt_polo_striped",
         "skins_#8d5524",
-        "hats_hair_sanalika_street",
         "props_kilic",
         "outfits_dress_bridal",
         "outfits_outfit_goth",
@@ -230,9 +221,21 @@
         "tshirts_#10b981",
         "tshirts_leather",
         "outfits_outfit_c2_casual_polo",
-        "props_sigara",
         "tshirts_#ef4444",
-        "tshirts_hoodie"
+        "tshirts_hoodie",
+        "tshirts_k2_cyber_street",
+        "pants_pants_k2_tactical_jogger",
+        "shoes_shoes_k2_chunky_sneaker",
+        "outfits_dress_vintage_polka",
+        "tshirts_#0f172a",
+        "hats_korsan",
+        "tshirts_k2_graffiti_oversize",
+        "pants_pants_k2_skater_cargo",
+        "shoes_shoes_k2_skate_pro",
+        "props_k2_skateboard",
+        "skins_#d2996c",
+        "hats_bere",
+        "props_sigara"
       ],
       "propInventory": {
         "props_gazoz": 1,
@@ -248,6 +251,7 @@
         "props_kupa": 1,
         "props_oyuncak_araba": 1,
         "props_kilic": 1,
+        "props_k2_skateboard": 1,
         "props_sigara": 1
       },
       "furnitureInventory": [
@@ -591,7 +595,9 @@
           "isSaved": true,
           "name": "Racon"
         }
-      }
+      },
+      "horseExpiresAt": null,
+      "horseModel": "royal_sprite"
     },
     "babake": {
       "_id": "6ad3debb1552c02d3989a15f",
@@ -1189,7 +1195,7 @@
     "deneme": {
       "_id": "6ad3debc1552c02d3989a172",
       "username": "deneme",
-      "money": 232,
+      "money": 6387,
       "gender": "male",
       "auth": {
         "hash": "3f5a6b2fc1b6c285f920e9f1e0eee7c81a53970115e7a043b8526d5a0177907e",
@@ -1198,15 +1204,15 @@
       "role": "user",
       "isAdmin": false,
       "avatar": {
-        "model": "classic",
-        "hat": "hair_sanalika_street",
+        "model": "karakter_2",
+        "hat": "none",
         "face": "none",
         "skinColor": "#ffd1a4",
-        "shirtColor": "tshirt_divalar",
-        "color": "tshirt_divalar",
-        "heldItem": "sirtcantasi",
-        "shoes": "sanalika_skate_shoes",
-        "shirt": "tshirt_divalar",
+        "shirtColor": "k2_graffiti_oversize",
+        "color": "k2_graffiti_oversize",
+        "heldItem": "kilic",
+        "shoes": "sneakers",
+        "shirt": "k2_graffiti_oversize",
         "outfit": null
       },
       "inventory": [
@@ -1216,12 +1222,24 @@
         "shoes_sneakers",
         "face_none",
         "props_none",
-        "shoes_sanalika_skate_shoes",
         "props_sirtcantasi",
-        "hats_hair_sanalika_street"
+        "props_gitar",
+        "props_kilic",
+        "outfits_outfit_c2_femme_chic",
+        "hats_hair_curly_brown",
+        "hats_beret_pink",
+        "outfits_dress_red",
+        "tshirts_k2_graffiti_oversize",
+        "tshirts_polo",
+        "tshirts_#ef4444",
+        "tshirts_#0f172a",
+        "tshirts_hoodie",
+        "tshirts_#f59e0b"
       ],
       "propInventory": {
-        "props_sirtcantasi": 1
+        "props_sirtcantasi": 1,
+        "props_gitar": 1,
+        "props_kilic": 1
       },
       "furnitureInventory": [],
       "friends": [],
@@ -1300,7 +1318,8 @@
       "isMod": false,
       "scale": 1,
       "scaleExpiresAt": null,
-      "skinSets": {}
+      "skinSets": {},
+      "horseExpiresAt": null
     },
     "mehmet": {
       "_id": "6ad3debc1552c02d3989a178",
@@ -1407,7 +1426,7 @@
     "kadın": {
       "_id": "6ad3debd1552c02d3989a17a",
       "username": "kadın",
-      "money": 510,
+      "money": 354,
       "gender": "female",
       "auth": {
         "hash": "5705842ad9517df27276d1a380379f061bf7a50927d7fa46cdce7b44f8e76d81",
@@ -1416,16 +1435,17 @@
       "role": "user",
       "isAdmin": false,
       "avatar": {
-        "hat": "hair_long",
+        "hat": "hair_k2_twin_tails",
         "face": "none",
         "skinColor": "#ffd1a4",
-        "shirtColor": "dress_bridal",
-        "color": "dress_bridal",
-        "heldItem": "none",
-        "shoes": "flats",
-        "model": "classic",
-        "shirt": null,
-        "outfit": null
+        "shirtColor": "top_k2_pastel_hoodie",
+        "color": "top_k2_pastel_hoodie",
+        "heldItem": "sigara",
+        "shoes": "heels",
+        "model": "karakter_2",
+        "shirt": "top_k2_pastel_hoodie",
+        "outfit": null,
+        "pants": "pants_k2_cargo_mini"
       },
       "inventory": [
         "hats_hair_long",
@@ -1434,17 +1454,79 @@
         "shoes_flats",
         "face_none",
         "props_none",
-        "shirts_dress_bridal"
+        "shirts_dress_bridal",
+        "outfits_dress_black",
+        "outfits_dress_k2_cyber_street",
+        "outfits_dress_k2_goth_grunge",
+        "hats_hair_k2_twin_tails",
+        "outfits_dress_red",
+        "hats_hair_redhead_wavy",
+        "hats_hair_pigtails_ribbon",
+        "outfits_dress_vintage_polka",
+        "shoes_heels",
+        "tshirts_top_k2_pastel_hoodie",
+        "pants_pants_k2_cargo_mini",
+        "props_sigara",
+        "props_k2_energy_drink"
       ],
-      "propInventory": {},
+      "propInventory": {
+        "props_sigara": 1,
+        "props_k2_energy_drink": 1
+      },
       "furnitureInventory": [],
       "friends": [],
       "friendRequests": [],
       "house": null,
       "houses": {},
       "dailyQuests": {
-        "date": "",
-        "quests": []
+        "date": "2026-10-28",
+        "quests": [
+          {
+            "id": "okey101_play",
+            "title": "🀄 101 Okey Partisi",
+            "desc": "101 Okey masasında 1 el tamamla",
+            "target": 1,
+            "reward": 180,
+            "current": 0,
+            "claimed": false
+          },
+          {
+            "id": "batak_play",
+            "title": "🃏 Koz Batak Ustası",
+            "desc": "Batak masasında 1 el tamamla",
+            "target": 1,
+            "reward": 150,
+            "current": 0,
+            "claimed": false
+          },
+          {
+            "id": "tavla_play",
+            "title": "🎲 Tavla Mücadelesi",
+            "desc": "Tavla masasında 1 oyun tamamla",
+            "target": 1,
+            "reward": 120,
+            "current": 0,
+            "claimed": false
+          },
+          {
+            "id": "drink_tea",
+            "title": "☕ Tavşan Kanlı Çay",
+            "desc": "Kıraathane çay ocağından taze çay iç",
+            "target": 1,
+            "reward": 60,
+            "current": 0,
+            "claimed": false
+          },
+          {
+            "id": "go_fishing",
+            "title": "🎣 Göl Kenarı Balıkçısı",
+            "desc": "Göl kenarında 1 kez olta atıp balık tut",
+            "target": 1,
+            "reward": 90,
+            "current": 1,
+            "claimed": false
+          }
+        ]
       },
       "teaExpiresAt": null,
       "banExpiresAt": null,
@@ -1457,7 +1539,8 @@
       "__v": 0,
       "isProp": false,
       "propExpiresAt": null,
-      "propType": null
+      "propType": null,
+      "horseExpiresAt": null
     },
     "ceki": {
       "_id": "6ad3debd1552c02d3989a17b",
@@ -1475,10 +1558,10 @@
         "hat": "korsan",
         "face": "none",
         "skinColor": "#ffd1a4",
-        "shirtColor": "sanalika_striped_polo",
-        "color": "sanalika_striped_polo",
+        "shirtColor": "#3b82f6",
+        "color": "#3b82f6",
         "heldItem": "cocktail_mojito",
-        "shoes": "sanalika_skate_shoes",
+        "shoes": "sneakers",
         "shirt": null,
         "outfit": null
       },
@@ -1489,9 +1572,7 @@
         "shoes_sneakers",
         "face_none",
         "props_none",
-        "shoes_sanalika_skate_shoes",
-        "hats_korsan",
-        "shirts_sanalika_striped_polo"
+        "hats_korsan"
       ],
       "propInventory": {},
       "furnitureInventory": [],
@@ -7799,6 +7880,45 @@
       "houses": {},
       "furnitureInventory": [],
       "propInventory": {}
+    },
+    "28ekim": {
+      "username": "28ekim",
+      "money": 180,
+      "gender": "female",
+      "auth": {
+        "hash": "e399a4b58775139039845eeeb54893f5a69c937709218a71077b18b3730dbd75",
+        "salt": "29c1905d9efc4ee96719d9c0dc01f6df"
+      },
+      "role": "user",
+      "isAdmin": false,
+      "isMod": false,
+      "avatar": {
+        "model": "karakter_2",
+        "hat": "hair_pigtails_ribbon",
+        "face": "none",
+        "skinColor": "#ffd1a4",
+        "shirtColor": "dress_pink",
+        "color": "dress_pink",
+        "heldItem": "none",
+        "shoes": "flats"
+      },
+      "inventory": [
+        "hats_hair_long",
+        "skins_#ffd1a4",
+        "shirts_dress_pink",
+        "shoes_flats",
+        "face_none",
+        "props_none",
+        "hats_hair_curly_brown",
+        "hats_kulaklik",
+        "hats_hair_pigtails_ribbon"
+      ],
+      "friends": [],
+      "friendRequests": [],
+      "house": null,
+      "houses": {},
+      "furnitureInventory": [],
+      "propInventory": {}
     }
   },
   "leaderboard": {
@@ -7825,7 +7945,7 @@
       "maltoroz": 1
     },
     "amiral": {
-      "yasin": 1
+      "yasin": 4
     },
     "chess": {
       "Elyesa": 2

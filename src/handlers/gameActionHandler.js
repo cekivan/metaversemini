@@ -17,8 +17,10 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
         if (g && g.players && g.players.includes(sid)) {
             let isDuel = (g.players && g.players.length === 2) || (tables[gid] && tables[gid].min === 2) || gid.startsWith('xox') || gid.startsWith('amiral') || gid.startsWith('chess') || gid.startsWith('tavla') || gid.startsWith('billiard');
 
-            if (isDuel) {
-                // 2 kişilik düello veya mini oyunlarda biri ayrıldığında oyun devam edemez:
+            let isPaidGame = (g.bet && g.bet > 0) || (g.pot && g.pot > 0);
+
+            if (isDuel && !isPaidGame) {
+                // Ücretsiz 2 kişilik düello veya mini oyunlarda biri ayrıldığında oyun sonlanır:
                 if (g.voidHandVote) {
                     gameCoordinator.cancelVoidHandVote(g, `⚠️ ${pName} masadan ayrıldığı için oylama iptal edildi.`, io, players);
                 }
@@ -48,22 +50,6 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
                     delete gameCoordinator.tableCleanupTimers[gid];
                 }
 
-                // Eğer oyun bitmemişse ve bahis potu varsa paraları iade et
-                if (g.pot && g.pot > 0 && g.bet && !g.gameOver) {
-                    g.players.forEach(pid => {
-                        if (!pid.startsWith('bot_') && players[pid]) {
-                            let uName = players[pid].name;
-                            if (dataManager.persistentData.users[uName]) {
-                                dataManager.persistentData.users[uName].money = (dataManager.persistentData.users[uName].money || 0) + g.bet;
-                                players[pid].money = dataManager.persistentData.users[uName].money;
-                                io.to(pid).emit('moneyUpdate', players[pid].money);
-                            }
-                        }
-                    });
-                    dataManager.savePersistentData();
-                    g.pot = 0;
-                }
-
                 // Kalan rakibe bildirim gönder ve masasını sıfırla
                 g.players.forEach(pid => {
                     if (pid !== sid && !pid.startsWith('bot_')) {
@@ -80,11 +66,19 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
                     });
                 }
 
+                if (g && g.players) {
+                    g.players.forEach(pid => {
+                        if (typeof pid === 'string' && pid.startsWith('bot_') && players[pid]) {
+                            delete players[pid];
+                        }
+                    });
+                }
                 delete activeGames[gid];
-                tableManager.closeTable(gid);
+                tableManager.closeTable(gid, players);
                 io.emit('tableClosed', { tableId: gid });
             } else {
-                // 3 veya 4 kişilik oyunlar (Batak, 101 Okey, Dost Kazığı) - koltuk devralma / reconnect destekli
+                // ÜCRETLİ OYUNLAR (2, 3 veya 4 kişilik) ve 3-4 KİŞİLİK OYUNLAR:
+                // Bir oyuncu çıktığında para ödenmiş olduğu için oyun bitmez, yerini anında bota devreder!
                 if (g.voidHandVote) {
                     gameCoordinator.cancelVoidHandVote(g, `⚠️ ${pName} masadan ayrıldığı için el bozma oylaması iptal edildi.`, io, players);
                 }
@@ -97,6 +91,7 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
 
                 let remainingHumans = g.players.filter(pid => pid !== sid && !pid.startsWith('bot_') && (!g.disconnectedPlayers || !g.disconnectedPlayers[pid]));
                 if (remainingHumans.length === 0) {
+                    // Masada hiç gerçek oyuncu kalmadıysa masayı temizle ve kapat
                     if (gameCoordinator.okey101AfkTimers && gameCoordinator.okey101AfkTimers[gid]) {
                         clearTimeout(gameCoordinator.okey101AfkTimers[gid]);
                         delete gameCoordinator.okey101AfkTimers[gid];
@@ -109,18 +104,41 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
                         clearTimeout(gameCoordinator.dostKazigiAfkTimers[gid]);
                         delete gameCoordinator.dostKazigiAfkTimers[gid];
                     }
+                    if (gameCoordinator.billiardBotTimers && gameCoordinator.billiardBotTimers[gid]) {
+                        clearTimeout(gameCoordinator.billiardBotTimers[gid]);
+                        delete gameCoordinator.billiardBotTimers[gid];
+                    }
+                    if (gameCoordinator.xoxBotTimers && gameCoordinator.xoxBotTimers[gid]) {
+                        clearTimeout(gameCoordinator.xoxBotTimers[gid]);
+                        delete gameCoordinator.xoxBotTimers[gid];
+                    }
+                    if (gameCoordinator.amiralBotTimers && gameCoordinator.amiralBotTimers[gid]) {
+                        clearTimeout(gameCoordinator.amiralBotTimers[gid]);
+                        delete gameCoordinator.amiralBotTimers[gid];
+                    }
+                    if (gameCoordinator.tavlaBotTimers && gameCoordinator.tavlaBotTimers[gid]) {
+                        clearTimeout(gameCoordinator.tavlaBotTimers[gid]);
+                        delete gameCoordinator.tavlaBotTimers[gid];
+                    }
+                    if (gameCoordinator.clearChessTimers) {
+                        gameCoordinator.clearChessTimers(gid);
+                    }
                     if (gameCoordinator.tableCleanupTimers && gameCoordinator.tableCleanupTimers[gid]) {
                         clearTimeout(gameCoordinator.tableCleanupTimers[gid]);
                         delete gameCoordinator.tableCleanupTimers[gid];
                     }
-                    delete activeGames[gid];
-                    if (tables[gid]) {
-                        tables[gid].players = [];
-                        tables[gid].spectators = [];
-                        tables[gid].pot = 0;
+                    if (g && g.players) {
+                        g.players.forEach(pid => {
+                            if (typeof pid === 'string' && pid.startsWith('bot_') && players[pid]) {
+                                delete players[pid];
+                            }
+                        });
                     }
+                    delete activeGames[gid];
+                    tableManager.closeTable(gid, players);
+                    io.emit('tableClosed', { tableId: gid });
                 } else {
-                    // Masada hala başka aktif oyuncu var -> ayrılan oyuncunun yerine bot ekle
+                    // Masada hala en az bir aktif insan oyuncu var -> ayrılan oyuncunun yerini BOT devralır
                     let botId = `bot_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
                     let botNames = ["Ahmet Dayı", "Mehmet Emmi", "Hüseyin Dayı", "Ali", "Can", "Burak", "Kıvrak", "Kadir", "Cemil"];
                     let botName = "🤖 " + botNames[Math.floor(Math.random() * botNames.length)];
@@ -152,7 +170,7 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
                     delete g.playerProfiles[sid];
                     if (g.disconnectedPlayers) delete g.disconnectedPlayers[sid];
 
-                    // Kart ve el durumlarını bota aktar
+                    // Kart ve el durumlarını bota aktar (Batak, 101 Okey, Dost Kazığı)
                     if (g.hands && g.hands[sid]) {
                         g.hands[botId] = g.hands[sid];
                         delete g.hands[sid];
@@ -191,15 +209,41 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
                         delete g.roundPenalties[sid];
                     }
 
+                    // Düello / Masa oyunları durum aktarımı (Tavla, XOX, Amiral, Satranç, Bilardo)
+                    if (g.playerColors && g.playerColors[sid] !== undefined) {
+                        g.playerColors[botId] = g.playerColors[sid];
+                        delete g.playerColors[sid];
+                    }
+                    if (g.playerSymbols && g.playerSymbols[sid] !== undefined) {
+                        g.playerSymbols[botId] = g.playerSymbols[sid];
+                        delete g.playerSymbols[sid];
+                    }
+                    if (g.boards && g.boards[sid]) {
+                        g.boards[botId] = g.boards[sid];
+                        delete g.boards[sid];
+                    }
+                    if (g.ships && g.ships[sid]) {
+                        g.ships[botId] = g.ships[sid];
+                        delete g.ships[sid];
+                    }
+                    if (g.solids === sid) g.solids = botId;
+                    if (g.stripes === sid) g.stripes = botId;
+
+                    let potTotal = g.pot || ((g.bet || 0) * (g.players ? g.players.length : 2));
+                    let leaveNotice = isPaidGame
+                        ? `⚠️ ${pName} oyundan ayrıldı, yerini ${botName} devraldı. Bahis potu (${potTotal} TL) geçerlidir, oyun devam ediyor!`
+                        : `⚠️ ${pName} masadan ayrıldı, yerine ${botName} eklendi.`;
+
                     g.players.forEach(pid => {
                         if (pid !== sid && !pid.startsWith('bot_')) {
-                            io.to(pid).emit('systemMessage', `⚠️ ${pName} masadan ayrıldı, yerine ${botName} eklendi.`);
+                            io.to(pid).emit('systemMessage', leaveNotice);
                         }
                     });
                     if (g.spectators) {
-                        g.spectators.forEach(specId => io.to(specId).emit('systemMessage', `⚠️ ${pName} masadan ayrıldı, yerine ${botName} eklendi.`));
+                        g.spectators.forEach(specId => io.to(specId).emit('systemMessage', leaveNotice));
                     }
 
+                    // Oyun türüne göre güncelleme ve bot sırası tetikleme
                     if (gid.startsWith('batak')) {
                         gameCoordinator.sendBatakUpdate(g, io, players);
                         if (g.players[g.turnIndex] === botId) {
@@ -215,6 +259,16 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
                         if (g.players[g.turnIndex] === botId) {
                             gameCoordinator.startDostKazigiAfkTimer(g, io, players);
                         }
+                    } else if (gid.startsWith('tavla')) {
+                        gameCoordinator.sendTavlaUpdate(g, io);
+                    } else if (gid.startsWith('xox')) {
+                        gameCoordinator.sendXoxUpdate(g, io);
+                    } else if (gid.startsWith('amiral')) {
+                        gameCoordinator.sendAmiralUpdate(g, io);
+                    } else if (gid.startsWith('chess')) {
+                        gameCoordinator.sendChessUpdate(g, io);
+                    } else if (gid.startsWith('billiard')) {
+                        io.to(gid).emit('billiardUpdate', g);
                     }
                 }
             }
@@ -244,7 +298,7 @@ function handlePlayerLeaveTable(io, players, targetSocket, silent = false) {
             tableManager.closeTable(t.id);
             io.emit('tableClosed', { tableId: t.id });
         } else {
-            if (t.players.length > 0) {
+            if (t.players.length > 0 && (!t.bet || t.bet === 0)) {
                 let res = tableManager.addBotToTable(t.id, activeGames, players);
                 if (res && res.success) {
                     t.players.forEach(pid => {

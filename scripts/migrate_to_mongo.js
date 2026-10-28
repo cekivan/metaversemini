@@ -40,7 +40,7 @@ async function runMigration() {
 
         for (const uname of usernames) {
             const uData = usersObj[uname];
-            const existing = await User.findOne({ username: { $regex: new RegExp(`^${uname}$`, 'i') } });
+            const existing = await User.findByUsername(uname);
 
             if (existing) {
                 // Mevcut kullanıcıyı data.json ile güncelle

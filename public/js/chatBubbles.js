@@ -191,15 +191,9 @@ function sendSideChat() {
     let rawMsg = input.value.trim();
     if (!rawMsg) return;
 
-    // Hızlı Işınlanma Komutları: /cadde, /sanalika, /1cadde
-    if (rawMsg.toLowerCase() === '/cadde' || rawMsg.toLowerCase() === '/sanalika' || rawMsg.toLowerCase() === '/1cadde') {
+    if (handleSpecialChatCommands(rawMsg)) {
         input.value = "";
         updateChatCharCounter();
-        if (typeof selectPlace === 'function') {
-            selectPlace('sanalika_cadde');
-        } else if (typeof changeRoom === 'function') {
-            changeRoom('sanalika_cadde');
-        }
         return;
     }
 
@@ -214,6 +208,22 @@ function sendSideChat() {
             msg: rawMsg,
             channel: channelToSend
         });
+
+        // Karakter 2 ve avatarlar için anında ağız konuşma tetikleyicisi
+        const localChatDuration = Math.min(4200, Math.max(1800, rawMsg.length * 75));
+        if (typeof myAvatar !== 'undefined') {
+            myAvatar.lastChatTime = Date.now();
+            myAvatar.lastChatDuration = localChatDuration;
+            myAvatar.isChatTalking = true;
+            setTimeout(() => { if (typeof myAvatar !== 'undefined') myAvatar.isChatTalking = false; }, localChatDuration);
+        }
+        if (typeof myId !== 'undefined' && typeof players !== 'undefined' && players[myId]) {
+            players[myId].lastChatTime = Date.now();
+            players[myId].lastChatDuration = localChatDuration;
+            players[myId].isChatTalking = true;
+            setTimeout(() => { if (typeof players !== 'undefined' && players[myId]) players[myId].isChatTalking = false; }, localChatDuration);
+        }
+
         input.value = "";
         updateChatCharCounter();
     }
@@ -290,6 +300,11 @@ function openSettingsModal() {
     if (wasdChk) wasdChk.checked = window.movementSettings.wasdEnabled;
     const clickChk = document.getElementById('settingClickMovement');
     if (clickChk) clickChk.checked = window.movementSettings.clickEnabled;
+
+    // Sanal Kumanda (Joystick) Ayarlarını Senkronize Et
+    if (typeof syncSettingsModalJoystickUI === 'function') {
+        syncSettingsModalJoystickUI();
+    }
 }
 
 function closeSettingsModal() {
@@ -401,7 +416,7 @@ function updateAllChatButtons(isOpen) {
         const btn = document.getElementById(id);
         if (!btn) return;
         if (id === 'chatToggleBtn') {
-            btn.innerText = isOpen ? '💬 Chat Kapat' : '💬 Chat Aç';
+            btn.innerText = isOpen ? '💬 Chat Paneli Kapat' : '💬 Chat Paneli Aç';
         } else if (id === 'tableChatToggleBtn') {
             const txt = document.getElementById('tableChatText');
             if (txt) txt.innerText = isOpen ? 'Sohbet Kapat' : 'Sohbet';
@@ -412,10 +427,244 @@ function updateAllChatButtons(isOpen) {
     });
 }
 
+// Alt Bar Hızlı Sohbet Gönderme (Ekrandan konuşma)
+function sendBottomChat() {
+    const input = document.getElementById('bottomChatInput');
+    if (!input) return;
+    let rawMsg = input.value.trim();
+    if (!rawMsg) return;
+
+    if (handleSpecialChatCommands(rawMsg)) {
+        input.value = "";
+        return;
+    }
+
+    if (rawMsg.length > 50) {
+        rawMsg = rawMsg.substring(0, 50);
+    }
+    if (window.socket) {
+        const channelToSend = (typeof activeSendChannel !== 'undefined' && activeSendChannel) ? activeSendChannel : 'room';
+        window.socket.emit('chatMessage', {
+            msg: rawMsg,
+            channel: channelToSend
+        });
+
+        // Karakter 2 ve avatarlar için anında ağız konuşma tetikleyicisi
+        const localChatDuration = Math.min(4200, Math.max(1800, rawMsg.length * 75));
+        if (typeof myAvatar !== 'undefined') {
+            myAvatar.lastChatTime = Date.now();
+            myAvatar.lastChatDuration = localChatDuration;
+            myAvatar.isChatTalking = true;
+            setTimeout(() => { if (typeof myAvatar !== 'undefined') myAvatar.isChatTalking = false; }, localChatDuration);
+        }
+        if (typeof myId !== 'undefined' && typeof players !== 'undefined' && players[myId]) {
+            players[myId].lastChatTime = Date.now();
+            players[myId].lastChatDuration = localChatDuration;
+            players[myId].isChatTalking = true;
+            setTimeout(() => { if (typeof players !== 'undefined' && players[myId]) players[myId].isChatTalking = false; }, localChatDuration);
+        }
+
+        input.value = "";
+        setTimeout(() => {
+            if (input) input.focus();
+        }, 10);
+    }
+}
+
+// Alt Bar Hızlı Chat Tuş Yönetimi (Enter ile gönder / Boş Enter veya Escape ile oyuna dön)
+function handleBottomChatKeydown(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+
+        const input = document.getElementById('bottomChatInput');
+        if (!input) return;
+        const val = (input.value || '').trim();
+        if (val.length > 0) {
+            sendBottomChat();
+            setTimeout(() => {
+                if (input) input.focus();
+            }, 10);
+        } else {
+            // Boşken Enter'a basıldı: Chat'ten çık, imleci kaldır ve oyuna (WASD) dön
+            window.lastChatExitTime = Date.now();
+            input.value = "";
+            input.blur();
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas) canvas.focus();
+            window.focus();
+        }
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        window.lastChatExitTime = Date.now();
+        const input = document.getElementById('bottomChatInput');
+        if (input) {
+            input.value = "";
+            input.blur();
+        }
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas) canvas.focus();
+        window.focus();
+    }
+}
+
+// Yan Panel Chat Tuş Yönetimi
+function handleSideChatKeydown(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+
+        const input = document.getElementById('sideChatInput');
+        if (!input) return;
+        const val = (input.value || '').trim();
+        if (val.length > 0) {
+            sendSideChat();
+            setTimeout(() => {
+                if (input) input.focus();
+            }, 10);
+        } else {
+            window.lastChatExitTime = Date.now();
+            input.blur();
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas) canvas.focus();
+            window.focus();
+        }
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        window.lastChatExitTime = Date.now();
+        const input = document.getElementById('sideChatInput');
+        if (input) input.blur();
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas) canvas.focus();
+        window.focus();
+    }
+}
+
+// Alt Bar Emote Menüsü Yönetimi (El Salla, Dans Et, Alkışla)
+function toggleEmoteMenu(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const menu = document.getElementById('emoteDropdownMenu');
+    const arrow = document.getElementById('emoteMenuArrow');
+    if (!menu) return;
+    const isHidden = (menu.style.display === 'none' || !menu.style.display);
+    if (isHidden) {
+        menu.style.display = 'flex';
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
+    } else {
+        menu.style.display = 'none';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+}
+
+function triggerEmoteAction(action) {
+    if (typeof triggerPlayerAction === 'function') {
+        triggerPlayerAction(action);
+    } else if (window.socket) {
+        window.socket.emit('playerAction', { action: action });
+    }
+    const menu = document.getElementById('emoteDropdownMenu');
+    const arrow = document.getElementById('emoteMenuArrow');
+    if (menu) menu.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+}
+
+function triggerCigaretteSmoke() {
+    if (typeof myAvatar !== 'undefined') {
+        myAvatar.heldItem = 'sigara';
+        if (typeof players !== 'undefined' && players[myId]) {
+            players[myId].heldItem = 'sigara';
+        }
+        if (typeof window.triggerSmokeAnimation === 'function') {
+            window.triggerSmokeAnimation(myAvatar);
+            if (typeof players !== 'undefined' && players[myId]) {
+                window.triggerSmokeAnimation(players[myId]);
+            }
+        }
+    }
+    const menu = document.getElementById('emoteDropdownMenu');
+    const arrow = document.getElementById('emoteMenuArrow');
+    if (menu) menu.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+}
+
+function toggleAvatarModelQuick() {
+    let cur = (typeof myAvatar !== 'undefined' && myAvatar.model) ? myAvatar.model : 'classic_2';
+    let next = (cur === 'karakter_2') ? 'classic_2' : 'karakter_2';
+    if (typeof selectAvatarBodyModel === 'function') {
+        selectAvatarBodyModel(next);
+    }
+    const menu = document.getElementById('emoteDropdownMenu');
+    const arrow = document.getElementById('emoteMenuArrow');
+    if (menu) menu.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+}
+
+function handleSpecialChatCommands(rawMsg) {
+    if (!rawMsg) return false;
+    let lowMsg = rawMsg.toLowerCase().trim().replace(/\s+/g, '');
+    if (lowMsg === '/cadde' || lowMsg === '/sanalika' || lowMsg === '/1cadde') {
+        if (typeof selectPlace === 'function') selectPlace('sanalika_cadde');
+        else if (typeof changeRoom === 'function') changeRoom('sanalika_cadde');
+        return true;
+    }
+    if (lowMsg === '/karakter1' || lowMsg === '/model1' || lowMsg === '/k1') {
+        if (typeof selectAvatarBodyModel === 'function') selectAvatarBodyModel('classic_2');
+        return true;
+    }
+    if (lowMsg === '/karakter2' || lowMsg === '/model2' || lowMsg === '/k2') {
+        if (typeof selectAvatarBodyModel === 'function') selectAvatarBodyModel('karakter_2');
+        return true;
+    }
+    if (lowMsg === '/sigara' || lowMsg === '/smoke') {
+        triggerCigaretteSmoke();
+        return true;
+    }
+    if (lowMsg === '/dans' || lowMsg === '/dance') {
+        triggerEmoteAction('dance');
+        return true;
+    }
+    if (lowMsg === '/elsalla' || lowMsg === '/el' || lowMsg === '/wave') {
+        triggerEmoteAction('wave');
+        return true;
+    }
+    if (lowMsg === '/alkis' || lowMsg === '/alkış' || lowMsg === '/clap') {
+        triggerEmoteAction('clap');
+        return true;
+    }
+    return false;
+}
+
+// Menü dışına tıklanırsa kapat
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('emoteDropdownMenu');
+    const toggleBtn = document.getElementById('btnEmoteMenuToggle');
+    const arrow = document.getElementById('emoteMenuArrow');
+    if (menu && menu.style.display === 'flex') {
+        if (!menu.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) {
+            menu.style.display = 'none';
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+});
+
 // Global olarak erişilebilir yap
 window.toggleChatPanel = toggleChatPanel;
 window.toggleChatMinimize = toggleChatMinimize;
 window.sendSideChat = sendSideChat;
+window.sendBottomChat = sendBottomChat;
+window.handleBottomChatKeydown = handleBottomChatKeydown;
+window.handleSideChatKeydown = handleSideChatKeydown;
+window.toggleEmoteMenu = toggleEmoteMenu;
+window.triggerEmoteAction = triggerEmoteAction;
+window.triggerCigaretteSmoke = triggerCigaretteSmoke;
+window.toggleAvatarModelQuick = toggleAvatarModelQuick;
+window.handleSpecialChatCommands = handleSpecialChatCommands;
 window.updateChatCharCounter = updateChatCharCounter;
 window.sendQuickEmoji = sendQuickEmoji;
 window.switchChatTab = switchChatTab;
@@ -480,8 +729,26 @@ if (window.socket) {
                 text: bubbleText,
                 name: senderName,
                 channel: channel,
-                timer: timer
+                timer: timer,
+                createdAt: Date.now()
             });
+
+            // Karakter ağız animasyonu için oyuncu nesnesine anında konuşma süresi bağla
+            const chatDuration = Math.min(4200, Math.max(1800, (data.msg ? data.msg.length * 75 : 2200)));
+            if (typeof players !== 'undefined' && players[data.id]) {
+                players[data.id].lastChatTime = Date.now();
+                players[data.id].lastChatDuration = chatDuration;
+                players[data.id].isChatTalking = true;
+                setTimeout(() => { if (typeof players !== 'undefined' && players[data.id]) players[data.id].isChatTalking = false; }, chatDuration);
+            }
+            if (typeof myId !== 'undefined' && data.id === myId) {
+                if (typeof myAvatar !== 'undefined') {
+                    myAvatar.lastChatTime = Date.now();
+                    myAvatar.lastChatDuration = chatDuration;
+                    myAvatar.isChatTalking = true;
+                    setTimeout(() => { if (typeof myAvatar !== 'undefined') myAvatar.isChatTalking = false; }, chatDuration);
+                }
+            }
         }
     });
 }

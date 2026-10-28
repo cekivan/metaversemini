@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Mini Metaverse Beta v1.3</title>
     <!-- CSS dosyamızı bağlıyoruz -->
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -62,11 +62,60 @@
         <button id="adminPanelNavBtn" class="nav-btn" style="display: none; background: linear-gradient(135deg, #ef4444, #991b1b); box-shadow: 0 4px 12px rgba(239,68,68,0.4);" onclick="openAdminPanel()">👑 Admin Paneli</button>
         <button id="updatesNavBtn" class="nav-btn" style="background: linear-gradient(135deg, #6366f1, #a855f7); box-shadow: 0 4px 12px rgba(99,102,241,0.35); font-weight: 800;" onclick="openUpdatesModal()">📢 Yenilikler (v1.3)</button>
         <button class="nav-btn" style="background: linear-gradient(135deg, #475569, #334155); box-shadow: 0 4px 12px rgba(0,0,0,0.3);" onclick="openSettingsModal()">⚙️ Ayarlar</button>
+        <!-- 🔍 EKRAN ZOOM / ÇÖZÜNÜRLÜK KONTROLÜ -->
+        <div class="zoom-dropdown-wrapper">
+            <button id="zoomDropdownBtn" class="nav-btn zoom-dropdown-btn" onclick="toggleZoomMenu(event)" title="Ekranı büyüt veya küçült">
+                <span>🔍 Ekran: <span id="currentZoomBadge">100%</span></span>
+                <span id="zoomArrow" style="font-size: 10px; transition: transform 0.2s;">▼</span>
+            </button>
+            <div id="zoomDropdownMenu" class="zoom-dropdown-menu" style="display: none;">
+                <!-- Başlık ve Hızlı Stepper -->
+                <div class="zoom-menu-header">
+                    <span class="zoom-menu-title">🔍 Ekran Çözünürlüğü</span>
+                    <div class="zoom-stepper">
+                        <button type="button" class="zoom-step-btn" onclick="stepZoom(-10)" title="Küçült (-10%)">-</button>
+                        <span id="zoomStepVal" class="zoom-step-val">100%</span>
+                        <button type="button" class="zoom-step-btn" onclick="stepZoom(10)" title="Büyüt (+10%)">+</button>
+                    </div>
+                </div>
+
+                <!-- Canlı Kaydırma Çubuğu (Slider) -->
+                <div class="zoom-slider-container">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-bottom:5px; font-weight:600;">
+                        <span>Küçük (%70)</span>
+                        <span id="zoomSliderDisplay" style="color:#38bdf8; font-weight:800;">100%</span>
+                        <span>Dev (%200)</span>
+                    </div>
+                    <input type="range" id="zoomRangeSlider" min="70" max="200" step="5" value="100" oninput="handleZoomSliderInput(this.value)" class="zoom-range-input">
+                </div>
+
+                <!-- Hızlı Seçenekler (Grid) -->
+                <div class="zoom-presets-grid">
+                    <button type="button" class="zoom-preset-btn" data-zoom="80" onclick="applyGameZoom(80)">80%</button>
+                    <button type="button" class="zoom-preset-btn active" data-zoom="100" onclick="applyGameZoom(100)">100%</button>
+                    <button type="button" class="zoom-preset-btn" data-zoom="120" onclick="applyGameZoom(120)">120%</button>
+                    <button type="button" class="zoom-preset-btn" data-zoom="135" onclick="applyGameZoom(135)">135%</button>
+                    <button type="button" class="zoom-preset-btn" data-zoom="150" onclick="applyGameZoom(150)">150%</button>
+                    <button type="button" class="zoom-preset-btn" data-zoom="175" onclick="applyGameZoom(175)">175%</button>
+                    <button type="button" class="zoom-preset-btn" data-zoom="200" onclick="applyGameZoom(200)">200%</button>
+                </div>
+
+                <!-- Akıllı Aksiyonlar -->
+                <div class="zoom-menu-actions">
+                    <button type="button" class="zoom-action-btn zoom-action-fit" onclick="fitZoomToScreen()">
+                        <span>📐 Monitöre Otomatik Sığdır</span>
+                    </button>
+                    <button type="button" class="zoom-action-btn zoom-action-reset" onclick="applyGameZoom(100)">
+                        <span>🔄 Varsayılana Sıfırla (%100)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
         <button id="globalVoiceNavBtn" class="nav-btn" style="background: linear-gradient(135deg, #334155, #1e293b); display: flex; align-items: center; gap: 6px; font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); transition: all 0.2s;" onclick="toggleGlobalVoiceChat()" title="Canlı Sesli Sohbet (Klavyeden 'C' tuşuna basarak da konuşabilirsiniz)">
             <span id="globalVoiceIcon">🎤</span>
             <span id="globalVoiceText">Sesli Sohbet (C)</span>
         </button>
-        <button id="chatToggleBtn" class="nav-btn btn-chat" onclick="toggleChatPanel()">💬 Chat Kapat</button>
+        <button id="chatToggleBtn" class="nav-btn btn-chat" onclick="toggleChatPanel()">💬 Chat Paneli Kapat</button>
     </div>
 
     <!-- 2. LOGIN & REGISTER (GİRİŞ / KAYIT) EKRANI -->
@@ -176,7 +225,7 @@
                     <span id="chatChannelLabel">Oda</span>
                 </button>
                 <div style="flex: 1; position: relative; display: flex;">
-                    <input type="text" id="sideChatInput" maxlength="50" placeholder="🏠 Oda sohbetine yaz (maks 50)..." autocomplete="off" oninput="updateChatCharCounter(this)" style="width: 100%; padding: 8px 34px 8px 10px; border-radius: 6px; border: 1px solid rgba(45, 212, 191, 0.35); outline: none; font-size: 12.5px; background: rgba(30, 41, 59, 0.9); color: white;">
+                    <input type="text" id="sideChatInput" maxlength="50" placeholder="🏠 Oda sohbetine yaz (maks 50)..." autocomplete="off" oninput="updateChatCharCounter(this)" onkeydown="handleSideChatKeydown(event)" style="width: 100%; padding: 8px 34px 8px 10px; border-radius: 6px; border: 1px solid rgba(45, 212, 191, 0.35); outline: none; font-size: 12.5px; background: rgba(30, 41, 59, 0.9); color: white;">
                     <span id="chatCharCounter" style="position: absolute; right: 8px; top: 9px; font-size: 10px; color: #94a3b8; pointer-events: none; font-weight: bold;">50</span>
                 </div>
                 <button id="sideChatSendBtn" onclick="sendSideChat()" style="padding: 8px 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: transform 0.1s;">Gönder</button>
@@ -256,6 +305,26 @@
                 <!-- SOL KOLON: CANLI AVATAR ÖNİZLEME SAHNESİ & AION 2 SKİN SETLERİ -->
                 <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 10px;">
                     
+                    <!-- KARAKTER MODELİ SEÇİCİ (1. Karakter / 2. Karakter Eklemli) -->
+                    <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); padding: 10px; border-radius: 14px; border: 1.5px solid #f59e0b; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                            <span style="font-size: 11px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.8px; display:flex; align-items:center; gap:5px;">
+                                <span>🧬</span> Karakter Tipi
+                            </span>
+                            <span id="currentModelBadge" style="font-size: 10px; font-weight: 800; color: #34d399; background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+                                🚶 Karakter 1 (Klasik)
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="btnModelClassic" type="button" onclick="selectAvatarBodyModel('classic_2')" style="flex: 1; padding: 7px 6px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s; border: 1.5px solid #a7f3d0; background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                🚶 1. Karakter
+                            </button>
+                            <button id="btnModelKarakter2" type="button" onclick="selectAvatarBodyModel('karakter_2')" style="flex: 1; padding: 7px 6px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(30, 41, 59, 0.6); color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                🌟 2. Karakter (Eklemli)
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- AION 2 TARZI HIZLI SKİN SETLERİ (1 - 2 - 3) -->
                     <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); padding: 10px; border-radius: 14px; border: 1.5px solid #38bdf8; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.25);">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
@@ -288,24 +357,10 @@
                             <span id="previewFacingBadge" style="font-size: 10px; font-weight: 800; color: #38bdf8; background: rgba(15,23,42,0.7); padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(56,189,248,0.25); min-width: 74px; text-align: center;">Ön (Güney)</span>
                             <button id="rotatePreviewRightBtn" type="button" onclick="rotateAvatarPreview(1)" title="Sağa Döndür" style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">↷</button>
                         </div>
-
-                        <!-- AVATAR VÜCUT MODELİ SEÇİCİ (KLASİK vs 2.5D İZOMETRİK) -->
-                        <div style="margin-top: 10px; background: rgba(15, 23, 42, 0.75); padding: 8px 10px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);">
-                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #a78bfa; font-weight: 800; margin-bottom: 6px; text-align: center;">👤 Vücut & Avatar Modeli</div>
-                            <div style="display: flex; gap: 8px;">
-                                <button id="bodyModelBtnClassic2" type="button" onclick="selectAvatarBodyModel('classic_2')" style="flex: 1; padding: 8px 6px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s; border: 1px solid #34d399; background: linear-gradient(135deg, #10b981, #059669); color: white;">
-                                    🚶 Klasik
-                                </button>
-                                <button id="bodyModelBtnIsometric" type="button" onclick="selectAvatarBodyModel('sanalika_v2')" style="flex: 1; padding: 8px 6px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.15); background: rgba(30, 41, 59, 0.6); color: #94a3b8;">
-                                    🌟 2.5D İzometrik
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
                     <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; font-size: 12px; border: 1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; gap:6px;">
                         <div style="font-weight:bold; color:#cbd5e1; margin-bottom:2px;">✨ Üzerindekiler:</div>
-                        <div style="display:flex; justify-content:space-between;"><span>👤 Model:</span> <b id="currentModelBadge" style="color:#c084fc;">🚶 Klasik</b></div>
                         <div style="display:flex; justify-content:space-between;"><span>🧢 Şapka / Saç:</span> <b id="currentHatBadge" style="color:#38bdf8;">-</b></div>
                         <div style="display:flex; justify-content:space-between;"><span>🥸 Yüz / Sakal:</span> <b id="currentFaceBadge" style="color:#facc15;">-</b></div>
                         <div style="display:flex; justify-content:space-between;"><span>🎨 Ten Rengi:</span> <b id="currentSkinBadge" style="color:#fb923c;">-</b></div>
@@ -1145,6 +1200,31 @@
                     </div>
                 </div>
 
+                <!-- 📱 SANAL KUMANDA (JOYSTICK) TAŞIMA & KONUM AYARLARI -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="font-size: 13px; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 6px;">
+                            🕹️ Sanal Kumanda (Joystick) Konumu
+                        </label>
+                    </div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-bottom: 10px;">
+                        Kumandanın ekrandaki yerini seçebilir veya serbestçe sürükleyip istediğin yere bırakabilirsin (anlık hafızada saklanır, sunucuya yük bindirmez):
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        <button id="joyPresetBtn_bottom-right" type="button" onclick="setJoystickPreset('bottom-right')" style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid #60a5fa; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; font-size: 11.5px; font-weight: 800; cursor: pointer; transition: all 0.15s;">↘️ Sağ Alt (Varsayılan)</button>
+                        <button id="joyPresetBtn_bottom-left" type="button" onclick="setJoystickPreset('bottom-left')" style="padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(15,23,42,0.6); color: #94a3b8; font-size: 11.5px; cursor: pointer; transition: all 0.15s;">↙️ Sol Alt</button>
+                        <button id="joyPresetBtn_top-right" type="button" onclick="setJoystickPreset('top-right')" style="padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(15,23,42,0.6); color: #94a3b8; font-size: 11.5px; cursor: pointer; transition: all 0.15s;">↗️ Sağ Üst</button>
+                        <button id="joyPresetBtn_top-left" type="button" onclick="setJoystickPreset('top-left')" style="padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(15,23,42,0.6); color: #94a3b8; font-size: 11.5px; cursor: pointer; transition: all 0.15s;">↖️ Sol Üst</button>
+                    </div>
+                    <button id="joyPresetBtn_custom" type="button" onclick="startJoystickDragMode()" style="width: 100%; padding: 10px; border-radius: 10px; border: 1.5px solid #facc15; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2)); color: #facc15; font-weight: 800; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; transition: all 0.15s;">
+                        🖐️ Ekranda Serbest Taşı (Sürükle & Bırak)
+                    </button>
+                    <label style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; cursor: pointer;">
+                        <span style="font-size: 11px; color: #cbd5e1;">📱 Kumandayı Masaüstünde de Göster (PC)</span>
+                        <input type="checkbox" id="settingJoystickAlwaysShow" onchange="setJoystickAlwaysShow(this.checked)" style="width: 16px; height: 16px; accent-color: #f59e0b; cursor: pointer;">
+                    </label>
+                </div>
+
                 <!-- HESAP VE GÜVENLİK (ŞİFRE DEĞİŞTİR) -->
                 <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -1222,6 +1302,11 @@
                     </button>
                     <div class="bj-badge bj-spectator-badge" id="bjSpectatorCountBadge">👥 <b id="bjSpectatorCount">0</b></div>
                     <div class="bj-badge bj-money-badge">💰 <b id="bjUserMoney">1000</b> TL</div>
+                    <div class="in-game-zoom-ctrl" title="Oyun Ekranı Boyutu (Zoom)">
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(-10)" title="Küçült (−%10)">−</button>
+                        <span class="ig-zoom-badge" onclick="resetInGameZoom()" title="Tıkla: %100 Sıfırla">100%</span>
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(10)" title="Büyüt (+%10)">+</button>
+                    </div>
                     <button class="bj-close-btn" onclick="closeBlackjackModal()" title="Masadan Ayrıl" style="padding: 4px 10px; font-size: 12px; font-weight: 800; background: rgba(239,68,68,0.25); border: 1px solid #ef4444; color: #fca5a5; border-radius: 6px; cursor: pointer;">✕ Kapat</button>
                 </div>
             </div>
@@ -1232,7 +1317,7 @@
             </div>
 
             <!-- CASINO YEŞİL ÇUHA MASASI (VELVET GREEN FELT OVAL TABLE) -->
-            <div class="bj-felt-table">
+            <div class="bj-felt-table" id="bjModalBody" style="transform-origin: top center;">
                 <!-- Masa Damgası (Felt Stamp) -->
                 <div class="bj-felt-stamp">
                     <div class="stamp-line">BLACKJACK PAYS 3 TO 2</div>
@@ -1337,12 +1422,17 @@
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <button type="button" id="rouletteChatToggleBtn" onclick="toggleChatPanel(event)" style="padding: 4px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #0d9488, #0f766e); border: 1px solid #2dd4bf; color: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s;" title="Sohbet Panelini Aç / Kapat"><span>💬</span><span>Sohbet</span></button>
                     <div class="bj-badge bj-money-badge">💰 <b id="rouletteUserBalance">1000</b> TL</div>
+                    <div class="in-game-zoom-ctrl" title="Oyun Ekranı Boyutu (Zoom)">
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(-10)" title="Küçült (−%10)">−</button>
+                        <span class="ig-zoom-badge" onclick="resetInGameZoom()" title="Tıkla: %100 Sıfırla">100%</span>
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(10)" title="Büyüt (+%10)">+</button>
+                    </div>
                     <button class="bj-close-btn" onclick="closeRouletteModal()" title="Masadan Ayrıl">✕ Masadan Ayrıl</button>
                 </div>
             </div>
 
             <!-- Ana Oyun Alanı: Çark & Canlı Bahis Çuhası -->
-            <div class="roulette-main-area">
+            <div class="roulette-main-area" id="rouletteModalBody" style="transform-origin: top center;">
                 <!-- Sol Taraf: Çark & Kazanç Bildirimi -->
                 <div class="roulette-wheel-wrapper">
                     <canvas id="rouletteWheelCanvas" width="260" height="260"></canvas>
@@ -1480,12 +1570,17 @@
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <button type="button" id="slotChatToggleBtn" onclick="toggleChatPanel(event)" style="padding: 4px 10px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #0d9488, #0f766e); border: 1px solid #2dd4bf; color: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s;" title="Sohbet Panelini Aç / Kapat"><span>💬</span><span>Sohbet</span></button>
                     <div class="bj-badge bj-money-badge">💰 <b id="slotUserBalance">1000</b> TL</div>
+                    <div class="in-game-zoom-ctrl" title="Oyun Ekranı Boyutu (Zoom)">
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(-10)" title="Küçült (−%10)">−</button>
+                        <span class="ig-zoom-badge" onclick="resetInGameZoom()" title="Tıkla: %100 Sıfırla">100%</span>
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(10)" title="Büyüt (+%10)">+</button>
+                    </div>
                     <button class="bj-close-btn" onclick="closeSlotModal()" title="Kapat">✕ Kapat</button>
                 </div>
             </div>
 
             <!-- Çarklar & Mekanik Kasa Gövdesi -->
-            <div class="slot-body">
+            <div class="slot-body" id="slotModalBody" style="transform-origin: top center;">
                 <!-- 3 Çark Penceresi -->
                 <div class="slot-window">
                     <!-- Orta Kazanç Çizgisi (Laser Payline) -->
@@ -1596,12 +1691,20 @@
                     <span id="tableVoiceIcon">🎤</span>
                     <span id="tableVoiceText">Ses Aç</span>
                 </button>
+                <div class="in-game-zoom-ctrl" title="Oyun Ekranı Boyutu (Zoom)">
+                    <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(-10)" title="Küçült (−%10)">−</button>
+                    <span class="ig-zoom-badge" onclick="resetInGameZoom()" title="Tıkla: %100 Sıfırla">100%</span>
+                    <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(10)" title="Büyüt (+%10)">+</button>
+                </div>
                 <div class="game-window-controls" style="display: flex; align-items: center; gap: 6px; margin-left: 6px;">
                     <button type="button" class="game-win-btn game-win-min-btn" onclick="minimizeCurrentGame()" title="Oyunu Alta Al (Esc)">−</button>
                     <button type="button" class="game-win-btn game-win-leave-btn" onclick="promptLeaveCurrentGame()" title="Masadan Ayrıl">✕</button>
                 </div>
             </div>
         </div>
+
+        <!-- OYUN İÇERİK GÖVDESİ (ZOOM İZOLASYON ALANI - BAŞLIK SABİT KALIR) -->
+        <div id="gameModalBody" style="display: flex; flex-direction: column; width: 100%; transform-origin: top center;">
 
         <div id="spectatorBanner" style="display: none; background: #e67e22; color: white; padding: 4px 8px; border-radius: 6px; text-align: center; font-weight: bold; margin-bottom: 6px; font-size: 12px;">👁️ İzleyici Modu (Yancısın) - Oyuncuları izliyorsun</div>
         
@@ -1761,8 +1864,20 @@
 
         <!-- TAVLA ALANI -->
         <div id="tavlaArea" style="display: none;">
-            <h3 style="color: white; margin-top: 0; margin-bottom: 5px;">🎲 Klasik Tavla</h3>
-            <div id="tavlaStatus" style="color:white; font-size: 16px; margin-bottom:10px; font-weight:bold;">Zarlar Bekleniyor...</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">🎲</span>
+                    <span style="color: #facc15; font-weight: 900; font-size: 16px;">Klasik Tavla</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" id="tavlaOrientationBtn" onclick="toggleTavlaOrientation()" style="padding: 5px 12px; font-size: 12px; font-weight: 800; background: linear-gradient(135deg, #1e293b, #0f172a); border: 1.5px solid #f59e0b; color: #facc15; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); transition: all 0.15s;" title="Taş toplama yönünü değiştir (Sağ Alt / Sol Alt)">
+                        <span>Toplama Yönü:</span>
+                        <b id="tavlaOrientationBadge">↘️ Sağ Alt</b>
+                    </button>
+                    <button type="button" onclick="openTavlaOrientationModal(true)" style="padding: 5px 9px; font-size: 13px; font-weight: bold; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #cbd5e1; border-radius: 8px; cursor: pointer; transition: all 0.15s;" title="Yön Seçim Menüsünü Aç">⚙️</button>
+                </div>
+            </div>
+            <div id="tavlaStatus" style="color:white; font-size: 15px; margin-bottom:10px; font-weight:bold;">Zarlar Bekleniyor...</div>
             
             <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-bottom:12px;">
                 <button id="tavlaRollBtn" onclick="handleTavlaRoll()" style="display:none; padding:10px 22px; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border:none; border-radius:8px; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 4px 12px rgba(245,158,11,0.4);">🎲 Zar At</button>
@@ -2179,6 +2294,8 @@
 
         </div>
 
+        </div><!-- /#gameModalBody -->
+
     </div>
 
     <!-- 4.1 XOX (TİC-TAC-TOE) DÜELLO MODALI -->
@@ -2194,6 +2311,11 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button type="button" id="xoxChatToggleBtn" onclick="toggleChatPanel(event)" style="padding: 4px 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #0d9488, #0f766e); border: 1px solid #2dd4bf; color: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(13,148,136,0.3); transition: all 0.15s;" title="Sohbet Panelini Aç / Kapat"><span>💬</span><span>Sohbet</span></button>
+                    <div class="in-game-zoom-ctrl" title="Oyun Ekranı Boyutu (Zoom)">
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(-10)" title="Küçült (−%10)">−</button>
+                        <span class="ig-zoom-badge" onclick="resetInGameZoom()" title="Tıkla: %100 Sıfırla">100%</span>
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(10)" title="Büyüt (+%10)">+</button>
+                    </div>
                     <div class="game-window-controls" style="display: flex; align-items: center; gap: 6px;">
                         <button type="button" class="game-win-btn game-win-min-btn" onclick="minimizeCurrentGame()" title="Oyunu Alta Al (Esc)">−</button>
                         <button type="button" class="game-win-btn game-win-leave-btn" onclick="promptLeaveCurrentGame()" title="Masadan Ayrıl">✕</button>
@@ -2201,7 +2323,7 @@
                 </div>
             </div>
 
-            <div style="padding: 16px 20px;">
+            <div id="xoxModalBody" style="padding: 16px 20px; transform-origin: top center;">
                 <!-- Mod Seçimi (Tek Kişilik / 2 Kişilik) -->
                 <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 12px;">
                     <button type="button" class="xox-mode-btn active" data-mode="ai" onclick="setXoxMode('ai')">🤖 Yapay Zeka</button>
@@ -2264,6 +2386,11 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button type="button" id="amiralChatToggleBtn" onclick="toggleChatPanel(event)" style="padding: 4px 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #0d9488, #0f766e); border: 1px solid #2dd4bf; color: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(13,148,136,0.3); transition: all 0.15s;" title="Sohbet Panelini Aç / Kapat"><span>💬</span><span>Sohbet</span></button>
+                    <div class="in-game-zoom-ctrl" title="Oyun Ekranı Boyutu (Zoom)">
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(-10)" title="Küçült (−%10)">−</button>
+                        <span class="ig-zoom-badge" onclick="resetInGameZoom()" title="Tıkla: %100 Sıfırla">100%</span>
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(10)" title="Büyüt (+%10)">+</button>
+                    </div>
                     <div class="game-window-controls" style="display: flex; align-items: center; gap: 6px;">
                         <button type="button" class="game-win-btn game-win-min-btn" onclick="minimizeCurrentGame()" title="Oyunu Alta Al (Esc)">−</button>
                         <button type="button" class="game-win-btn game-win-leave-btn" onclick="promptLeaveCurrentGame()" title="Masadan Ayrıl">✕</button>
@@ -2271,7 +2398,7 @@
                 </div>
             </div>
 
-            <div style="padding: 14px 18px; max-height: 85vh; overflow-y: auto;">
+            <div id="amiralModalBody" style="padding: 14px 18px; max-height: 85vh; overflow-y: auto; transform-origin: top center;">
                 
                 <!-- Durum ve Toast Bildirimleri -->
                 <div id="amiralStatusBanner" style="text-align: center; font-size: 14px; font-weight: 800; min-height: 22px; margin-bottom: 8px;">
@@ -2351,6 +2478,38 @@
         </div>
     </div>
 
+    <!-- TAVLA TOPLAMA YÖNÜ SEÇİM MODALI -->
+    <div id="tavlaOrientationModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 7, 18, 0.9); backdrop-filter: blur(8px); z-index: 31000; justify-content: center; align-items: center; color: white;">
+        <div style="background: linear-gradient(135deg, #1e293b, #0f172a); border: 2px solid #f59e0b; border-radius: 18px; padding: 22px 26px; max-width: 480px; width: 92%; box-shadow: 0 25px 60px rgba(0,0,0,0.9), 0 0 30px rgba(245,158,11,0.25); text-align: center; animation: overlayFadeIn 0.2s ease;">
+            <div style="font-size: 32px; margin-bottom: 6px;">🎲</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 900; color: #facc15; letter-spacing: 0.5px;">Taşları Nereye Toplamak İstersiniz?</h3>
+            <p style="margin: 0 0 16px 0; font-size: 13px; color: #94a3b8; line-height: 1.4;">
+                Tavla tahtası seçiminize göre <b>simetrik olarak ayarlanacaktır</b>. Rakibiniz kendi tercihine göre, siz de kendi tercihinize göre oynarsınız.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <!-- Seçenek 1: Sağ Alt (Geleneksel) -->
+                <div onclick="setTavlaOrientation('sag_alt')" class="tavla-orient-card" style="cursor: pointer; background: rgba(245,158,11,0.08); border: 2px solid #f59e0b; border-radius: 14px; padding: 14px 10px; transition: all 0.2s; text-align: center;" onmouseover="this.style.background='rgba(245,158,11,0.18)'; this.style.transform='scale(1.02)';" onmouseout="this.style.background='rgba(245,158,11,0.08)'; this.style.transform='scale(1)';">
+                    <div style="font-size: 28px; margin-bottom: 6px;">↘️</div>
+                    <div style="font-weight: 900; font-size: 15px; color: #facc15; margin-bottom: 4px;">Sağ Alt</div>
+                    <div style="font-size: 11px; color: #cbd5e1; line-height: 1.3;">Saat yönünde ilerler, sağ altta toplanır (Geleneksel)</div>
+                </div>
+
+                <!-- Seçenek 2: Sol Alt (Standart) -->
+                <div onclick="setTavlaOrientation('sol_alt')" class="tavla-orient-card" style="cursor: pointer; background: rgba(56,189,248,0.08); border: 2px solid #38bdf8; border-radius: 14px; padding: 14px 10px; transition: all 0.2s; text-align: center;" onmouseover="this.style.background='rgba(56,189,248,0.18)'; this.style.transform='scale(1.02)';" onmouseout="this.style.background='rgba(56,189,248,0.08)'; this.style.transform='scale(1)';">
+                    <div style="font-size: 28px; margin-bottom: 6px;">↙️</div>
+                    <div style="font-weight: 900; font-size: 15px; color: #38bdf8; margin-bottom: 4px;">Sol Alt</div>
+                    <div style="font-size: 11px; color: #cbd5e1; line-height: 1.3;">Saat yönünün tersinde ilerler, sol altta toplanır</div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 12px; color: #94a3b8; user-select: none;">
+                <input type="checkbox" id="tavlaRememberChoice" checked style="accent-color: #f59e0b; cursor: pointer;">
+                <label for="tavlaRememberChoice" style="cursor: pointer;">Bu tercihimi hatırla (Oyun içinden de değiştirebilirsiniz)</label>
+            </div>
+        </div>
+    </div>
+
     <!-- 4.3 SATRANÇ (CHESS) MODALI -->
     <div id="chessModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 7, 18, 0.92); z-index: 28000; justify-content: center; align-items: center; color: white; backdrop-filter: blur(12px); padding: 12px; box-sizing: border-box;">
         <div id="chessModalContent" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(24, 34, 52, 0.96)); border: 1.5px solid rgba(250, 204, 21, 0.4); border-radius: 18px; width: 100%; max-width: 580px; box-shadow: 0 25px 65px rgba(0, 0, 0, 0.9), 0 0 30px rgba(250, 204, 21, 0.15); overflow: hidden; display: flex; flex-direction: column; position: relative;">
@@ -2365,6 +2524,11 @@
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button type="button" onclick="toggleBoardFlip()" style="padding: 4px 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #475569, #334155); border: 1px solid #64748b; color: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Tahtayı Döndür (Çevir)"><span>🔄</span><span>Döndür</span></button>
                     <button type="button" id="chessChatToggleBtn" onclick="toggleChatPanel(event)" style="padding: 4px 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #0d9488, #0f766e); border: 1px solid #2dd4bf; color: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(13,148,136,0.3);" title="Sohbet Panelini Aç / Kapat"><span>💬</span><span>Sohbet</span></button>
+                    <div class="in-game-zoom-ctrl" title="Oyun Ekranı Boyutu (Zoom)">
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(-10)" title="Küçült (−%10)">−</button>
+                        <span class="ig-zoom-badge" onclick="resetInGameZoom()" title="Tıkla: %100 Sıfırla">100%</span>
+                        <button type="button" class="ig-zoom-btn" onclick="stepInGameZoom(10)" title="Büyüt (+%10)">+</button>
+                    </div>
                     <div class="game-window-controls" style="display: flex; align-items: center; gap: 6px;">
                         <button type="button" class="game-win-btn game-win-min-btn" onclick="minimizeCurrentGame()" title="Oyunu Alta Al (Esc)">−</button>
                         <button type="button" class="game-win-btn game-win-leave-btn" onclick="promptLeaveCurrentGame()" title="Masadan Ayrıl">✕</button>
@@ -2373,7 +2537,7 @@
             </div>
 
             <!-- Ana İçerik -->
-            <div style="padding: 12px 16px; display: flex; flex-direction: column; align-items: center; position: relative;">
+            <div id="chessModalBody" style="padding: 12px 16px; display: flex; flex-direction: column; align-items: center; position: relative; transform-origin: top center; width: 100%; box-sizing: border-box;">
                 
                 <!-- İzleyici Bilgilendirme Rozeti -->
                 <div id="chessSpectatorBanner" style="display: none; width: 100%; justify-content: center; align-items: center; gap: 8px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; padding: 4px 10px; margin-bottom: 8px; font-size: 11px; font-weight: 800; color: #facc15;">
@@ -2624,15 +2788,54 @@
     <!-- 5. METAVERSE OYUN ALANI (CANVAS) -->
     <canvas id="gameCanvas" width="800" height="500" style="background: #2ecc71; display: block; margin: 0 auto; border: 2px solid #27ae60;"></canvas>
 
-    <!-- SOSYAL EYLEM BUTONLARI -->
-    <div id="socialActionBar" style="display: flex; gap: 10px; margin-top: 14px; justify-content: center; flex-wrap: wrap;">
-        <button id="btnFishAction" onclick="triggerFishing()" style="display: none; padding: 9px 16px; background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);">🎣 Oltayı At (Balık Tut)</button>
-        <button id="btnSwanBoatAction" onclick="handleRentSwanBoat()" style="display: none; padding: 9px 16px; background: linear-gradient(135deg, #f43f5e, #be123c); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);">🦢 Kuğu Deniz Bisikleti Kirala (20 TL)</button>
-        <button id="btnEditHouseFurniture" onclick="toggleHouseEditMode()" style="display: none; padding: 9px 16px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);">🛋️ Evi Düzenle</button>
-        <button id="btnLeaveHouseAction" onclick="changeRoom('sokak')" style="display: none; padding: 9px 16px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);">🚪 Meydana Çık</button>
-        <button onclick="triggerPlayerAction('wave')" style="padding: 9px 16px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">👋 El Salla</button>
-        <button onclick="triggerPlayerAction('dance')" style="padding: 9px 16px; background: linear-gradient(135deg, #ec4899, #db2777); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);">💃 Dans Et</button>
-        <button onclick="triggerPlayerAction('clap')" style="padding: 9px 16px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">👏 Alkışla</button>
+    <!-- 6. ORTALANMIŞ ALT OYUN KONTROL VE HIZLI CHAT ÇUBUĞU (BOTTOM HUD) -->
+    <div id="gameBottomControlBar" style="max-width: 800px; width: 100%; margin: 8px auto 14px auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; box-sizing: border-box; padding: 0 4px; transition: max-width 0.25s ease;">
+        
+        <!-- SOL ALAN: BİNEK & ARAÇ KONTROLLERİ (Kuğu, Binek Atı, Evi Düzenle vb.) - SOLA YASLI -->
+        <div id="bottomMountArea" style="display: flex; align-items: center; gap: 8px; flex: 0 0 auto; justify-content: flex-start;">
+            <button id="btnSwanBoatAction" onclick="handleRentSwanBoat()" style="display: none; padding: 6px 11px; background: linear-gradient(135deg, #f43f5e, #be123c); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 11.5px; cursor: pointer; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4); white-space: nowrap; flex-shrink: 0;">🦢 Kuğu Kirala (20 TL)</button>
+            <button id="btnEditHouseFurniture" onclick="toggleHouseEditMode()" style="display: none; padding: 6px 11px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 11.5px; cursor: pointer; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); white-space: nowrap; flex-shrink: 0;">🛋️ Evi Düzenle</button>
+            <button id="btnLeaveHouseAction" onclick="changeRoom('sokak')" style="display: none; padding: 6px 11px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 11.5px; cursor: pointer; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); white-space: nowrap; flex-shrink: 0;">🚪 Meydana Çık</button>
+
+            <!-- BİNEK ATI AKTİF SÜRE SAYACI VE BİN/İN BUTONU (KOMPAKT) -->
+            <div id="horseMountActiveBadge" style="display: none; background: linear-gradient(135deg, #f59e0b, #b45309); border: 1.5px solid #fef08a; border-radius: 8px; padding: 4px 8px; color: white; font-weight: 800; font-size: 12px; box-shadow: 0 4px 12px rgba(245,158,11,0.4); align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0;">
+                <span style="font-size: 15px;">🐎</span>
+                <span id="horseMountCountdown" style="color: #fef08a; font-size: 12px; font-weight: 900;">05:00</span>
+                <button id="btnHorseMountToggle" type="button" onclick="toggleHorseMountAction()" style="background: #dc2626; border: 1px solid #f87171; color: #ffffff; font-weight: 800; font-size: 11px; padding: 2px 7px; border-radius: 5px; cursor: pointer; transition: all 0.15s; outline: none; white-space: nowrap;">Attan İn</button>
+            </div>
+        </div>
+
+        <!-- ORTA ALAN: HIZLI CHAT ÇUBUĞU - SAĞA DOĞRU BÜYÜTÜLMÜŞ -->
+        <div id="bottomChatArea" style="flex: 1 1 480px; max-width: 500px; width: 100%; display: flex; justify-content: center; min-width: 220px; margin-left: auto; margin-right: 14px;">
+            <div style="display: flex; width: 100%; gap: 6px; position: relative;">
+                <input type="text" id="bottomChatInput" maxlength="50" onkeydown="handleBottomChatKeydown(event)" placeholder="💬 Buraya yaz ve Enter'a bas..." autocomplete="off" style="width: 100%; min-width: 0; padding: 7px 11px; border-radius: 8px; border: 1.5px solid rgba(45, 212, 191, 0.45); outline: none; font-size: 13px; background: rgba(15, 23, 42, 0.92); color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: border-color 0.2s;">
+                <button id="bottomChatSendBtn" onclick="sendBottomChat()" style="padding: 7px 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12.5px; white-space: nowrap; box-shadow: 0 4px 12px rgba(16,185,129,0.35); flex-shrink: 0; transition: transform 0.1s;">Gönder</button>
+            </div>
+        </div>
+
+        <!-- SAĞ ALAN: TEK EYLEM BUTONU & AÇILIR MENÜ - SAĞA YASLI -->
+        <div id="bottomEmoteArea" style="position: relative; display: flex; justify-content: flex-end; align-items: center; flex: 0 0 auto;">
+            <div id="emoteDropdownMenu" style="display: none; position: absolute; bottom: 44px; right: 0; background: rgba(15, 23, 42, 0.96); border: 1.5px solid rgba(99, 102, 241, 0.5); border-radius: 12px; padding: 6px; box-shadow: 0 12px 30px rgba(0,0,0,0.7), 0 0 20px rgba(99,102,241,0.25); backdrop-filter: blur(10px); flex-direction: column; gap: 4px; z-index: 20000; animation: popIn 0.15s ease-out; min-width: 140px;">
+                <button type="button" onclick="triggerEmoteAction('wave')" style="padding: 8px 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: white; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-align: left; transition: all 0.15s;">
+                    <span>👋</span> <span>El Salla</span>
+                </button>
+                <button type="button" onclick="triggerEmoteAction('dance')" style="padding: 8px 12px; background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.4); color: white; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-align: left; transition: all 0.15s;">
+                    <span>💃</span> <span>Dans Et</span>
+                </button>
+                <button type="button" onclick="triggerEmoteAction('clap')" style="padding: 8px 12px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: white; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-align: left; transition: all 0.15s;">
+                    <span>👏</span> <span>Alkışla</span>
+                </button>
+                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 2px 0;"></div>
+                <button type="button" onclick="toggleAvatarModelQuick()" style="padding: 8px 12px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: white; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-align: left; transition: all 0.15s;">
+                    <span>🧬</span> <span>Model Değiştir</span>
+                </button>
+            </div>
+
+            <button id="btnEmoteMenuToggle" type="button" onclick="toggleEmoteMenu(event)" style="padding: 7px 12px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4); white-space: nowrap; flex-shrink: 0; transition: transform 0.1s;">
+                <span>🎭 Eylemler</span>
+                <span id="emoteMenuArrow" style="font-size: 9px; transition: transform 0.15s;">▲</span>
+            </button>
+        </div>
     </div>
 
     <!-- BALIK TUTMA GERİ SAYIM PANELİ (SAHİL) -->
@@ -2708,13 +2911,7 @@
 
     <!-- MOBİL EKRAN D-PAD KONTROLLERİ -->
     
-    <!-- BİNEK ATI AKTİF SÜRE SAYACI ROZETİ (2X HIZ) -->
-    <div id="horseMountActiveBadge" style="display: none; position: fixed; top: 75px; left: 20px; z-index: 15000; background: linear-gradient(135deg, #f59e0b, #b45309); border: 2px solid #fef08a; border-radius: 12px; padding: 7px 16px; color: white; font-weight: 800; font-size: 13px; box-shadow: 0 6px 20px rgba(245,158,11,0.5); align-items: center; gap: 8px;">
-        <span style="font-size: 18px;">🐎</span>
-        <span>Binek Atı:</span>
-        <span id="horseMountCountdown" style="color: #fef08a; font-size: 15px; font-weight: 900;">05:00</span>
-        <span style="font-size: 10px; background: rgba(0,0,0,0.35); padding: 2px 6px; border-radius: 6px; color: #86efac; font-weight: 900;">2X HIZ</span>
-    </div>
+
 
 
     <!-- GANYAN BAYİİ CANLI DUYURU & BİLDİRİM TOASTI -->
@@ -2777,21 +2974,44 @@
         </div>
     </div>
 
+    <!-- GENEL OYUN İÇİ UYARI VE BİLGİLENDİRME POP-UP MODALI (SİTE ALERT YERİNE) -->
+    <div id="inGameAlertModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 10, 20, 0.86); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(8px); padding: 14px; box-sizing: border-box;">
+        <div style="background: linear-gradient(180deg, #1e293b, #0f172a); border: 2.5px solid #f59e0b; border-radius: 22px; width: 92%; max-width: 430px; padding: 26px 22px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 30px rgba(245,158,11,0.35); animation: popIn 0.22s ease-out; position: relative;">
+            <button onclick="closeInGameAlert()" style="position: absolute; top: 12px; right: 14px; background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; font-weight: bold; padding: 4px 8px; border-radius: 6px; transition: color 0.15s;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#94a3b8'">✕</button>
+            <div id="inGameAlertIcon" style="font-size: 52px; margin-bottom: 8px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">⚠️</div>
+            <h3 id="inGameAlertTitle" style="color: #fde047; font-size: 21px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 0.3px;">Bildirim</h3>
+            <div id="inGameAlertMessage" style="color: #e2e8f0; font-size: 14px; line-height: 1.6; margin: 0 0 22px 0; word-break: break-word; text-shadow: 0 1px 3px rgba(0,0,0,0.4);">
+                Mesaj içeriği
+            </div>
+            <div style="display: flex; justify-content: center;">
+                <button id="inGameAlertBtn" onclick="closeInGameAlert()" style="min-width: 150px; padding: 11px 28px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 12px; font-weight: 900; font-size: 14.5px; cursor: pointer; box-shadow: 0 4px 16px rgba(16,185,129,0.45); transition: transform 0.1s;">
+                    Tamam
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- BİNEK ATI KİRALAMA ONAY MODALI (200 TL / 5 DAKİKA) -->
     <div id="horseRentalModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 10, 20, 0.88); z-index: 28000; justify-content: center; align-items: center; color: white; backdrop-filter: blur(8px); padding: 14px; box-sizing: border-box;">
         <div style="background: linear-gradient(180deg, #1e293b, #0f172a); border: 3px solid #f59e0b; border-radius: 22px; width: 92%; max-width: 440px; padding: 26px; text-align: center; box-shadow: 0 20px 60px rgba(245,158,11,0.4); animation: popIn 0.25s ease-out;">
-            <div style="font-size: 56px; margin-bottom: 6px;">🐎</div>
-            <h3 style="color: #fde047; font-size: 22px; font-weight: 900; margin: 0 0 6px 0;">Şahlanan Asil Binek Atı</h3>
+            <div style="font-size: 58px; margin-bottom: 6px; filter: drop-shadow(0 6px 14px rgba(245,158,11,0.5));">⚡🐎</div>
+            <h3 style="color: #fde047; font-size: 22px; font-weight: 900; margin: 0 0 6px 0;">Şahlanan Asil Kraliyet Atı</h3>
             <p style="color: #cbd5e1; font-size: 13px; line-height: 1.5; margin: 0 0 16px 0;">
-                Seyis Dursun'un yetiştirdiği rüzgar gibi koşan binek atını kirala!<br>
+                Seyis Dursun'un yetiştirdiği 4 bacaklı canlı dörtnal koşan binek atını kirala!<br>
                 <b style="color: #38bdf8;">5 dakika boyunca</b> tüm mekanlarda <b style="color: #fde047;">2 KAT HIZLA</b> dörtnal koşturacaksın!
             </p>
-            <div style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; border-radius: 10px; padding: 10px; color: #34d399; font-weight: 900; font-size: 16px; margin-bottom: 18px;">
-                Kira Ücreti: 200 TL (5 Dakika)
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 10px; margin-bottom: 16px; text-align: left; font-size: 11.5px; color: #fef08a; line-height: 1.6;">
+                ✨ <b>Özellikler:</b><br>
+                • Canlı 4 bacaklı akıcı dörtnal koşu animasyonu<br>
+                • Altın alın tacı & madalyonlu zırh göğüslüğü<br>
+                • Altın halkalı örgülü yele ve bordo şabrack
+            </div>
+            <div id="horseRentalPriceBox" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; border-radius: 10px; padding: 10px; color: #34d399; font-weight: 900; font-size: 15px; margin-bottom: 18px;">
+                💰 Kira Ücreti: 200 TL (5 Dakika / 2 KAT HIZ)
             </div>
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="submitRentHorse()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.4);">
-                    🐎 Kirala (200 TL)
+                <button id="btnSubmitRentHorse" onclick="submitRentHorse()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.4);">
+                    🐎 200 TL'ye Kirala ve Bin
                 </button>
                 <button onclick="closeHorseRentalModal()" style="padding: 12px 20px; background: #475569; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">
                     Vazgeç
@@ -3226,14 +3446,15 @@
         var socket = io();
         window.socket = socket;
     </script>
-    <script src="js/economyPrices.js?v=3"></script>
+    <script src="js/economyPrices.js?v=4"></script>
     <script src="js/audio.js?v=4"></script>
     <script src="js/authUI.js?v=2"></script>
-    <script src="js/chatBubbles.js?v=3"></script>
-    <script src="js/wardrobe.js?v=7"></script>
+    <script src="js/chatBubbles.js?v=4"></script>
+    <script src="js/wardrobe.js?v=9"></script>
     <script src="js/renderers/swanBoatRenderer.js?v=2"></script>
-    <script src="js/renderers/horseMountRenderer.js?v=1"></script>
-    <script src="js/avatarRenderer.js?v=8"></script>
+    <script src="js/renderers/horseMountRenderer.js?v=5"></script>
+    <script src="js/renderers/karakter2Renderer.js?v=8"></script>
+    <script src="js/avatarRenderer.js?v=12"></script>
     <script src="js/worldRenderer.js?v=2"></script>
     <script src="js/renderers/renderSahil.js?v=1"></script>
     <script src="js/renderers/renderCadde.js?v=1"></script>
@@ -3252,21 +3473,21 @@
     <script src="js/gameMenusUI.js?v=2"></script>
     <script src="js/fishing.js?v=3"></script>
     <script src="js/adminPanel.js?v=2"></script>
-    <script src="js/mobileControls.js?v=2"></script>
-    <script src="js/social.js?v=3"></script>
+    <script src="js/mobileControls.js?v=3"></script>
+    <script src="js/social.js?v=4"></script>
     <script src="js/onlinePlayers.js?v=1"></script>
     <script src="js/furnitureDrawers.js?v=2"></script>
-    <script src="js/housing.js?v=4"></script>
+    <script src="js/housing.js?v=5"></script>
     <script src="js/billboardAd.js?v=2"></script>
     <script src="js/cocktailBar.js?v=2"></script>
     <script src="js/kiraathaneBar.js?v=1"></script>
-    <script src="js/main.js?v=7"></script>
+    <script src="js/main.js?v=9"></script>
     <script src="js/fatherPet.js?v=2"></script>
     <script src="js/renderers/tfmMouseRenderer.js?v=4"></script>
-    <script src="js/petShop.js?v=5"></script>
+    <script src="js/petShop.js?v=6"></script>
     <script src="js/batak.js?v=2"></script>
     <script src="js/billiard.js?v=2"></script>
-    <script src="js/tavla.js?v=3"></script>
+    <script src="js/tavla.js?v=4"></script>
     <script src="js/okey101.js?v=3"></script>
     <script src="js/blackjack.js?v=2"></script>
     <script src="js/roulette.js?v=2"></script>

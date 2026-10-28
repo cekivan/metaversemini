@@ -263,7 +263,7 @@ function openUpdatesModal() {
     if (modal) {
         modal.style.display = 'flex';
         if (typeof playSound === 'function') {
-            try { playSound('pop'); } catch(e) {}
+            try { playSound('pop'); } catch (e) { }
         }
     }
 }

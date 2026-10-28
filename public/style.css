@@ -96,6 +96,260 @@ body {
     transform: translateX(4px);
 }
 
+/* EKRAN ZOOM / ÇÖZÜNÜRLÜK KONTROLÜ STİLLERİ */
+.zoom-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.zoom-dropdown-btn {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.zoom-dropdown-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.55);
+    filter: brightness(1.1);
+}
+
+.zoom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 270px;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8), 0 0 20px rgba(14, 165, 233, 0.2);
+    backdrop-filter: blur(16px);
+    z-index: 10050;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+    animation: popIn 0.18s ease-out;
+}
+
+.zoom-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zoom-menu-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.zoom-stepper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 2px 4px;
+}
+
+.zoom-step-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-weight: 900;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.zoom-step-btn:hover {
+    background: rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+}
+
+.zoom-step-btn:active {
+    transform: scale(0.92);
+}
+
+.zoom-step-val {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #f8fafc;
+    min-width: 38px;
+    text-align: center;
+}
+
+.zoom-slider-container {
+    padding: 4px 2px 6px 2px;
+}
+
+.zoom-range-input {
+    width: 100%;
+    accent-color: #0284c7;
+    cursor: pointer;
+    height: 6px;
+    border-radius: 3px;
+    background: #334155;
+    outline: none;
+}
+
+.zoom-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+}
+
+.zoom-preset-btn {
+    padding: 6px 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 7px;
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.zoom-preset-btn:hover {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+    transform: translateY(-1px);
+}
+
+.zoom-preset-btn.active {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    border-color: #38bdf8;
+    color: white;
+    font-weight: 800;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.zoom-menu-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zoom-action-btn {
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+}
+
+.zoom-action-fit {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: white;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+}
+
+.zoom-action-fit:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.45);
+}
+
+.zoom-action-reset {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #cbd5e1;
+}
+
+.zoom-action-reset:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: white;
+}
+
+/* OYUN İÇİ ZOOM KONTROLÜ (IN-GAME MODAL ZOOM) */
+.in-game-zoom-ctrl {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 7px;
+    padding: 2px 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.ig-zoom-btn {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    line-height: 1;
+    padding: 0;
+}
+
+.ig-zoom-btn:hover {
+    background: rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+    transform: scale(1.1);
+}
+
+.ig-zoom-btn:active {
+    transform: scale(0.9);
+}
+
+.ig-zoom-badge {
+    font-size: 11px;
+    font-weight: 800;
+    color: #38bdf8;
+    min-width: 36px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0 2px;
+    transition: color 0.15s;
+}
+
+.ig-zoom-badge:hover {
+    color: #7dd3fc;
+    text-decoration: underline;
+}
+
 .emoji-quick-btn {
     background: rgba(255, 255, 255, 0.12);
     border: none;
@@ -120,7 +374,7 @@ body {
 /* 2. OYUN CANVAS */
 #gameCanvas { 
     width: 800px;
-    max-width: 96vw;
+    max-width: 98vw;
     height: auto;
     aspect-ratio: 800 / 500;
     display: block;
@@ -134,13 +388,18 @@ body {
     transform: translateZ(0);
     backface-visibility: hidden;
     image-rendering: auto;
-    transition: width 0.3s ease, aspect-ratio 0.3s ease;
+    transition: none;
 }
 
 #gameCanvas.wide-screen {
     width: 1000px;
-    max-width: 96vw;
+    max-width: 98vw;
     aspect-ratio: 1000 / 625;
+}
+
+#gameCanvas.wide-screen ~ #gameBottomControlBar,
+#gameBottomControlBar.wide-screen {
+    max-width: 1000px;
 }
 
 /* Modal Pop-In & Fade Animations */
@@ -1519,6 +1778,23 @@ body {
     margin: 4px 0;
 }
 
+/* Tavla Yön Seçim Kartları & Simetrik Düzen */
+.tavla-orient-card {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+}
+.tavla-orient-card:active {
+    transform: scale(0.97) !important;
+}
+.tavla-layout-sag .home-quadrant {
+    background: rgba(250, 204, 21, 0.05);
+    border-radius: 4px;
+}
+.tavla-layout-sol .home-quadrant {
+    background: rgba(56, 189, 248, 0.05);
+    border-radius: 4px;
+}
+
 .borne-box-title {
     font-size: 10px;
     font-weight: 800;
@@ -1776,7 +2052,8 @@ body {
     position: fixed;
     /* Oyun ekranına yakın, telefonun taa en altında kaybolmayan ergonomik konum */
     bottom: clamp(65px, 14vh, 160px);
-    left: clamp(16px, 4vw, 40px);
+    right: clamp(16px, 4vw, 40px);
+    left: auto;
     z-index: 12000;
     width: 130px;
     height: 130px;

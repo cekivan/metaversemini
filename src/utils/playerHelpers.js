@@ -11,7 +11,7 @@ const playerTeaTimers = {};
 function getPlayersInRoom(players, roomName) {
     let roomPlayers = {};
     for (let id in players) {
-        if (players[id].room === roomName) roomPlayers[id] = players[id];
+        if (players[id] && players[id].room === roomName) roomPlayers[id] = players[id];
     }
     return roomPlayers;
 }
@@ -134,6 +134,8 @@ function getAdminOnlineUsers(players) {
     for (let sid in players) {
         let p = players[sid];
         if (!p || !p.name) continue;
+        // Botlar admin panelinde asla listelenmez
+        if (p.isBot || sid.startsWith('bot_') || (typeof p.name === 'string' && p.name.startsWith('🤖'))) continue;
 
         let uData = dataManager.persistentData.users[p.name] || {};
         let uMoney = uData.money !== undefined ? uData.money : (p.money || 0);

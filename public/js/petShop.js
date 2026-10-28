@@ -108,15 +108,8 @@ window.requestBuyPet = requestBuyPet;
         }
     });
 
-    // Yoldaş konuştuğunda
-    s.on('companionPetSpeak', (data) => {
-        if (!data) return;
-        const pet = (data.ownerId && window.activeCompanionPets[data.ownerId]) || (data.petId && window.activeCompanionPets[data.petId]);
-        if (pet) {
-            pet.speech = data.speech;
-            pet.speechUntil = Date.now() + 6000;
-        }
-    });
+    // Yoldaş konuşması (Kullanıcı talebiyle kaldırıldı)
+    s.on('companionPetSpeak', (data) => {});
 
     // Pet süresi dolduğunda
     s.on('companionPetExpired', (data) => {
@@ -235,19 +228,6 @@ function drawSingleCompanionPet(ctx, pet, x, y, now) {
         ctx.fillText(pet.emoji || '🐾', x, y - 12);
     }
 
-    if (pet.speech && pet.speechUntil > now) {
-        ctx.font = '12px sans-serif';
-        const text = String(pet.speech).slice(0, 60);
-        const width = Math.min(220, Math.max(70, ctx.measureText(text).width + 20));
-        const bubbleX = hasDetailedRenderer ? -width / 2 : x - width / 2;
-        const bubbleY = hasDetailedRenderer ? -44 : y - 52;
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-        ctx.beginPath();
-        ctx.roundRect(bubbleX, bubbleY, width, 28, 8);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(text, hasDetailedRenderer ? 0 : x, bubbleY + 14, width - 12);
-    }
     ctx.restore();
 }
 

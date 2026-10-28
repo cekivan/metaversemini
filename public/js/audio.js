@@ -32,6 +32,7 @@ window.getAudioSettings = () => ({ sfx: sfxVolume, music: musicVolume });
 // Pre-generated SFX Noise Buffers (Performans & Sıfır GC Havuzlama)
 let cardNoiseBuffer = null;
 let splashNoiseBuffer = null;
+let sandNoiseBuffer = null;
 
 function initNoiseBuffers() {
     if (!audioCtx) return;
@@ -57,6 +58,26 @@ function initNoiseBuffers() {
             if (sData) {
                 for (let i = 0; i < sSize; i++) {
                     sData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sSize * 0.35));
+                }
+            }
+        }
+
+        // Sahil kumu granüler ezilme tamponu (0.17s) - Gerçekçi kuru kum sürtünmesi
+        let sandSize = Math.floor(sampleRate * 0.17);
+        sandNoiseBuffer = audioCtx.createBuffer(1, sandSize, sampleRate);
+        if (sandNoiseBuffer && typeof sandNoiseBuffer.getChannelData === 'function') {
+            let sndData = sandNoiseBuffer.getChannelData(0);
+            if (sndData) {
+                let lastB = 0;
+                for (let i = 0; i < sandSize; i++) {
+                    // Brown/Pink gürültü entegrasyonu (tok kum dokusu)
+                    let white = Math.random() * 2 - 1;
+                    lastB = (lastB + 0.05 * white) / 1.05;
+                    // Mikro-kum tanecik kırılmaları (Granular sand crunch)
+                    let grain = (Math.random() < 0.14) ? (Math.random() * 1.6 - 0.8) : 0;
+                    // Ayak basma ve kum kayma sönümlemesi
+                    let env = Math.sin((i / sandSize) * Math.PI) * Math.exp(-i / (sandSize * 0.7));
+                    sndData[i] = (lastB * 2.6 + grain * 0.4) * env;
                 }
             }
         }
@@ -139,20 +160,214 @@ function playSound(type, param) {
 
     try {
         if (type === 'footstep') {
-            // Ritmik, hafif ve doğal zemin adım sesi
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(100 + Math.random() * 25, now);
-            osc.frequency.exponentialRampToValueAtTime(45, now + 0.035);
+            // Zemin Türüne Göre Akıllı Adım Sesi (Asfalt/Taş, Ahşap İskele/Parke, Sahil Kumu, Çimen, Su)
+            if (!cardNoiseBuffer || !splashNoiseBuffer) {
+                try { initNoiseBuffers(); } catch (_) {}
+            }
 
-            gain.gain.setValueAtTime(0.06, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+            const surface = (param && typeof param === 'object' && param.surface) ? param.surface : (typeof param === 'string' ? param : 'solid');
+            const isSprinting = !!(param && param.isSprinting);
+            const pitchMult = isSprinting ? 1.15 : 1.0;
+            const volMult = isSprinting ? 1.25 : 1.0;
 
-            osc.connect(gain);
-            gain.connect(sfxGainNode);
-            osc.start(now);
-            osc.stop(now + 0.04);
+            if (surface === 'wood') {
+                // Tok ahşap iskele / kafe parke rezonans tıkırtısı (Resonant hollow wood tap)
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                let filter = audioCtx.createBiquadFilter();
+
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime((440 + Math.random() * 40) * pitchMult, now);
+                filter.Q.setValueAtTime(5.5, now);
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime((150 + Math.random() * 20) * pitchMult, now);
+                osc.frequency.exponentialRampToValueAtTime(65 * pitchMult, now + 0.045);
+
+                gain.gain.setValueAtTime(0.08 * volMult, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now);
+                osc.stop(now + 0.05);
+
+                // Ekstra ahşap yüzey mikro-tıkırtı transienti
+                if (cardNoiseBuffer) {
+                    let noise = audioCtx.createBufferSource();
+                    noise.buffer = cardNoiseBuffer;
+                    let nFilter = audioCtx.createBiquadFilter();
+                    nFilter.type = 'bandpass';
+                    nFilter.frequency.setValueAtTime(900 * pitchMult, now);
+                    nFilter.Q.setValueAtTime(3.0, now);
+
+                    let nGain = audioCtx.createGain();
+                    nGain.gain.setValueAtTime(0.035 * volMult, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+                    noise.connect(nFilter);
+                    nFilter.connect(nGain);
+                    nGain.connect(sfxGainNode);
+                    noise.start(now);
+                    noise.stop(now + 0.03);
+                }
+            } else if (surface === 'sand') {
+                // Gerçekçi Kuru Sahil Kumu Ezilme & Hışırtı Sesi (Granular Beach Sand Step)
+                if (!sandNoiseBuffer) {
+                    try { initNoiseBuffers(); } catch (_) {}
+                }
+
+                if (sandNoiseBuffer) {
+                    let noise = audioCtx.createBufferSource();
+                    noise.buffer = sandNoiseBuffer;
+                    // Her adımda hafif ton varyasyonu (Doğal kum çeşitliliği)
+                    noise.playbackRate.setValueAtTime(0.92 + Math.random() * 0.16, now);
+
+                    // Sıcak, tok kum sürtünme filtresi (950Hz - 1300Hz aralığında organik kum sürtünmesi)
+                    let bandFilter = audioCtx.createBiquadFilter();
+                    bandFilter.type = 'bandpass';
+                    bandFilter.frequency.setValueAtTime((1050 + Math.random() * 150) * pitchMult, now);
+                    bandFilter.Q.setValueAtTime(1.8, now);
+
+                    // Yüksek frekans tıslamalarını törpüleyen yumuşatıcı
+                    let lowFilter = audioCtx.createBiquadFilter();
+                    lowFilter.type = 'lowpass';
+                    lowFilter.frequency.setValueAtTime(2200, now);
+
+                    let gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.12 * volMult, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+                    noise.connect(bandFilter);
+                    bandFilter.connect(lowFilter);
+                    lowFilter.connect(gain);
+                    gain.connect(sfxGainNode);
+                    noise.start(now);
+                    noise.stop(now + 0.15);
+                }
+
+                // Ayağın kuma gömülme / çökme dip rezonansı (Boğuk "tuhff" sürtünmesi)
+                let sinkOsc = audioCtx.createOscillator();
+                let sinkGain = audioCtx.createGain();
+                sinkOsc.type = 'sine';
+                sinkOsc.frequency.setValueAtTime(58 * pitchMult, now);
+                sinkOsc.frequency.exponentialRampToValueAtTime(28, now + 0.07);
+
+                sinkGain.gain.setValueAtTime(0.045 * volMult, now);
+                sinkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+                sinkOsc.connect(sinkGain);
+                sinkGain.connect(sfxGainNode);
+                sinkOsc.start(now);
+                sinkOsc.stop(now + 0.08);
+            } else if (surface === 'water') {
+                // Sığ su şıpırtısı / küçük su sıçraması (Shallow water slosh & mini splash)
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                let filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(650 * pitchMult, now);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime((260 + Math.random() * 40) * pitchMult, now);
+                osc.frequency.exponentialRampToValueAtTime(75 * pitchMult, now + 0.06);
+
+                gain.gain.setValueAtTime(0.07 * volMult, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now);
+                osc.stop(now + 0.065);
+
+                if (splashNoiseBuffer) {
+                    let noise = audioCtx.createBufferSource();
+                    noise.buffer = splashNoiseBuffer;
+                    let nFilter = audioCtx.createBiquadFilter();
+                    nFilter.type = 'bandpass';
+                    nFilter.frequency.setValueAtTime(1400 * pitchMult, now);
+                    nFilter.Q.setValueAtTime(2.0, now);
+
+                    let nGain = audioCtx.createGain();
+                    nGain.gain.setValueAtTime(0.04 * volMult, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+                    noise.connect(nFilter);
+                    nFilter.connect(nGain);
+                    nGain.connect(sfxGainNode);
+                    noise.start(now);
+                    noise.stop(now + 0.05);
+                }
+            } else if (surface === 'grass') {
+                // Bahçe / park çimen ezilmesi (Organic grass rustle & soft muffled step)
+                if (cardNoiseBuffer) {
+                    let noise = audioCtx.createBufferSource();
+                    noise.buffer = cardNoiseBuffer;
+                    let filter = audioCtx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime((1350 + Math.random() * 150) * pitchMult, now);
+                    filter.Q.setValueAtTime(2.2, now);
+
+                    let gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.06 * volMult, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(sfxGainNode);
+                    noise.start(now);
+                    noise.stop(now + 0.055);
+                }
+                // Boğuk zemin dokunuşu
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(65 * pitchMult, now);
+                osc.frequency.exponentialRampToValueAtTime(32, now + 0.035);
+                gain.gain.setValueAtTime(0.025 * volMult, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now);
+                osc.stop(now + 0.04);
+            } else {
+                // 'solid': Asfalt / Taş / Beton / Cadde ayakkabı tabanı tıkırtısı
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime((105 + Math.random() * 25) * pitchMult, now);
+                osc.frequency.exponentialRampToValueAtTime(42 * pitchMult, now + 0.035);
+
+                gain.gain.setValueAtTime(0.065 * volMult, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now);
+                osc.stop(now + 0.04);
+
+                // Sneaker taban sert vuruş click transienti
+                if (cardNoiseBuffer) {
+                    let noise = audioCtx.createBufferSource();
+                    noise.buffer = cardNoiseBuffer;
+                    let filter = audioCtx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(1100 * pitchMult, now);
+                    filter.Q.setValueAtTime(3.2, now);
+
+                    let nGain = audioCtx.createGain();
+                    nGain.gain.setValueAtTime(0.03 * volMult, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+
+                    noise.connect(filter);
+                    filter.connect(nGain);
+                    nGain.connect(sfxGainNode);
+                    noise.start(now);
+                    noise.stop(now + 0.025);
+                }
+            }
         }
         else if (type === 'waterPaddle') {
             // Su şıpırtısı / kürek / kuğu pedalı sesi
@@ -215,6 +430,195 @@ function playSound(type, param) {
             filter.connect(gain);
             gain.connect(sfxGainNode);
             noise.start(now);
+        }
+        else if (type === 'zippo_open') {
+            // İkonik Gümüş Zippo Kapağı Açılış Sesi ("ÇLİNK!" - Çift Tonal Yüksek Metalik Çınlama)
+            // 1. Tok Metalik Tıklama Transienti
+            let clickOsc = audioCtx.createOscillator();
+            let clickGain = audioCtx.createGain();
+            let clickFilter = audioCtx.createBiquadFilter();
+            clickFilter.type = 'bandpass';
+            clickFilter.frequency.setValueAtTime(3200, now);
+            clickFilter.Q.setValueAtTime(3.0, now);
+
+            clickOsc.type = 'triangle';
+            clickOsc.frequency.setValueAtTime(1400, now);
+            clickOsc.frequency.exponentialRampToValueAtTime(300, now + 0.025);
+
+            clickGain.gain.setValueAtTime(0.18, now);
+            clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+            clickOsc.connect(clickFilter);
+            clickFilter.connect(clickGain);
+            clickGain.connect(sfxGainNode);
+            clickOsc.start(now);
+            clickOsc.stop(now + 0.03);
+
+            // 2. Pirinç/Çelik Kasa Rezonans Çınlaması (2850Hz & 4200Hz Kristal Metal Tınlaması)
+            [2850, 4200].forEach((freq, idx) => {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + 0.005);
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.96, now + 0.16);
+
+                const vol = (idx === 0 ? 0.22 : 0.12);
+                gain.gain.setValueAtTime(vol, now + 0.005);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now + 0.005);
+                osc.stop(now + 0.17);
+            });
+        }
+        else if (type === 'zippo_strike') {
+            // Tırtıklı Çakmak Taşı Sürtünmesi ve Kıvılcım Patlaması ("ŞŞ-ÇIK!")
+            if (!cardNoiseBuffer) initNoiseBuffers();
+            if (cardNoiseBuffer) {
+                let noise = audioCtx.createBufferSource();
+                noise.buffer = cardNoiseBuffer;
+                noise.playbackRate.setValueAtTime(1.4, now);
+
+                let filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(3800, now);
+                filter.Q.setValueAtTime(4.2, now);
+
+                let gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.24, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(sfxGainNode);
+                noise.start(now);
+                noise.stop(now + 0.07);
+            }
+
+            // Yakıtın Tutuşma Tok "Puf" Sesi
+            let flameOsc = audioCtx.createOscillator();
+            let flameGain = audioCtx.createGain();
+            flameOsc.type = 'sine';
+            flameOsc.frequency.setValueAtTime(220, now + 0.02);
+            flameOsc.frequency.exponentialRampToValueAtTime(70, now + 0.09);
+
+            flameGain.gain.setValueAtTime(0.09, now + 0.02);
+            flameGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+            flameOsc.connect(flameGain);
+            flameGain.connect(sfxGainNode);
+            flameOsc.start(now + 0.02);
+            flameOsc.stop(now + 0.10);
+        }
+        else if (type === 'zippo_close') {
+            // Tok Ağırlıklı Metal Kapağın Kapanış Çarpması ("KLAK-KLİNK")
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            let filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(950, now);
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(280, now);
+            osc.frequency.exponentialRampToValueAtTime(65, now + 0.045);
+
+            gain.gain.setValueAtTime(0.22, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(sfxGainNode);
+            osc.start(now);
+            osc.stop(now + 0.05);
+
+            // Metalik kilit mandalı tıkırtısı
+            let latchOsc = audioCtx.createOscillator();
+            let latchGain = audioCtx.createGain();
+            latchOsc.type = 'sine';
+            latchOsc.frequency.setValueAtTime(1850, now + 0.01);
+            latchOsc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+
+            latchGain.gain.setValueAtTime(0.12, now + 0.01);
+            latchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+            latchOsc.connect(latchGain);
+            latchGain.connect(sfxGainNode);
+            latchOsc.start(now + 0.01);
+            latchOsc.stop(now + 0.06);
+        }
+        else if (type === 'tobacco_inhale') {
+            // Tütünün İç Çekişte Çatırdaması & Köz Parıltı Hışırtısı (Granular Tobacco Sizzle)
+            if (!cardNoiseBuffer) initNoiseBuffers();
+            if (cardNoiseBuffer) {
+                // Mikro tütün kıvılcım çıtırtıları
+                for (let i = 0; i < 4; i++) {
+                    let crackleTime = now + 0.05 + i * 0.14 + (Math.random() * 0.04);
+                    let noise = audioCtx.createBufferSource();
+                    noise.buffer = cardNoiseBuffer;
+                    noise.playbackRate.setValueAtTime(1.8 + Math.random() * 0.8, crackleTime);
+
+                    let cFilter = audioCtx.createBiquadFilter();
+                    cFilter.type = 'bandpass';
+                    cFilter.frequency.setValueAtTime(2600 + Math.random() * 800, crackleTime);
+                    cFilter.Q.setValueAtTime(4.5, crackleTime);
+
+                    let cGain = audioCtx.createGain();
+                    cGain.gain.setValueAtTime(0.045, crackleTime);
+                    cGain.gain.exponentialRampToValueAtTime(0.001, crackleTime + 0.035);
+
+                    noise.connect(cFilter);
+                    cFilter.connect(cGain);
+                    cGain.connect(sfxGainNode);
+                    noise.start(crackleTime);
+                    noise.stop(crackleTime + 0.04);
+                }
+
+                // Derin Nefes Çekiş Hava Akımı
+                let breathNoise = audioCtx.createBufferSource();
+                breathNoise.buffer = cardNoiseBuffer;
+                breathNoise.playbackRate.setValueAtTime(0.55, now);
+
+                let bFilter = audioCtx.createBiquadFilter();
+                bFilter.type = 'lowpass';
+                bFilter.frequency.setValueAtTime(680, now);
+
+                let bGain = audioCtx.createGain();
+                bGain.gain.setValueAtTime(0.01, now);
+                bGain.gain.linearRampToValueAtTime(0.055, now + 0.35);
+                bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+                breathNoise.connect(bFilter);
+                bFilter.connect(bGain);
+                bGain.connect(sfxGainNode);
+                breathNoise.start(now);
+                breathNoise.stop(now + 0.90);
+            }
+        }
+        else if (type === 'smoke_exhale') {
+            // Rahatlatıcı, Yumuşak Büzülmüş Dudak Duman Üfleme Hışırtısı (Soft Airy Exhale)
+            if (!cardNoiseBuffer) initNoiseBuffers();
+            if (cardNoiseBuffer) {
+                let exhaleNoise = audioCtx.createBufferSource();
+                exhaleNoise.buffer = cardNoiseBuffer;
+                exhaleNoise.playbackRate.setValueAtTime(0.42, now);
+
+                let eFilter = audioCtx.createBiquadFilter();
+                eFilter.type = 'bandpass';
+                eFilter.frequency.setValueAtTime(540, now);
+                eFilter.Q.setValueAtTime(1.2, now);
+
+                let eGain = audioCtx.createGain();
+                eGain.gain.setValueAtTime(0.01, now);
+                eGain.gain.linearRampToValueAtTime(0.065, now + 0.25);
+                eGain.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
+
+                exhaleNoise.connect(eFilter);
+                eFilter.connect(eGain);
+                eGain.connect(sfxGainNode);
+                exhaleNoise.start(now);
+                exhaleNoise.stop(now + 1.30);
+            }
         }
         else if (type === 'billiardHit' || type === 'billiard_hit') {
             // Bilardo toplarının çarpışma sesi (Önce assets/sounds/billiard_hit.mp3 dener, yoksa masif reçine akustik sentezine geçer)

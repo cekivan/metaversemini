@@ -226,11 +226,25 @@
         }
     }
 
+    function resetAmiralModalPosition() {
+        const modalContent = document.getElementById('amiralBattiModalContent');
+        if (modalContent) {
+            modalContent.style.position = '';
+            modalContent.style.left = '';
+            modalContent.style.top = '';
+            modalContent.style.margin = '';
+            modalContent.style.transform = '';
+            modalContent.style.animation = '';
+        }
+    }
+    window.resetAmiralModalPosition = resetAmiralModalPosition;
+
     // Modal Açma / Kapatma
     function openAmiralBattiModal() {
         const modal = document.getElementById('amiralBattiModal');
         if (!modal) return;
         modal.style.display = 'flex';
+        resetAmiralModalPosition();
         if (!serverAmiralData) {
             initAmiralBatti();
         }
@@ -250,6 +264,7 @@
         phase = 'SETUP';
         const modal = document.getElementById('amiralBattiModal');
         if (modal) modal.style.display = 'none';
+        resetAmiralModalPosition();
         if (typeof window.resetAllTableUIs === 'function') {
             window.resetAllTableUIs();
         }
@@ -980,31 +995,94 @@
         }
     }
 
-    // Sürükleme Mantığı (Window Header)
+    // Sürükleme Mantığı (Window Header) - Kayma ve Zıplama Bug'ı Önlenmiş Robust Sürükleme
     window.addEventListener('DOMContentLoaded', () => {
         const header = document.getElementById('amiralModalHeader');
         const modal = document.getElementById('amiralBattiModalContent');
         if (header && modal) {
-            let isDragging = false, startX, startY, initialX, initialY;
-            header.addEventListener('mousedown', (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+            let isDragging = false, startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
+            let hasMoved = false;
+
+            function startDrag(clientX, clientY, target) {
+                if (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.in-game-zoom-ctrl') || target.closest('.game-window-controls')) {
+                    return false;
+                }
+                
                 isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
+                hasMoved = false;
+                startX = clientX;
+                startY = clientY;
+
+                modal.style.animation = 'none';
+                modal.style.transform = 'none';
+
                 const rect = modal.getBoundingClientRect();
-                initialX = rect.left;
-                initialY = rect.top;
-                modal.style.position = 'fixed';
-                modal.style.margin = '0';
-                modal.style.left = initialX + 'px';
-                modal.style.top = initialY + 'px';
+                const currentZoom = parseFloat(modal.style.zoom) || 1;
+                
+                initialLeft = rect.left / currentZoom;
+                initialTop = rect.top / currentZoom;
+                return true;
+            }
+
+            function moveDrag(clientX, clientY) {
+                if (!isDragging) return;
+                const dist = Math.hypot(clientX - startX, clientY - startY);
+                if (dist > 3 && !hasMoved) {
+                    hasMoved = true;
+                    modal.style.position = 'fixed';
+                    modal.style.margin = '0';
+                    modal.style.left = initialLeft + 'px';
+                    modal.style.top = initialTop + 'px';
+                }
+                if (!hasMoved) return;
+
+                const currentZoom = parseFloat(modal.style.zoom) || 1;
+                const deltaX = (clientX - startX) / currentZoom;
+                const deltaY = (clientY - startY) / currentZoom;
+                
+                let newLeft = initialLeft + deltaX;
+                let newTop = initialTop + deltaY;
+
+                // Ekran dışına kaçmaması için kenar sınırlama (Clamping)
+                const modalW = (modal.offsetWidth || 680);
+                const maxL = Math.max(10, (window.innerWidth / currentZoom) - 60);
+                const minL = Math.min(10, 10 - modalW + 100);
+                const maxT = Math.max(10, (window.innerHeight / currentZoom) - 50);
+
+                newLeft = Math.max(minL, Math.min(newLeft, maxL));
+                newTop = Math.max(5, Math.min(newTop, maxT));
+
+                modal.style.left = newLeft + 'px';
+                modal.style.top = newTop + 'px';
+            }
+
+            function endDrag() {
+                isDragging = false;
+                hasMoved = false;
+            }
+
+            header.addEventListener('mousedown', (e) => {
+                if (startDrag(e.clientX, e.clientY, e.target)) {
+                    e.preventDefault();
+                }
             });
             window.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                modal.style.left = (initialX + (e.clientX - startX)) + 'px';
-                modal.style.top = (initialY + (e.clientY - startY)) + 'px';
+                moveDrag(e.clientX, e.clientY);
             });
-            window.addEventListener('mouseup', () => { isDragging = false; });
+            window.addEventListener('mouseup', endDrag);
+
+            // Mobil / Dokunmatik Sürükleme Desteği
+            header.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches.length === 1) {
+                    startDrag(e.touches[0].clientX, e.touches[0].clientY, e.target);
+                }
+            }, { passive: true });
+            window.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches && e.touches.length === 1) {
+                    moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: true });
+            window.addEventListener('touchend', endDrag);
         }
     });
 })();

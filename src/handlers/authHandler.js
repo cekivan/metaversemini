@@ -3,6 +3,7 @@ const tableManager = require('../tableManager');
 const gameCoordinator = require('../gameCoordinator');
 const fatherPetManager = require('../fatherPetManager');
 const petManager = require('../petManager');
+const { givePlayerHorseWithTimer } = require('./ganyanHandler');
 
 function registerAuthHandlers(io, socket, players, helpers) {
     const { getPlayersInRoom, givePlayerTeaWithTimer, broadcastOnlineCount } = helpers;
@@ -11,9 +12,7 @@ function registerAuthHandlers(io, socket, players, helpers) {
     function onLoginSuccess(uData, username, isAdmin) {
         const previousModel = uData.avatar && uData.avatar.model;
         if (!uData.avatar) uData.avatar = {};
-        if (uData.avatar.model !== 'sanalika_v2') {
-            uData.avatar.model = 'classic_2';
-        }
+        uData.avatar.model = 'classic_2';
         if (previousModel !== uData.avatar.model) {
             dataManager.savePersistentData();
         }
@@ -30,13 +29,25 @@ function registerAuthHandlers(io, socket, players, helpers) {
             }
         }
 
+        let hasValidHorse = false;
+        let horseRemainingMs = 0;
+        if (uData.horseExpiresAt) {
+            if (Date.now() >= uData.horseExpiresAt) {
+                uData.horseExpiresAt = null;
+                dataManager.savePersistentData();
+            } else {
+                hasValidHorse = true;
+                horseRemainingMs = uData.horseExpiresAt - Date.now();
+            }
+        }
+
         players[socket.id] = {
             name: username,
             x: 400, y: 400,
             model: uData.avatar.model,
             color: uData.avatar.shirtColor || '#3b82f6',
             shirt: (uData.avatar && uData.avatar.shirt) || (uData.avatar && uData.avatar.shirtColor) || '#3b82f6',
-            pants: (uData.avatar && uData.avatar.pants) || 'pants_camo_cargo',
+            pants: (uData.avatar && uData.avatar.pants) || 'pants_classic_jeans',
             outfit: (uData.avatar && uData.avatar.outfit) || null,
             skinColor: uData.avatar.skinColor || '#facc15',
             hat: uData.avatar.hat || 'bere',
@@ -49,6 +60,8 @@ function registerAuthHandlers(io, socket, players, helpers) {
             msg: "",
             room: "sokak",
             hasTea: hasValidTea,
+            hasHorse: hasValidHorse,
+            horseExpiresAt: hasValidHorse ? uData.horseExpiresAt : undefined,
             action: hasValidTea ? 'tea' : null,
             isFishing: false,
             hasSwanBoat: false,
@@ -63,6 +76,10 @@ function registerAuthHandlers(io, socket, players, helpers) {
 
         if (hasValidTea) {
             givePlayerTeaWithTimer(socket.id, username, uData.teaExpiresAt - Date.now());
+        }
+
+        if (hasValidHorse && typeof givePlayerHorseWithTimer === 'function') {
+            givePlayerHorseWithTimer(io, players, socket.id, username, horseRemainingMs, true);
         }
 
         socket.join("sokak");
@@ -128,7 +145,12 @@ function registerAuthHandlers(io, socket, players, helpers) {
             return;
         }
 
-        const inputName = dataManager.sanitizeString(data.name || "Oyuncu", 20);
+        if (players[socket.id]) {
+            socket.emit('loginFailed', "Bu bağlantıda zaten açık bir oturumunuz bulunuyor!");
+            return;
+        }
+
+        const inputName = dataManager.sanitizeString(data.name || "Oyuncu", 20, false);
         const pass = typeof data.pass === 'string' ? data.pass.trim() : "";
 
         const authResult = await dataManager.loginUser(inputName, pass, players);
@@ -170,7 +192,12 @@ function registerAuthHandlers(io, socket, players, helpers) {
             return;
         }
 
-        const inputName = dataManager.sanitizeString(data.name || "", 20);
+        if (players[socket.id]) {
+            socket.emit('registerFailed', "Bu bağlantıda zaten açık bir oturumunuz bulunuyor!");
+            return;
+        }
+
+        const inputName = dataManager.sanitizeString(data.name || "", 20, false);
         const pass = typeof data.pass === 'string' ? data.pass.trim() : "";
         const chosenGender = (data.gender === 'female') ? 'female' : 'male';
 

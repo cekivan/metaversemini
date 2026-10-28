@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Karakter 2 Canlı Önizleme — 30s Devir Daim Sigara & A/B Duman Stüdyosu</title>
+    <style>
+        body {
+            background: #0b1120;
+            color: white;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin: 0 0 6px 0;
+            font-size: 22px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            margin: 0 0 14px 0;
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: #1e293b;
+            color: #f1f5f9;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button.active {
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            color: white;
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        button.smoke-btn {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            border-color: #fb923c;
+            color: white;
+        }
+
+        button.smoke-btn:hover {
+            box-shadow: 0 0 16px rgba(249, 115, 22, 0.5);
+        }
+
+        button.firt-btn {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            border-color: #f472b6;
+            color: white;
+        }
+
+        button.firt-btn:hover {
+            box-shadow: 0 0 16px rgba(236, 72, 153, 0.5);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .hud-banner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 12px;
+            padding: 8px 20px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            backdrop-filter: blur(8px);
+        }
+
+        .hud-tag {
+            background: #1e293b;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .hud-status {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        canvas {
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border: 2px solid rgba(56, 189, 248, 0.4);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Karakter 2 — 8 Yönlü İzometrik Stüdyo & Kadın Karakter Gardırop Testi</h2>
+    <div class="subtitle">30s Devir Daim Sigara & Zippo • Yeni Kadın Yüz & Postür • 👗 K2 Siber Mini & Gotik Elbise</div>
+
+    <div class="controls">
+        <button id="btnStand" class="active" onclick="setMode('stand')">🧍 Ayakta (Nefes & Göz Kırpma)</button>
+        <button id="btnWalk" onclick="setMode('walk')">🚶 Yürüme (Zıt Fazlı Salınım)</button>
+        <button id="btnSprint" onclick="setMode('sprint')">⚡ Koşma (Köz Parlaması & Rüzgar)</button>
+        <button id="btnSit" onclick="setMode('sit')">🪑 Oturma</button>
+        <button id="btnSmokeToggle" class="smoke-btn active" onclick="toggleSigara()">🚬 Sigara: AÇIK</button>
+        <button id="btnTriggerFirt" class="firt-btn" onclick="triggerFirt()">🔥 Hemen Bir Fırt Al</button>
+        <button id="btnTriggerZippo" class="firt-btn" style="background: linear-gradient(135deg, #475569 0%, #334155 100%); border-color: #cbd5e1; color: #f8fafc;" onclick="triggerZippo()">🪙 Zippo ile Yak (Sesli)</button>
+        <button id="btnZoom" onclick="toggleZoom()">🔍 Yakınlaştırma (2.6x)</button>
+    </div>
+
+    <!-- Kadın & Elbise / Kıyafet Kontrol Paneli -->
+    <div class="controls" style="margin-top: -4px;">
+        <button id="btnGender" style="background: linear-gradient(135deg, #ec4899, #db2777); border-color: #f472b6;" onclick="toggleGender()">🚺 Cinsiyet: Kadın</button>
+        <button id="btnHairTwinTails" class="active" onclick="setHair('hair_k2_twin_tails')">👧 İkiz Atkuyruğu (Twin Tails)</button>
+        <button id="btnHairWavy" onclick="setHair('hair_k2_wavy_shoulder')">💇 Omuz Hizası Dalgalı (Wavy Lob)</button>
+        <button id="btnHairHime" onclick="setHair('hair_k2_hime_cut')">👸 Hime Cut (Düz Kahkül & Yan Bukle)</button>
+        <button id="btnHairNone" onclick="setHair('none')">✨ Varsayılan Kadın Saçı</button>
+        <button id="btnHairBucket" onclick="setHair('k2_skater_bucket')">🧢 Bucket Şapka</button>
+        <button id="btnHairCycle" onclick="cycleHair()">🎨 Renk: Koyu Kahve</button>
+    </div>
+
+    <!-- Yeni Üstler & Altlar & Ayakkabılar Kontrol Paneli -->
+    <div class="controls" style="margin-top: -4px;">
+        <button id="btnTopCyberCrop" class="active" onclick="setTop('top_k2_cyber_crop')">👚 Siber Göbeği Açık (Cyber Crop)</button>
+        <button id="btnTopGrunge" onclick="setTop('top_k2_grunge_oversize')">👕 Grunge Oversize (Düşük Omuz)</button>
+        <button id="btnTopPastel" onclick="setTop('top_k2_pastel_hoodie')">🌸 Pastel Crop Hoodie</button>
+        <button id="btnTopCyberDress" onclick="setTop('dress_k2_cyber_street')">👗 Siber Mini Elbise</button>
+        <button id="btnTopGothDress" onclick="setTop('dress_k2_goth_grunge')">🖤 Gotik Grunge Elbise</button>
+        <button id="btnTopGraffiti" onclick="setTop('k2_graffiti_oversize')">🛹 Grafiti Oversize</button>
+    </div>
+
+    <div class="controls" style="margin-top: -4px;">
+        <button id="btnBtmCargoMini" class="active" onclick="setBottom('pants_k2_cargo_mini')">🩳 Kargo Mini Etek</button>
+        <button id="btnBtmFlared" onclick="setBottom('pants_k2_flared_jeans')">👖 İspanyol Paça Kot</button>
+        <button id="btnBtmFishnet" onclick="setBottom('pants_k2_goth_fishnet')">🖤 Gotik Fileli Yırtık Jean</button>
+        <button id="btnBtmSkater" onclick="setBottom('pants_k2_skater_cargo')">🛹 Skater Bol Pantolon</button>
+        <button id="btnShoeGothBoots" class="active" onclick="setShoe('shoes_k2_goth_boots')">👢 Gotik Platform Bot</button>
+        <button id="btnShoeSneaker" onclick="setShoe('shoes_k2_chunky_sneaker')">👟 Chunky Sneaker</button>
+    </div>
+
+    <div class="hud-banner">
+        <span class="hud-tag" id="hudPuffBadge">Fırt #1</span>
+        <span class="hud-status" id="hudStatus">⏱️ Başlıyor...</span>
+    </div>
+
+    <canvas id="c" width="1020" height="390"></canvas>
+
+    <script src="js/audio.js"></script>
+    <script src="js/renderers/karakter2Renderer.js"></script>
+    <script src="js/avatarRenderer.js"></script>
+    <script>
+        let mode = 'stand';
+        let zoom = 2.6;
+        let walkCycle = 0;
+        let hairIndex = 0;
+
+        const hairColors = [
+            { name: 'Koyu Kahve', color: '#26150b' },
+            { name: 'Sarışın', color: '#f59e0b' },
+            { name: 'Kızıl', color: '#dc2626' },
+            { name: 'Pastel Pembe', color: '#f472b6' },
+            { name: 'Gece Siyahı', color: '#09090b' },
+            { name: 'Siber Cyan', color: '#06b6d4' }
+        ];
+
+        const facings = ['down', 'down-right', 'right', 'up-right', 'up', 'down-left'];
+        const p = {
+            name: 'yasin',
+            gender: 'female',
+            skinColor: '#ffd1a4',
+            hairColor: '#26150b',
+            hat: 'hair_k2_twin_tails',
+            shirt: 'top_k2_cyber_crop',
+            pants: 'pants_k2_cargo_mini',
+            shoes: 'shoes_k2_goth_boots',
+            heldItem: 'sigara'
+        };
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('btnStand').classList.toggle('active', m === 'stand');
+            document.getElementById('btnWalk').classList.toggle('active', m === 'walk');
+            document.getElementById('btnSprint').classList.toggle('active', m === 'sprint');
+            document.getElementById('btnSit').classList.toggle('active', m === 'sit');
+            p.isSprinting = (m === 'sprint');
+        }
+
+        function toggleGender() {
+            if (p.gender === 'female') {
+                p.gender = 'male';
+                document.getElementById('btnGender').innerHTML = '🚹 Cinsiyet: Erkek';
+                document.getElementById('btnGender').style.background = 'linear-gradient(135deg, #0284c7, #2563eb)';
+                document.getElementById('btnGender').style.borderColor = '#38bdf8';
+            } else {
+                p.gender = 'female';
+                document.getElementById('btnGender').innerHTML = '🚺 Cinsiyet: Kadın';
+                document.getElementById('btnGender').style.background = 'linear-gradient(135deg, #ec4899, #db2777)';
+                document.getElementById('btnGender').style.borderColor = '#f472b6';
+            }
+        }
+
+        function setHair(h) {
+            p.hat = h;
+            ['TwinTails', 'Wavy', 'Hime', 'None', 'Bucket'].forEach(k => {
+                const el = document.getElementById('btnHair' + k);
+                if (el) el.classList.remove('active');
+            });
+            if (h === 'hair_k2_twin_tails') document.getElementById('btnHairTwinTails')?.classList.add('active');
+            else if (h === 'hair_k2_wavy_shoulder') document.getElementById('btnHairWavy')?.classList.add('active');
+            else if (h === 'hair_k2_hime_cut') document.getElementById('btnHairHime')?.classList.add('active');
+            else if (h === 'none') document.getElementById('btnHairNone')?.classList.add('active');
+            else if (h === 'k2_skater_bucket') document.getElementById('btnHairBucket')?.classList.add('active');
+        }
+
+        function setTop(t) {
+            p.shirt = t;
+            p.outfit = t.startsWith('dress_') ? t : null;
+            ['CyberCrop', 'Grunge', 'Pastel', 'CyberDress', 'GothDress', 'Graffiti'].forEach(k => {
+                const el = document.getElementById('btnTop' + k);
+                if (el) el.classList.remove('active');
+            });
+            if (t === 'top_k2_cyber_crop') document.getElementById('btnTopCyberCrop')?.classList.add('active');
+            else if (t === 'top_k2_grunge_oversize') document.getElementById('btnTopGrunge')?.classList.add('active');
+            else if (t === 'top_k2_pastel_hoodie') document.getElementById('btnTopPastel')?.classList.add('active');
+            else if (t === 'dress_k2_cyber_street') document.getElementById('btnTopCyberDress')?.classList.add('active');
+            else if (t === 'dress_k2_goth_grunge') document.getElementById('btnTopGothDress')?.classList.add('active');
+            else if (t === 'k2_graffiti_oversize') document.getElementById('btnTopGraffiti')?.classList.add('active');
+        }
+
+        function setBottom(b) {
+            p.pants = b;
+            ['CargoMini', 'Flared', 'Fishnet', 'Skater'].forEach(k => {
+                const el = document.getElementById('btnBtm' + k);
+                if (el) el.classList.remove('active');
+            });
+            if (b === 'pants_k2_cargo_mini') document.getElementById('btnBtmCargoMini')?.classList.add('active');
+            else if (b === 'pants_k2_flared_jeans') document.getElementById('btnBtmFlared')?.classList.add('active');
+            else if (b === 'pants_k2_goth_fishnet') document.getElementById('btnBtmFishnet')?.classList.add('active');
+            else if (b === 'pants_k2_skater_cargo') document.getElementById('btnBtmSkater')?.classList.add('active');
+        }
+
+        function setShoe(s) {
+            p.shoes = s;
+            ['GothBoots', 'Sneaker'].forEach(k => {
+                const el = document.getElementById('btnShoe' + k);
+                if (el) el.classList.remove('active');
+            });
+            if (s === 'shoes_k2_goth_boots') document.getElementById('btnShoeGothBoots')?.classList.add('active');
+            else if (s === 'shoes_k2_chunky_sneaker') document.getElementById('btnShoeSneaker')?.classList.add('active');
+        }
+
+        function cycleHair() {
+            hairIndex = (hairIndex + 1) % hairColors.length;
+            p.hairColor = hairColors[hairIndex].color;
+            document.getElementById('btnHairCycle').textContent = '💇 Saç: ' + hairColors[hairIndex].name;
+        }
+
+        function toggleSigara() {
+            if (p.heldItem === 'sigara') {
+                p.heldItem = 'none';
+                document.getElementById('btnSmokeToggle').textContent = '🚬 Sigara: KAPALI';
+                document.getElementById('btnSmokeToggle').classList.remove('active');
+            } else {
+                p.heldItem = 'sigara';
+                p._k2NextSmokeTime = Date.now() + 1000;
+                document.getElementById('btnSmokeToggle').textContent = '🚬 Sigara: AÇIK';
+                document.getElementById('btnSmokeToggle').classList.add('active');
+            }
+        }
+
+        function triggerFirt() {
+            if (typeof audioCtx !== 'undefined' && audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            if (typeof triggerK2SmokeAnimation === 'function') {
+                triggerK2SmokeAnimation(p);
+            }
+        }
+
+        function triggerZippo() {
+            if (typeof audioCtx !== 'undefined' && audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            if (typeof triggerK2SmokeAnimation === 'function') {
+                triggerK2SmokeAnimation(p, true);
+            }
+        }
+
+        function toggleZoom() {
+            zoom = (zoom === 2.6) ? 3.5 : 2.6;
+            document.getElementById('btnZoom').textContent = (zoom === 2.6) ? '🔍 Yakınlaştırma (2.6x)' : '🔍 Yakınlaştırma (3.5x)';
+        }
+
+        window.onload = function () {
+            const canvas = document.getElementById('c');
+            const ctx = canvas.getContext('2d');
+
+            function render() {
+                const now = Date.now();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Izgara
+                ctx.strokeStyle = "rgba(255,255,255,0.03)";
+                for (let x = 0; x < canvas.width; x += 25) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+                for (let y = 0; y < canvas.height; y += 25) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+
+                if (mode === 'sprint') {
+                    walkCycle += 0.14;
+                } else if (mode === 'walk') {
+                    walkCycle += 0.08;
+                } else {
+                    walkCycle = 0;
+                }
+
+                const isMoving = (mode === 'walk' || mode === 'sprint');
+                const isSitting = (mode === 'sit');
+                const legSwing = isMoving ? Math.sin(walkCycle) * (mode === 'sprint' ? 0.55 : 0.42) : 0;
+
+                const spacing = canvas.width / (facings.length + 1);
+
+                facings.forEach((facing, i) => {
+                    const cx = (i + 1) * spacing;
+                    const cy = 215;
+
+                    ctx.save();
+                    ctx.translate(cx, cy);
+                    ctx.scale(zoom, zoom);
+                    Karakter2Renderer.draw(ctx, 0, 0, p, facing, isSitting, legSwing, walkCycle, isMoving, false);
+                    ctx.restore();
+
+                    // Etiket
+                    ctx.fillStyle = (facing === 'right') ? '#facc15' : '#38bdf8';
+                    ctx.font = "bold 13px 'Inter', sans-serif";
+                    ctx.textAlign = "center";
+                    const label = (facing === 'right') ? '👉 Sağ Profil' : (facing === 'down') ? '👇 Tam Ön' : (facing === 'down-right') ? '↘️ 3/4 Ön' : (facing === 'up-right') ? '↗️ 3/4 Sırt' : (facing === 'up') ? '☝️ Tam Sırt' : '↙️ 3/4 Sol';
+                    ctx.fillText(label, cx, 355);
+                });
+
+                // HUD Güncelleme
+                const state = Karakter2Renderer.getKarakter2SmokingState(p, false);
+                const badgeEl = document.getElementById('hudPuffBadge');
+                const statusEl = document.getElementById('hudStatus');
+
+                if (p.heldItem !== 'sigara') {
+                    badgeEl.textContent = 'Sigara Yok';
+                    badgeEl.style.color = '#94a3b8';
+                    statusEl.textContent = 'Karakter sigara tutmuyor. "Sigara: AÇIK" butonuna basarak eline verebilirsiniz.';
+                } else if (state && state.active) {
+                    const isRings = (state.puffStyle === 'rings');
+                    badgeEl.textContent = `Fırt #${state.puffIndex} — ${isRings ? '💨 Option A (Halkalar)' : '☁️ Option B (Hacimli Bulut)'}`;
+                    badgeEl.style.color = isRings ? '#38bdf8' : '#ec4899';
+
+                    if (state.isLighting) {
+                        if (state.elapsed < 1000) {
+                            statusEl.innerHTML = `<span style="color: #38bdf8;">1. Faz:</span> Sigarayı Ağza Alma • 🪙 Sol Kol Zippo'yu Kaldırıyor & Kapak Açılıyor ✨`;
+                        } else if (state.elapsed < 2200) {
+                            statusEl.innerHTML = `<span style="color: #f59e0b;">2. Faz:</span> 🪙 Sol Elle Zippo Tutuluyor & Alev Ucu Yakıyor 🔥 (1.6s doyurucu alev süresi)`;
+                        } else if (state.elapsed < 3600) {
+                            statusEl.innerHTML = `<span style="color: #ef4444; font-weight: bold;">3. Faz: 🔥 Yakar Yakmaz Derin İlk Fırt</span> & Akkor Köz & Süzülen Rahat Gözler • Zippo Kapanıp Cebe İniyor`;
+                        } else if (state.elapsed < 4800) {
+                            statusEl.innerHTML = `<span style="color: #cbd5e1;">4. Faz:</span> Kolu İndirme & Parmaktan Kül Çırpma (Zerrecikler)`;
+                        } else {
+                            statusEl.innerHTML = `<span style="color: #a855f7;">5. Faz:</span> 👃 Burun Sızıntısı + ${isRings ? '💨 Yoğun Duman Halkaları (Option A)' : '☁️ Yoğun Başlayan ve Dağılan Sokak Dumanı (Option B)'}`;
+                        }
+                    } else {
+                        if (state.elapsed < 1000) {
+                            statusEl.innerHTML = `<span style="color: #38bdf8;">1. Faz:</span> Sigarayı Ağza Götürme & Karizmatik Baş Eğimi`;
+                        } else if (state.elapsed < 2200) {
+                            statusEl.innerHTML = `<span style="color: #f97316;">2. Faz:</span> Derin Fırt & Köz Akkor Parlaması & Süzülen Rahat Gözler 🔥`;
+                        } else if (state.elapsed < 3100) {
+                            statusEl.innerHTML = `<span style="color: #cbd5e1;">3. Faz:</span> Kolu İndirme & Parmaktan Kül Çırpma (Zerrecikler)`;
+                        } else {
+                            statusEl.innerHTML = `<span style="color: #a855f7;">4. Faz:</span> 👃 Burun Duman Sızıntısı + ${isRings ? '💨 Duman Halkaları (Option A)' : '☁️ Hacimli Sokak Dumanı (Option B)'}`;
+                        }
+                    }
+                } else {
+                    const nextSec = ((state ? state.nextSmokeIn : 0) / 1000).toFixed(1);
+                    const nextStyle = (state && state.puffStyle === 'rings') ? '💨 Option A (Halkalar)' : '☁️ Option B (Hacimli Bulut)';
+                    badgeEl.textContent = `Beklemede — Sıradaki: ${nextStyle}`;
+                    badgeEl.style.color = '#facc15';
+                    statusEl.innerHTML = `👖 Boştaki el kargo cebinde (Hand-In-Pocket) • Rüzgara duyarlı duman • ⏱️ Sonraki fırt: <b>${nextSec}s</b> (30s periyot)`;
+                }
+
+                requestAnimationFrame(render);
+            }
+
+            render();
+        };
+    </script>
+</body>
+
+</html>

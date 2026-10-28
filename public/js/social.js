@@ -176,7 +176,10 @@ function drawInteractingAvatar(player) {
         let propEmojis = {
             'nargile': '💨', 'cay': '☕', 'kahve': '☕', 'balon': '🎈',
             'gazoz': '🍾', 'tespih': '📿', 'olta': '🎣', 'baglama': '🪕',
-            'asagold': '🦯', 'kupa': '🏆', 'sigara': '🚬'
+            'asagold': '🦯', 'kupa': '🏆', 'sigara': '🚬',
+            'gitar': '🎸', 'sirtcantasi': '🎒', 'oralet': '🍵',
+            'kilic': '🗡️', 'oyuncak_araba': '🚗', 'tespih2': '📿',
+            'k2_energy_drink': '⚡', 'k2_skateboard': '🛹'
         };
         ictx.font = "18px sans-serif";
         ictx.fillText(propEmojis[held] || '🖐️', centerX + 18, centerY + 14);
@@ -268,7 +271,7 @@ function openGiftItemModal() {
             list.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:20px;">Çantanızda hediye edilebilecek el eşyası bulunmuyor. Gardıroptan veya Eşyalarım çantasından yeni eşyalar alabilirsiniz!</div>`;
         } else {
             ownedPropKeys.forEach(itemKey => {
-                let info = ALL_PROPS_INFO[itemKey] || { name: itemKey, emoji: '🖐️' };
+                let info = getPropInfo(itemKey);
                 let count = propInv[itemKey] || 1;
                 let card = document.createElement('div');
                 card.className = 'gift-item-card';
@@ -554,12 +557,38 @@ const ALL_PROPS_INFO = {
     'props_tespih2': { id: 'tespih2', name: 'Çift Katmanlı Tespih', cost: 900, emoji: '📿', desc: 'İki katmanlı parıltılı tespih, daha hızlı salınım.' },
     'props_olta': { id: 'olta', name: 'Balıkçı Oltası', cost: 400, emoji: '🎣', desc: 'Balık tutarken prestij kazandırır.' },
     'props_baglama': { id: 'baglama', name: 'Oyma Dut Bağlama', cost: 440, emoji: '🪕', desc: 'Anadolu türkülerine eşlik eder.' },
+    'props_gitar': { id: 'gitar', name: 'Akustik Gitar', cost: 700, emoji: '🎸', desc: 'Sırtında veya elinde taşınır.' },
+    'props_sirtcantasi': { id: 'sirtcantasi', name: 'Gezgin Sırt Çantası', cost: 440, emoji: '🎒', desc: 'Her an yanında.' },
     'props_asagold': { id: 'asagold', name: 'Altın Başlıklı Asa', cost: 520, emoji: '🪄', desc: 'Gösterişli ve asil bir duruş sağlar.' },
     'props_kupa': { id: 'kupa', name: 'Şampiyonluk Kupası', cost: 580, emoji: '🏆', desc: 'Masaların fatihine yakışır altın kupa.' },
     'props_kilic': { id: 'kilic', name: 'Orta Çağ Kılıcı', cost: 500, emoji: '🗡️', desc: 'Güçlü bir yakın dövüş silahı.' },
     'props_oyuncak_araba': { id: 'oyuncak_araba', name: 'Küçük Oyuncak Araba', cost: 600, emoji: '🚗', desc: 'Eğlenceli bir oyuncak araba.' },
-    'props_sigara': { id: 'sigara', name: 'Tüten Sigara', cost: 10000, emoji: '🚬', desc: 'Hafif dumanı tüten karizmatik el sigarası.' }
+    'props_sigara': { id: 'sigara', name: 'Tüten Sigara', cost: 10000, emoji: '🚬', desc: 'Hafif dumanı tüten karizmatik el sigarası.' },
+    'props_k2_energy_drink': { id: 'k2_energy_drink', name: 'K2 Buzlu Enerji İçeceği', cost: 150, emoji: '⚡', desc: 'Buz gibi neon siber enerji içeceği (8 açılı).' },
+    'props_k2_skateboard': { id: 'k2_skateboard', name: 'K2 Grafiti Sokak Kaykayı', cost: 350, emoji: '🛹', desc: 'Canlı grafiti desenli, neon tekerlekli profesyonel sokak kaykayı.' }
 };
+
+function getPropInfo(itemKey) {
+    if (ALL_PROPS_INFO[itemKey]) {
+        return ALL_PROPS_INFO[itemKey];
+    }
+    let propId = itemKey ? itemKey.replace('props_', '') : '';
+    if (typeof WARDROBE_CATALOG !== 'undefined' && WARDROBE_CATALOG.props) {
+        let found = WARDROBE_CATALOG.props.find(p => p.id === propId);
+        if (found) {
+            return {
+                id: found.id,
+                name: found.name,
+                cost: found.cost || 0,
+                emoji: found.icon || '🖐️',
+                desc: found.description || 'El Aksesuarı'
+            };
+        }
+    }
+    let cleanName = propId.replace(/^k2_/, 'K2 ').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return { id: propId, name: cleanName, cost: 0, emoji: '🖐️', desc: 'El Aksesuarı' };
+}
+window.getPropInfo = getPropInfo;
 
 let isItemInventoryOpen = false;
 
@@ -596,8 +625,14 @@ function renderItemInventoryUI() {
     let propInv = window.myPropInventory || {};
     updatePropsCountBadge();
 
-    for (let itemKey in ALL_PROPS_INFO) {
-        let info = ALL_PROPS_INFO[itemKey];
+    // ALL_PROPS_INFO'daki tüm eşyalar + çantada sahip olunan diğer eşyalar
+    let allKeys = new Set([
+        ...Object.keys(ALL_PROPS_INFO),
+        ...Object.keys(propInv).filter(k => k.startsWith('props_') && k !== 'props_none')
+    ]);
+
+    for (let itemKey of allKeys) {
+        let info = getPropInfo(itemKey);
         let count = propInv[itemKey] || 0;
         let isHeld = (myAvatar && myAvatar.heldItem === info.id);
 
@@ -653,6 +688,25 @@ function renderItemInventoryUI() {
 
 function equipPropItem(itemKey) {
     socket.emit('equipPropItem', { itemKey: itemKey });
+    let propId = itemKey.replace('props_', '');
+    if (propId === 'sigara') {
+        if (typeof myAvatar !== 'undefined' && myAvatar) {
+            myAvatar.heldItem = 'sigara';
+            myAvatar._k2CigLit = false;
+            myAvatar._k2UseLighter = true;
+            if (typeof triggerK2SmokeAnimation === 'function') {
+                triggerK2SmokeAnimation(myAvatar, true);
+            }
+        }
+        if (typeof previewAvatar !== 'undefined' && previewAvatar) {
+            previewAvatar.heldItem = 'sigara';
+            previewAvatar._k2CigLit = false;
+            previewAvatar._k2UseLighter = true;
+            if (typeof triggerK2SmokeAnimation === 'function') {
+                triggerK2SmokeAnimation(previewAvatar, true);
+            }
+        }
+    }
 }
 
 function buyPropFromBag(propId) {

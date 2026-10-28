@@ -81,20 +81,41 @@ if (socket) {
     socket.on('playerHorseUpdate', (data) => {
         if (typeof players !== 'undefined' && players[data.id]) {
             players[data.id].hasHorse = data.hasHorse;
+            if (typeof myId !== 'undefined' && data.id === myId) {
+                updateHorseMountBadgeUI();
+            }
         }
+    });
+
+    socket.on('horse_mount_state', (data) => {
+        if (typeof players !== 'undefined' && players[myId]) {
+            players[myId].hasHorse = !!data.isMounted;
+        }
+        if (data && typeof data.remainingSeconds === 'number') {
+            if (data.remainingSeconds > 0) {
+                startHorseTimerDisplay(data.remainingSeconds);
+            } else {
+                stopHorseTimerDisplay();
+            }
+        }
+        updateHorseMountBadgeUI();
     });
 
     socket.on('horse_rent_result', (res) => {
         if (res.success) {
             if (typeof players !== 'undefined' && players[myId]) {
-                players[myId].hasHorse = true;
+                players[myId].hasHorse = (res.isMounted !== false);
             }
             if (window.playSound) window.playSound('win');
             startHorseTimerDisplay(res.durationSeconds || 300);
             closeHorseRentalModal();
-            showGanyanToast(`🐎 5 Dakikalık Binek Atın Hazır! Hızın 2.5 Katına Çıktı!`);
+            showGanyanToast(`🐎 5 Dakikalık Asil Binek Atın Hazır! Hızın 2 Katına Çıktı!`);
         } else {
-            alert(res.message);
+            if (typeof showInGameAlert === 'function') {
+                showInGameAlert(res.message, 'Seyis Dursun', '🐎');
+            } else {
+                alert(res.message);
+            }
         }
     });
 
@@ -335,6 +356,30 @@ function updateGanyanUI() {
 
 // --- 3. BİNEK ATI KİRALAMA PENCERESİ (200 TL / 5 DAKİKA 2X HIZ) ---
 function openHorseRentalModal() {
+    if (typeof players !== 'undefined' && players[myId] && players[myId].hasSwanBoat) {
+        if (typeof showInGameAlert === 'function') {
+            showInGameAlert("Kuğu deniz bisikletindeyken ata binemez veya at kiralayamazsınız!\nÖnce kuğudan inmelisiniz.", "Seyis Dursun", "🦢");
+        } else {
+            alert("⚠️ Kuğu deniz bisikletindeyken ata binemez veya at kiralayamazsınız! Önce kuğudan inmelisiniz.");
+        }
+        return;
+    }
+    if (horseSecondsRemaining > 0) {
+        let mins = Math.floor(horseSecondsRemaining / 60);
+        let secs = horseSecondsRemaining % 60;
+        let timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        if (typeof showInGameAlert === 'function') {
+            showInGameAlert(
+                `Hey Kivre! Zaten altındaki asil atın kiralama süresi devam ediyor!\n\n⏱️ Kalan Süre: ${timeStr}\n\nHaritada rüzgar gibi dörtnal koşturmana bak, süren bittiğinde tekrar kiralayabilirsin!`,
+                "Seyis Dursun",
+                "🐎",
+                "Koşmaya Devam Et!"
+            );
+        } else {
+            alert(`⚠️ Zaten kiralık bir binek atınız bulunuyor! (Kalan Süre: ${timeStr})\nSüreniz bittiğinde tekrar kiralayabilirsiniz.`);
+        }
+        return;
+    }
     const modal = document.getElementById('horseRentalModal');
     if (modal) modal.style.display = 'flex';
 }
@@ -347,33 +392,104 @@ function closeHorseRentalModal() {
 window.closeHorseRentalModal = closeHorseRentalModal;
 
 function submitRentHorse() {
+    if (typeof players !== 'undefined' && players[myId] && players[myId].hasSwanBoat) {
+        if (typeof showInGameAlert === 'function') {
+            showInGameAlert("Kuğu deniz bisikletindeyken ata binemezsiniz!\nÖnce kuğudan inmelisiniz.", "Seyis Dursun", "🦢");
+        } else {
+            alert("⚠️ Kuğu deniz bisikletindeyken ata binemezsiniz! Önce kuğudan inmelisiniz.");
+        }
+        return;
+    }
     if (socket) {
         socket.emit('rent_horse_mount');
     }
 }
 window.submitRentHorse = submitRentHorse;
 
+function updateHorseMountBadgeUI() {
+    const badge = document.getElementById('horseMountActiveBadge');
+    const timerText = document.getElementById('horseMountCountdown');
+    const toggleBtn = document.getElementById('btnHorseMountToggle');
+    if (!badge) return;
+
+    if (horseSecondsRemaining > 0) {
+        badge.style.display = 'flex';
+        let mins = Math.floor(horseSecondsRemaining / 60);
+        let secs = horseSecondsRemaining % 60;
+        let str = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        if (timerText) timerText.innerText = str;
+
+        let currentlyMounted = (typeof players !== 'undefined' && players[myId]) ? !!players[myId].hasHorse : false;
+        if (toggleBtn) {
+            if (currentlyMounted) {
+                toggleBtn.innerText = "Attan İn";
+                toggleBtn.style.background = "#dc2626";
+                toggleBtn.style.borderColor = "#f87171";
+                toggleBtn.style.color = "#ffffff";
+            } else {
+                toggleBtn.innerText = "Ata Bin";
+                toggleBtn.style.background = "#16a34a";
+                toggleBtn.style.borderColor = "#86efac";
+                toggleBtn.style.color = "#ffffff";
+            }
+        }
+    } else {
+        badge.style.display = 'none';
+    }
+}
+window.updateHorseMountBadgeUI = updateHorseMountBadgeUI;
+
+function toggleHorseMountAction() {
+    if (horseSecondsRemaining <= 0) return;
+    let currentlyMounted = (typeof players !== 'undefined' && players[myId]) ? !!players[myId].hasHorse : false;
+    if (currentlyMounted) {
+        // Attan in
+        if (socket) socket.emit('toggle_horse_mount', { mounted: false });
+        if (typeof players !== 'undefined' && players[myId]) players[myId].hasHorse = false;
+        updateHorseMountBadgeUI();
+        showGanyanToast("🐎 Attan indin. Dilediğinde rozetten tekrar binebilirsin.");
+    } else {
+        // Ata bin
+        if (typeof players !== 'undefined' && players[myId] && players[myId].hasSwanBoat) {
+            if (typeof showInGameAlert === 'function') {
+                showInGameAlert("Kuğu deniz bisikletindeyken ata binemezsiniz!\nÖnce kuğudan inmelisiniz.", "Seyis Dursun", "🦢");
+            } else {
+                alert("⚠️ Kuğu deniz bisikletindeyken ata binemezsiniz! Önce kuğudan inmelisiniz.");
+            }
+            return;
+        }
+        if (socket) socket.emit('toggle_horse_mount', { mounted: true });
+        if (typeof players !== 'undefined' && players[myId]) players[myId].hasHorse = true;
+        updateHorseMountBadgeUI();
+        showGanyanToast("🐎 Ata bindin! 2X Hız aktif.");
+    }
+}
+window.toggleHorseMountAction = toggleHorseMountAction;
+
+function dismountHorseAutoOnSit() {
+    if (typeof players !== 'undefined' && players[myId] && players[myId].hasHorse) {
+        players[myId].hasHorse = false;
+        if (socket) socket.emit('toggle_horse_mount', { mounted: false });
+        updateHorseMountBadgeUI();
+        showGanyanToast("🛋️ Sandalyeye oturduğun için attan indin.");
+    }
+}
+window.dismountHorseAutoOnSit = dismountHorseAutoOnSit;
+
 function startHorseTimerDisplay(seconds = 300) {
     stopHorseTimerDisplay();
     horseSecondsRemaining = seconds;
-
-    const badge = document.getElementById('horseMountActiveBadge');
-    const timerText = document.getElementById('horseMountCountdown');
-    if (badge) badge.style.display = 'flex';
+    updateHorseMountBadgeUI();
 
     function tick() {
         if (horseSecondsRemaining <= 0) {
             stopHorseTimerDisplay();
             return;
         }
-        let mins = Math.floor(horseSecondsRemaining / 60);
-        let secs = horseSecondsRemaining % 60;
-        let str = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-        if (timerText) timerText.innerText = str;
         horseSecondsRemaining--;
+        updateHorseMountBadgeUI();
     }
 
-    tick();
     horseTimerInterval = setInterval(tick, 1000);
 }
 
@@ -382,6 +498,7 @@ function stopHorseTimerDisplay() {
         clearInterval(horseTimerInterval);
         horseTimerInterval = null;
     }
+    horseSecondsRemaining = 0;
     const badge = document.getElementById('horseMountActiveBadge');
     if (badge) badge.style.display = 'none';
 }

@@ -417,7 +417,7 @@ function closeGlobalAnnouncement() {
 // Admin Socket Dinleyicileri
 if (window.socket) {
     window.socket.on('adminUsersList', (users) => {
-        allAdminUsers = users || [];
+        allAdminUsers = (users || []).filter(u => u && !u.isBot && !String(u.username).startsWith('bot_') && !String(u.username).startsWith('🤖'));
         renderAdminUsers(allAdminUsers);
     });
 

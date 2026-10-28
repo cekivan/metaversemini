@@ -1,6 +1,33 @@
 const dataManager = require('../dataManager');
 const fatherPetManager = require('../fatherPetManager');
-const { checkRateLimit } = require('../utils/securityUtils');
+const PROP_NAMES = {
+    'baglama': 'Oyma Dut Bağlama',
+    'gitar': 'Akustik Gitar',
+    'sirtcantasi': 'Gezgin Sırt Çantası',
+    'nargile': 'Tüten Nargile',
+    'cay': 'İnce Belli Çay',
+    'oralet': 'Sıcak Kıraathane Oraleti',
+    'kahve': 'Közde Türk Kahvesi',
+    'balon': 'Uçan Kırmızı Balon',
+    'gazoz': 'Nostaljik Şişe Gazoz',
+    'tespih': 'Oltu Taşı Tespih',
+    'tespih2': 'Çift Katmanlı Tespih',
+    'olta': 'Balıkçı Oltası',
+    'asagold': 'Altın Başlıklı Asa',
+    'kupa': 'Şampiyonluk Kupası',
+    'kilic': 'Orta Çağ Kılıcı',
+    'oyuncak_araba': 'Küçük Oyuncak Araba',
+    'sigara': 'Tüten Sigara',
+    'k2_energy_drink': 'K2 Buzlu Enerji İçeceği',
+    'k2_skateboard': 'K2 Grafiti Sokak Kaykayı'
+};
+
+function getPropDisplayName(propId) {
+    if (!propId) return '';
+    let cleanId = propId.replace('props_', '');
+    if (PROP_NAMES[cleanId]) return PROP_NAMES[cleanId];
+    return cleanId.replace(/^k2_/, 'K2 ').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
 
 function registerSocialHandlers(io, socket, players, helpers) {
     const { givePlayerTeaWithTimer, playerTeaTimers, getPlayerDetailedLocation } = helpers;
@@ -211,8 +238,8 @@ function registerSocialHandlers(io, socket, players, helpers) {
             hasTea: players[socket.id].hasTea
         });
 
-        // 'tea' ve 'sitting' dışındaki eylemler (dans, el sallama, alkış) 3.5 sn sonra normale döner
-        if (actionData.action !== 'tea' && actionData.action !== 'sitting') {
+        // 'tea', 'sitting' ve 'afk' dışındaki eylemler (dans, el sallama, alkış) 3.5 sn sonra normale döner
+        if (actionData.action !== 'tea' && actionData.action !== 'sitting' && actionData.action !== 'afk') {
             setTimeout(() => {
                 if (players[socket.id] && players[socket.id].action === actionData.action) {
                     players[socket.id].action = null;
@@ -285,7 +312,7 @@ function registerSocialHandlers(io, socket, players, helpers) {
         socket.emit('systemMessage', `💸 ${targetKey} kullanıcısına ${amount} TL gönderdin.`);
 
         for (let sid in players) {
-            if (players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
+            if (players[sid]?.name && players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
                 players[sid].money = dataManager.persistentData.users[targetKey].money;
                 io.to(sid).emit('moneyUpdate', players[sid].money);
                 io.to(sid).emit('moneyGiftReceived', { from: sender.name, amount: amount });
@@ -324,7 +351,7 @@ function registerSocialHandlers(io, socket, players, helpers) {
                     delete playerTeaTimers[socket.id];
                 }
                 userData.teaExpiresAt = null;
-                socket.emit('systemMessage', `✋ ${propId} eşyasını çantana kaldırdın.`);
+                socket.emit('systemMessage', `✋ ${getPropDisplayName(propId)} eşyasını çantana kaldırdın.`);
             } else {
                 if (!userData.propInventory || !userData.propInventory[itemKey] || userData.propInventory[itemKey] <= 0) {
                     socket.emit('gameError', "Bu eşyaya çantanızda sahip değilsiniz!");
@@ -337,7 +364,7 @@ function registerSocialHandlers(io, socket, players, helpers) {
                 }
                 userData.avatar.heldItem = propId;
                 players[socket.id].heldItem = propId;
-                socket.emit('systemMessage', `🖐️ ${propId} eşyasını eline aldın.`);
+                socket.emit('systemMessage', `🖐️ ${getPropDisplayName(propId)} eşyasını eline aldın.`);
             }
         }
         dataManager.savePersistentData();
@@ -359,6 +386,7 @@ function registerSocialHandlers(io, socket, players, helpers) {
         let targetUser = dataManager.sanitizeString(data.targetUsername, 30);
         let itemKey = data.itemKey;
         let propId = itemKey.replace('props_', '');
+        let propDisplayName = getPropDisplayName(propId);
 
         if (!itemKey.startsWith('props_') || itemKey === 'props_none') {
             socket.emit('gameError', "Sadece elde taşınabilen aksesuarlar hediye edilebilir!");
@@ -396,14 +424,14 @@ function registerSocialHandlers(io, socket, players, helpers) {
         socket.emit('propInventoryUpdate', senderData.propInventory);
         socket.emit('wardrobeUpdate', { avatar: senderData.avatar, inventory: senderData.inventory });
         io.to(sender.room).emit('playerAvatarChange', { id: socket.id, avatar: senderData.avatar, heldItem: sender.heldItem });
-        socket.emit('systemMessage', `🎁 ${targetKey} oyuncusuna 1 adet ${propId} hediye ettiniz!`);
+        socket.emit('systemMessage', `🎁 ${targetKey} oyuncusuna 1 adet ${propDisplayName} hediye ettiniz!`);
 
         for (let sid in players) {
-            if (players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
+            if (players[sid]?.name && players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
                 io.to(sid).emit('propInventoryUpdate', targetData.propInventory);
                 io.to(sid).emit('wardrobeUpdate', { avatar: targetData.avatar, inventory: targetData.inventory });
                 io.to(sid).emit('propGiftReceived', { from: sender.name, itemKey: itemKey });
-                io.to(sid).emit('systemMessage', `🎁 ${sender.name} sana 1 adet ${propId} hediye etti!`);
+                io.to(sid).emit('systemMessage', `🎁 ${sender.name} sana 1 adet ${propDisplayName} hediye etti!`);
             }
         }
     });
@@ -457,7 +485,7 @@ function registerSocialHandlers(io, socket, players, helpers) {
             socket.emit('friendRequestsUpdate', senderData.friendRequests || []);
 
             for (let sid in players) {
-                if (players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
+                if (players[sid]?.name && players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
                     io.to(sid).emit('systemMessage', `👥 ${senderKey} arkadaşlık teklifinizi onayladı! Artık arkadaşsınız.`);
                     io.to(sid).emit('friendListUpdate', dataManager.getFriendListData(targetKey, players));
                     io.to(sid).emit('friendRequestsUpdate', targetData.friendRequests || []);
@@ -472,7 +500,7 @@ function registerSocialHandlers(io, socket, players, helpers) {
         socket.emit('systemMessage', `👥 ${targetKey} oyuncusuna arkadaşlık isteği gönderildi.`);
 
         for (let sid in players) {
-            if (players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
+            if (players[sid]?.name && players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
                 io.to(sid).emit('friendRequestsUpdate', targetData.friendRequests);
                 io.to(sid).emit('friendRequestReceived', { fromUsername: senderKey });
                 io.to(sid).emit('systemMessage', `👥 ${senderKey} sana arkadaşlık isteği gönderdi!`);
@@ -513,7 +541,7 @@ function registerSocialHandlers(io, socket, players, helpers) {
             socket.emit('friendRequestsUpdate', responderData.friendRequests || []);
 
             for (let sid in players) {
-                if (players[sid].name.toLowerCase() === fromKey.toLowerCase()) {
+                if (players[sid]?.name && players[sid].name.toLowerCase() === fromKey.toLowerCase()) {
                     io.to(sid).emit('systemMessage', `👥 ${responderKey} arkadaşlık isteğini kabul etti! Artık arkadaşsınız.`);
                     io.to(sid).emit('friendListUpdate', dataManager.getFriendListData(fromKey, players));
                     io.to(sid).emit('friendRequestsUpdate', fromData.friendRequests || []);
@@ -549,7 +577,7 @@ function registerSocialHandlers(io, socket, players, helpers) {
         socket.emit('systemMessage', `👥 ${targetKey} arkadaş listenizden çıkarıldı.`);
 
         for (let sid in players) {
-            if (players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
+            if (players[sid]?.name && players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
                 io.to(sid).emit('friendListUpdate', dataManager.getFriendListData(targetKey, players));
                 io.to(sid).emit('systemMessage', `ℹ️ ${userKey} seni arkadaş listesinden çıkardı.`);
             }

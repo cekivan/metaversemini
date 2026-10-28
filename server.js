@@ -40,12 +40,21 @@ app.use(express.json({ limit: '10mb' }));
 
 // Geliştirici Varlık Kaydetme Uç Noktası (Sprite Sheet PNG çıktısı için)
 app.post('/api/dev/save-pet-asset', (req, res) => {
+    // Güvenlik: Yalnızca geliştirme modunda veya yerel makinede izin ver
+    const isLocal = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+    if (process.env.NODE_ENV === 'production' && !isLocal) {
+        return res.status(403).json({ error: 'Bu endpoint üretim ortamında devre dışıdır.' });
+    }
     try {
         const { filename, base64 } = req.body;
         if (!filename || !base64) return res.status(400).json({ error: 'Missing filename or base64' });
+        const cleanName = path.basename(filename);
+        if (!/^[a-zA-Z0-9_\-\.]+\.(png|jpg|jpeg|svg)$/i.test(cleanName)) {
+            return res.status(400).json({ error: 'Geçersiz dosya adı veya uzantısı!' });
+        }
         const targetFolder = path.join(__dirname, 'public', 'assets', 'pets');
         if (!fs.existsSync(targetFolder)) fs.mkdirSync(targetFolder, { recursive: true });
-        const filePath = path.join(targetFolder, path.basename(filename));
+        const filePath = path.join(targetFolder, cleanName);
         const raw = base64.replace(/^data:image\/\w+;base64,/, '');
         fs.writeFileSync(filePath, Buffer.from(raw, 'base64'));
         console.log(`[PetAsset] Saved sprite asset to: ${filePath}`);
@@ -182,24 +191,35 @@ io.on('connection', (socket) => {
                 }
             }
 
+            if (players[socket.id].action === 'afk' && (movementData.isMoving || (hasMoved && (Math.abs(prevX - movementData.x) > 0.5 || Math.abs(prevY - movementData.y) > 0.5)))) {
+                players[socket.id].action = null;
+                io.to(players[socket.id].room).emit('playerActionUpdate', { id: socket.id, action: null });
+            }
+
             players[socket.id].x = movementData.x;
             players[socket.id].y = movementData.y;
             let stateChanged = (movementData.isMoving !== undefined && movementData.isMoving !== players[socket.id]._lastBroadcastMoving);
             if (movementData.isMoving !== undefined) {
                 players[socket.id].isMoving = movementData.isMoving;
             }
+            let sprintChanged = (movementData.isSprinting !== undefined && movementData.isSprinting !== players[socket.id]._lastBroadcastSprinting);
+            if (movementData.isSprinting !== undefined) {
+                players[socket.id].isSprinting = movementData.isSprinting;
+            }
             let facingChanged = (movementData.facing && movementData.facing !== players[socket.id].facing);
             if (movementData.facing) {
                 players[socket.id].facing = movementData.facing;
             }
 
-            if (hasMoved || stateChanged || facingChanged) {
+            if (hasMoved || stateChanged || sprintChanged || facingChanged) {
                 players[socket.id]._lastBroadcastMoving = movementData.isMoving;
+                players[socket.id]._lastBroadcastSprinting = movementData.isSprinting;
                 socket.to(players[socket.id].room).emit('playerMoved', { 
                     id: socket.id, 
                     x: movementData.x, 
                     y: movementData.y,
                     isMoving: movementData.isMoving,
+                    isSprinting: movementData.isSprinting || false,
                     facing: movementData.facing || players[socket.id].facing || 'down'
                 });
                 fatherPetManager.updateOwnerPosition(socket.id, movementData.x, movementData.y);
@@ -230,8 +250,9 @@ io.on('connection', (socket) => {
         if (oldRoom === 'dostlar_kiraathanesi' && newRoom !== 'dostlar_kiraathanesi') {
             clearKiraathaneDrinkForPlayer(io, players, socket.id);
         }
-        if ((oldRoom === 'kafe' || oldRoom === 'dostlar_kiraathanesi') && newRoom !== oldRoom) {
+        if (newRoom !== oldRoom) {
             handlePlayerLeaveTable(io, players, socket, true);
+            removePlayerFromBlackjack(io, socket.id, players);
         }
 
         socket.leave(oldRoom);

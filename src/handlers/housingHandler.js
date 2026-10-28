@@ -409,7 +409,6 @@ function registerHousingHandlers(io, socket, players) {
 
         let room = players[socket.id].room;
         io.to(room).emit('playerAvatarChange', { id: socket.id, avatar: buyerData.avatar, heldItem: 'limonata' });
-        io.to(room).emit('chatUpdate', { id: socket.id, msg: '🍋 Buz gibi taze limonatamı yudumluyorum!' });
 
         // Alıcıya başarı mesajı
         socket.emit('lemonadePurchasedSuccess', { amount: LEMONADE_PRICE });

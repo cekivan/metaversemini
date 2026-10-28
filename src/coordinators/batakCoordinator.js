@@ -372,9 +372,13 @@ function handleBatakVoteRematch(game, pid, vote, io, players) {
             game.players.forEach(p => {
                 if (!p.startsWith('bot_') && players[p]) {
                     let uName = players[p].name;
-                    dataManager.persistentData.users[uName].money = Math.max(0, (dataManager.persistentData.users[uName].money || 0) - bet);
-                    players[p].money = dataManager.persistentData.users[uName].money;
-                    io.to(p).emit('moneyUpdate', players[p].money);
+                    let uKey = dataManager.findUserKey(uName) || uName;
+                    let uData = dataManager.persistentData.users[uKey];
+                    if (uData) {
+                        uData.money = Math.max(0, (uData.money || 0) - bet);
+                        players[p].money = uData.money;
+                        io.to(p).emit('moneyUpdate', players[p].money);
+                    }
                 }
                 newPot += bet;
             });

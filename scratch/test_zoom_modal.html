@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        #gameModal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 96vw;
+            max-width: 1020px;
+            background: #0f172a;
+            color: white;
+            border: 2px solid #38bdf8;
+            border-radius: 14px;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="gameModal">
+        <div id="modalHeader" style="display:flex; justify-content:space-between;">
+            <span>🎮 Batak Masası</span>
+            <div id="zoomControls">
+                <button onclick="setZoom(-10)">-</button>
+                <span id="badge">100%</span>
+                <button onclick="setZoom(10)">+</button>
+            </div>
+        </div>
+        <div id="gameContent" style="height:300px; background:#1e293b; margin-top:10px;">
+            Game Canvas / Table
+        </div>
+    </div>
+    <script>
+        let z = 100;
+        function setZoom(dz) {
+            z = Math.max(70, Math.min(150, z + dz));
+            document.getElementById('badge').textContent = z + '%';
+            // Test zoom
+            document.getElementById('gameModal').style.zoom = (z / 100);
+        }
+    </script>
+</body>
+
+</html>

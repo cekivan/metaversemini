@@ -196,8 +196,17 @@ function createNewTable(payload, activeGames = {}, creator = {}) {
     return { success: true, tableId: uniqueId, table: tables[uniqueId] };
 }
 
-function closeTable(tableId) {
+function closeTable(tableId, playersRef = null) {
     if (!tables[tableId]) return false;
+
+    // Masadaki botları players havuzundan temizle (Bellek sızıntısı önleme)
+    if (playersRef && Array.isArray(tables[tableId].players)) {
+        tables[tableId].players.forEach(pid => {
+            if (typeof pid === 'string' && pid.startsWith('bot_') && playersRef[pid]) {
+                delete playersRef[pid];
+            }
+        });
+    }
 
     // Statik / Varsayılan masaların durumu sıfırlanır, silinmez
     if (config.DEFAULT_TABLES && config.DEFAULT_TABLES[tableId]) {
@@ -251,6 +260,12 @@ function addBotToTable(tableId, activeGames = {}, players = {}) {
     if (!table) return { success: false, message: "Masa bulunamadı!" };
     if (activeGames[tableId]) return { success: false, message: "Bu masada oyun zaten başlamış!" };
     if (table.players.length >= table.min) return { success: false, message: "Masa zaten dolu!" };
+
+    // --- BAHİSLİ MASALARA OYUN BAŞINDA BOT ENGELİ ---
+    // Bahisli masalara bot eklenerek haksız kazanç sağlanması önlenir. Botlar yalnızca ücretsiz oyunlara eklenebilir.
+    if ((table.bet || 0) > 0) {
+        return { success: false, message: "Bahisli masalara oyun başında bot eklenemez! Botlar sadece ücretsiz masalara eklenebilir." };
+    }
 
     let botId = `bot_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     let usedNames = table.players.map(pid => players[pid]?.name);

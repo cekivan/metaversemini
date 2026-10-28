@@ -43,6 +43,11 @@ function verifyPassword(password, storedHash, salt) {
     }
 }
 
+function escapeRegex(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // --- 2. MONGOOSE İLE VERİ TABANINA ASENKRON ANLIK KAYIT ---
 async function saveUserData(username, updateFields = null) {
     if (!username) return;
@@ -58,8 +63,9 @@ async function saveUserData(username, updateFields = null) {
             const updateDoc = { ...dataToSave };
             delete updateDoc._id;
             delete updateDoc.__v;
+            const safePattern = escapeRegex(uKey);
             await User.findOneAndUpdate(
-                { username: { $regex: new RegExp(`^${uKey}$`, 'i') } },
+                { username: { $regex: new RegExp(`^${safePattern}$`, 'i') } },
                 { $set: updateDoc },
                 { upsert: true, new: true }
             );
@@ -87,9 +93,10 @@ async function savePersistentData(targetUsername = null) {
                 const doc = { ...uData };
                 delete doc._id;
                 delete doc.__v;
+                const safePattern = escapeRegex(uname);
                 bulkOps.push({
                     updateOne: {
-                        filter: { username: { $regex: new RegExp(`^${uname}$`, 'i') } },
+                        filter: { username: { $regex: new RegExp(`^${safePattern}$`, 'i') } },
                         update: { $set: doc },
                         upsert: true
                     }
@@ -633,5 +640,6 @@ module.exports = {
     isUserAdmin,
     ADMIN_USERS,
     isUserMod,
-    MOD_USERS
+    MOD_USERS,
+    escapeRegex
 };
