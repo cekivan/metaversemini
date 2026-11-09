@@ -148,8 +148,22 @@
     }
     window.handleRoomChangedVoice = handleRoomChangedVoice;
 
+    function isLocalPlayerJammed() {
+        let now = Date.now();
+        if (window.myJammerExpiresAt && window.myJammerExpiresAt > now) return true;
+        if (typeof myId !== 'undefined' && typeof players !== 'undefined' && players[myId] && players[myId].jammerExpiresAt && players[myId].jammerExpiresAt > now) {
+            return true;
+        }
+        return false;
+    }
+    window.isLocalPlayerJammed = isLocalPlayerJammed;
+
     // 4. Genel Sesli Sohbet Toggle (C Tuşu veya Butonlar)
     async function toggleGlobalVoiceChat(targetChannel = null) {
+        if (isLocalPlayerJammed()) {
+            showVoiceToast("📡❌ Sinyaliniz kesildi! Jammer etkisi altındayken sesli sohbet ve mikrofon açamazsınız.");
+            return;
+        }
         let channel = targetChannel || getEffectiveVoiceChannel();
 
         if (!isVoiceConnected) {
@@ -171,6 +185,10 @@
 
     // 5. Ses Kanalına Bağlan (Mikrofon İzni Al ve Odaya Katıl)
     async function joinTableVoiceChat() {
+        if (isLocalPlayerJammed()) {
+            showVoiceToast("📡❌ Sinyaliniz kesildi! Jammer etkisi altındayken sesli sohbet ve mikrofon açamazsınız.");
+            return;
+        }
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             showVoiceToast("⚠️ Tarayıcınız canlı sesli sohbeti (WebRTC) desteklemiyor.");
             return;
@@ -214,13 +232,21 @@
         }
 
         updateVoiceButtonUI();
-        showVoiceToast(`✅ ${getVoiceChannelDisplayName(currentVoiceTableId)} sesli sohbetine bağlandınız! (C ile konuşabilirsiniz)`);
+        const joinHint = isMobileTouchVoiceUI() ? "(Mikrofon butonuyla konuşabilirsiniz)" : "(C ile konuşabilirsiniz)";
+        showVoiceToast(`✅ ${getVoiceChannelDisplayName(currentVoiceTableId)} sesli sohbetine bağlandınız! ${joinHint}`);
     }
     window.joinTableVoiceChat = joinTableVoiceChat;
 
     // 6. Mikrofonu Sessize Al / Aç (Mute / Unmute)
     function toggleMicMute() {
+        if (isLocalPlayerJammed()) {
+            showVoiceToast("📡❌ Sinyaliniz kesildi! Jammer etkisi altındayken mikrofon kullanamazsınız.");
+            return;
+        }
         if (!localVoiceStream) return;
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().catch(() => {});
+        }
         isMicMuted = !isMicMuted;
         window.isMicMuted = isMicMuted;
 
@@ -237,7 +263,10 @@
         }
 
         updateVoiceButtonUI();
-        showVoiceToast(isMicMuted ? "🔇 Mikrofonunuz sessize alındı. (Açmak için C'ye basın)" : "🎙️ Mikrofonunuz açıldı. (Konuşabilirsiniz)");
+        const muteToast = isMobileTouchVoiceUI()
+            ? "🔇 Mikrofonunuz sessize alındı. (Mikrofon butonuna dokunarak açabilirsiniz)"
+            : "🔇 Mikrofonunuz sessize alındı. (Açmak için C'ye basın)";
+        showVoiceToast(isMicMuted ? muteToast : "🎙️ Mikrofonunuz açıldı. (Konuşabilirsiniz)");
     }
     window.toggleMicMute = toggleMicMute;
 
@@ -294,6 +323,9 @@
     function startVoiceActivityDetection() {
         try {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().catch(() => {});
+            }
             const source = audioContext.createMediaStreamSource(localVoiceStream);
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 256;
@@ -370,6 +402,8 @@
                 audioEl.id = `remoteAudio_${remoteSocketId}`;
                 audioEl.autoplay = true;
                 audioEl.playsInline = true;
+                audioEl.setAttribute('playsinline', '');
+                audioEl.setAttribute('webkit-playsinline', '');
                 document.body.appendChild(audioEl);
                 remoteAudioElements[remoteSocketId] = audioEl;
             }
@@ -382,8 +416,8 @@
         pc.onconnectionstatechange = () => {
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
                 if (remoteAudioElements[remoteSocketId]) {
-                    remoteAudioElements[remoteAudioElements[remoteSocketId]] = null;
-                    remoteAudioElements[remoteSocketId]?.remove();
+                    remoteAudioElements[remoteSocketId].srcObject = null;
+                    remoteAudioElements[remoteSocketId].remove();
                     delete remoteAudioElements[remoteSocketId];
                 }
                 updateSpeakingUI(remoteSocketId, false);
@@ -532,8 +566,9 @@
                 bjBtn.style.boxShadow = 'none';
                 bjBtn.style.borderColor = '#64748b';
             }
+            const keyTag = isMobileTouchVoiceUI() ? '' : ' (C)';
             if (bjIcon) bjIcon.innerText = '🎤';
-            if (bjText) bjText.innerText = 'Ses Aç (C)';
+            if (bjText) bjText.innerText = 'Ses Aç' + keyTag;
 
             if (globalBtn) {
                 globalBtn.style.background = 'linear-gradient(135deg, #334155, #1e293b)';
@@ -541,9 +576,10 @@
                 globalBtn.style.borderColor = 'rgba(255,255,255,0.15)';
             }
             if (globalIcon) globalIcon.innerText = '🎤';
-            if (globalText) globalText.innerText = 'Sesli Sohbet (C)';
+            if (globalText) globalText.innerText = 'Sesli Sohbet' + keyTag;
 
         } else if (isMicMuted) {
+            const keyTag = isMobileTouchVoiceUI() ? '' : ' (C)';
             // B) SESSİZDE (MUTE)
             if (btn) {
                 btn.style.background = 'linear-gradient(135deg, #eab308, #ca8a04)';
@@ -557,7 +593,7 @@
                 okeyBtn.style.boxShadow = '0 0 10px rgba(234,179,8,0.5)';
             }
             if (okeyIcon) okeyIcon.innerText = '🔇';
-            if (okeyText) okeyText.innerText = 'Sessizde (Tıkla Aç)';
+            if (okeyText) okeyText.innerText = 'Sessizde (Dokun Aç)';
             if (okeyInd) okeyInd.style.background = '#eab308';
             if (okeyStatText) okeyStatText.innerText = 'Mikrofon Sessiz';
 
@@ -567,7 +603,7 @@
                 bjBtn.style.borderColor = '#fde047';
             }
             if (bjIcon) bjIcon.innerText = '🔇';
-            if (bjText) bjText.innerText = 'Sessizde (C)';
+            if (bjText) bjText.innerText = 'Sessizde' + keyTag;
 
             if (globalBtn) {
                 globalBtn.style.background = 'linear-gradient(135deg, #ca8a04, #a16207)';
@@ -575,9 +611,10 @@
                 globalBtn.style.borderColor = '#fef08a';
             }
             if (globalIcon) globalIcon.innerText = '🔇';
-            if (globalText) globalText.innerText = `${getVoiceChannelDisplayName(currentVoiceTableId)}: Sessiz (C)`;
+            if (globalText) globalText.innerText = `${getVoiceChannelDisplayName(currentVoiceTableId)}: Sessiz${keyTag}`;
 
         } else {
+            const keyTag = isMobileTouchVoiceUI() ? '' : ' (C)';
             // C) MİKROFON AÇIK (CANLI)
             if (btn) {
                 btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
@@ -601,7 +638,7 @@
                 bjBtn.style.borderColor = '#6ee7b7';
             }
             if (bjIcon) bjIcon.innerText = '🎙️';
-            if (bjText) bjText.innerText = 'Ses Açık (C)';
+            if (bjText) bjText.innerText = 'Ses Açık' + keyTag;
 
             if (globalBtn) {
                 globalBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
@@ -609,7 +646,7 @@
                 globalBtn.style.borderColor = '#a7f3d0';
             }
             if (globalIcon) globalIcon.innerText = '🎙️';
-            if (globalText) globalText.innerText = `${getVoiceChannelDisplayName(currentVoiceTableId)}: Açık (C)`;
+            if (globalText) globalText.innerText = `${getVoiceChannelDisplayName(currentVoiceTableId)}: Açık${keyTag}`;
         }
     }
     window.updateVoiceButtonUI = updateVoiceButtonUI;
@@ -683,6 +720,17 @@
             toggleGlobalVoiceChat();
         }
     });
+
+    function isMobileTouchVoiceUI() {
+        return (typeof window !== 'undefined') && (window.innerWidth <= 860 || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateVoiceButtonUI);
+    } else {
+        updateVoiceButtonUI();
+    }
+    window.addEventListener('resize', updateVoiceButtonUI);
 
     // Sayfadan ayrılınca ses bağlantılarını temizle
     window.addEventListener('beforeunload', () => {

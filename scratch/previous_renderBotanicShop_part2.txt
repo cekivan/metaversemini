@@ -1,0 +1,94 @@
+Created At: 2026-11-08T23:12:16+03:00
+Completed At: 2026-11-08T23:12:16+03:00
+Showing lines 240-330 of 559
+240:         ctx.beginPath(); ctx.arc(x + 135, y - 18, 5, 0, Math.PI); ctx.fill();
+241:     }
+242: 
+243:     /**
+244:      * Merkez Süs Havuzu ve Egzotik Bitki Adası
+245:      */
+246:     function drawCenterBotanicalFountain(ctx, cx, cy) {
+247:         // Dış Taş Çember
+248:         ctx.fillStyle = "#334155";
+249:         ctx.beginPath();
+250:         ctx.ellipse(cx, cy, 75, 38, 0, 0, Math.PI * 2);
+251:         ctx.fill();
+252:         ctx.strokeStyle = "#64748b";
+253:         ctx.lineWidth = 3;
+254:         ctx.stroke();
+255: 
+256:         // İç Su Havuzu
+257:         ctx.fillStyle = "#0284c7";
+258:         ctx.beginPath();
+259:         ctx.ellipse(cx, cy, 66, 32, 0, 0, Math.PI * 2);
+260:         ctx.fill();
+261: 
+262:         // Nilüfer Yaprakları (Water Lilies)
+263:         ctx.fillStyle = "#15803d";
+264:         ctx.beginPath(); ctx.arc(cx - 30, cy - 6, 8, 0, Math.PI * 1.8); ctx.fill();
+265:         ctx.beginPath(); ctx.arc(cx + 25, cy + 8, 7, 0, Math.PI * 1.8); ctx.fill();
+266:         ctx.fillStyle = "#f472b6";
+267:         ctx.beginPath(); ctx.arc(cx - 30, cy - 6, 3, 0, Math.PI * 2); ctx.fill();
+268: 
+269:         // Merkez Taş Kaide & Bonsai Ağacı
+270:         ctx.fillStyle = "#475569";
+271:         ctx.beginPath();
+272:         ctx.ellipse(cx, cy - 5, 24, 12, 0, 0, Math.PI * 2);
+273:         ctx.fill();
+274: 
+275:         // Bonsai Gövdesi
+276:         ctx.strokeStyle = "#451a03";
+277:         ctx.lineWidth = 5;
+278:         ctx.beginPath();
+279:         ctx.moveTo(cx, cy - 8);
+280:         ctx.quadraticCurveTo(cx - 12, cy - 26, cx - 2, cy - 40);
+281:         ctx.stroke();
+282: 
+283:         // Bonsai Yeşil Taç Yaprakları
+284:         ctx.fillStyle = "#166534";
+285:         ctx.beginPath(); ctx.arc(cx - 15, cy - 35, 14, 0, Math.PI * 2); ctx.fill();
+286:         ctx.beginPath(); ctx.arc(cx + 8, cy - 42, 16, 0, Math.PI * 2); ctx.fill();
+287:         ctx.beginPath(); ctx.arc(cx - 2, cy - 50, 12, 0, Math.PI * 2); ctx.fill();
+288:     }
+289: 
+290:     /**
+291:      * Alt Çıkış Kapısı
+292:      */
+293:     function drawBotanicExitDoor(ctx, x, y, w, h) {
+294:         ctx.fillStyle = "#15803d";
+295:         ctx.beginPath();
+296:         ctx.roundRect(x, y, w, h, [8, 8, 0, 0]);
+297:         ctx.fill();
+298:         ctx.strokeStyle = "#4ade80";
+299:         ctx.lineWidth = 2;
+300:         ctx.stroke();
+301: 
+302:         ctx.fillStyle = "#f8fafc";
+303:         ctx.font = "bold 11px sans-serif";
+304:         ctx.textAlign = "center";
+305:         ctx.fillText("🚪 CADDE 2", x + w / 2, y + 24);
+306:         ctx.fillStyle = "#bbf7d0";
+307:         ctx.font = "9px sans-serif";
+308:         ctx.fillText("Çıkış Kapısı", x + w / 2, y + 38);
+309:     }
+310: 
+311:     /**
+312:      * Canlı Varlıklar: NPC Defne, NPC Rasim, Canlı Stok Tahtası ve İnteraktif Hover
+313:      */
+314:     function drawBotanicShopEntities(ctx, canvas, myAvatar) {
+315:         if (!canvas) return;
+316:         let now = Date.now();
+317: 
+318:         // A) NPC 1: BOTANİKÇİ DEFNE (x: 310, y: 220)
+319:         drawNpcDefne(ctx, 310, 215, now);
+320: 
+321:         // B) NPC 2: ÇİÇEK TÜCCARI RASİM (x: 750, y: 220)
+322:         drawNpcRasim(ctx, 750, 215, now);
+323: 
+324:         // C) CANLI BORSA STOK KARA TAHTASI (x: 885, y: 155)
+325:         drawLiveStockBoard(ctx, 875, 120, now);
+326: 
+327:         // D) OYUNCU YAKINLIK VE İNTERAKTİF İPUÇLARI (Kullanıcı talebiyle [E] yazıları kaldırıldı, tıklama veya [E] tuşu çalışmaya devam eder)
+328:     }
+329: 
+330:     /**

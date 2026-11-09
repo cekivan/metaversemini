@@ -4,6 +4,7 @@ const gameCoordinator = require('../gameCoordinator');
 const fatherPetManager = require('../fatherPetManager');
 const petManager = require('../petManager');
 const { givePlayerHorseWithTimer } = require('./ganyanHandler');
+const { calculateLevel, getRequiredTotalXP, getDeltaXP } = require('../utils/levelSystem');
 
 function registerAuthHandlers(io, socket, players, helpers) {
     const { getPlayersInRoom, givePlayerTeaWithTimer, broadcastOnlineCount } = helpers;
@@ -12,7 +13,12 @@ function registerAuthHandlers(io, socket, players, helpers) {
     function onLoginSuccess(uData, username, isAdmin) {
         const previousModel = uData.avatar && uData.avatar.model;
         if (!uData.avatar) uData.avatar = {};
-        uData.avatar.model = 'classic_2';
+        if (!uData.avatar.model) uData.avatar.model = 'classic_2';
+        if (uData.avatar.hat && typeof uData.avatar.hat === 'string' && uData.avatar.hat.startsWith('hair_') && (!uData.avatar.hair || uData.avatar.hair === 'none')) {
+            uData.avatar.hair = uData.avatar.hat;
+            uData.avatar.hat = 'none';
+        }
+        if (!uData.avatar.hair) uData.avatar.hair = 'none';
         if (previousModel !== uData.avatar.model) {
             dataManager.savePersistentData();
         }
@@ -43,7 +49,7 @@ function registerAuthHandlers(io, socket, players, helpers) {
 
         players[socket.id] = {
             name: username,
-            x: 400, y: 400,
+            x: 400, y: 280,
             model: uData.avatar.model,
             color: uData.avatar.shirtColor || '#3b82f6',
             shirt: (uData.avatar && uData.avatar.shirt) || (uData.avatar && uData.avatar.shirtColor) || '#3b82f6',
@@ -51,12 +57,19 @@ function registerAuthHandlers(io, socket, players, helpers) {
             outfit: (uData.avatar && uData.avatar.outfit) || null,
             skinColor: uData.avatar.skinColor || '#facc15',
             hat: uData.avatar.hat || 'bere',
+            hair: uData.avatar.hair || 'none',
+            hairColor: (uData.avatar && uData.avatar.hairColor) || null,
             face: uData.avatar.face || 'none',
             heldItem: uData.avatar.heldItem || 'none',
             shoes: uData.avatar.shoes || 'none',
             watch: (uData.avatar && uData.avatar.watch) || 'none',
+            costume: (uData.avatar && uData.avatar.costume) || null,
             gender: uData.gender || 'male',
             money: uData.money !== undefined ? uData.money : 1000,
+            diamonds: uData.diamonds || 0,
+            ores: uData.ores || { komur: 0, bakir: 0, demir: 0 },
+            pickaxeExpiresAt: uData.pickaxeExpiresAt || null,
+            mood: uData.mood || 'happy',
             msg: "",
             room: "sokak",
             hasTea: hasValidTea,
@@ -68,7 +81,19 @@ function registerAuthHandlers(io, socket, players, helpers) {
             isAdmin: isAdmin || (username && username.toLowerCase() === 'elyesa'),
             isMod: !isAdmin && username && username.toLowerCase() !== 'elyesa' && (uData.role === 'mod' || uData.role === 'moderator' || uData.isMod === true),
             role: (isAdmin || (username && username.toLowerCase() === 'elyesa')) ? 'admin' : ((uData.role === 'mod' || uData.role === 'moderator' || uData.isMod === true) ? 'mod' : 'user'),
-            isMuted: !!(uData.muteExpiresAt && Date.now() < uData.muteExpiresAt)
+            isMuted: !!(uData.muteExpiresAt && Date.now() < uData.muteExpiresAt),
+            fishCaughtCount: uData.fishCaughtCount || 0,
+            botanicHarvestCount: uData.botanicHarvestCount || 0,
+            minedRocksCount: uData.minedRocksCount || 0,
+            gamerGamesCount: uData.gamerGamesCount || 0,
+            level: (uData.level !== undefined && uData.level !== null) ? Number(uData.level) : calculateLevel(uData.totalXP || 0),
+            totalXP: uData.totalXP || 0,
+            likes: uData.likes || 0,
+            dislikes: uData.dislikes || 0,
+            jammerExpiresAt: uData.jammerExpiresAt || 0,
+            anonMaskExpiresAt: uData.anonMaskExpiresAt || 0,
+            neonRedNickExpiresAt: uData.neonRedNickExpiresAt || 0,
+            invisibilityExpiresAt: uData.invisibilityExpiresAt || 0
         };
 
         const isMod = players[socket.id].isMod;
@@ -84,8 +109,15 @@ function registerAuthHandlers(io, socket, players, helpers) {
 
         socket.join("sokak");
 
+        const pLevel = (uData.level !== undefined && uData.level !== null) ? Number(uData.level) : calculateLevel(uData.totalXP || 0);
+        const pTotalXP = Number(uData.totalXP) || 0;
+        const pBaseXP = getRequiredTotalXP(pLevel);
+        const pDeltaXP = (pLevel < 100) ? getDeltaXP(pLevel + 1) : 0;
+        const pProgress = Math.max(0, pTotalXP - pBaseXP);
+
         socket.emit('loginSuccess', {
             money: uData.money,
+            diamonds: uData.diamonds || 0,
             avatar: uData.avatar,
             inventory: uData.inventory,
             propInventory: uData.propInventory || {},
@@ -101,12 +133,39 @@ function registerAuthHandlers(io, socket, players, helpers) {
             furnitureInventory: uData.furnitureInventory || [],
             skinSets: uData.skinSets || {},
             isMuted: !!(uData.muteExpiresAt && Date.now() < uData.muteExpiresAt),
+            fishCaughtCount: uData.fishCaughtCount || 0,
+            botanicHarvestCount: uData.botanicHarvestCount || 0,
+            minedRocksCount: uData.minedRocksCount || 0,
+            gamerGamesCount: uData.gamerGamesCount || 0,
+            level: pLevel,
+            totalXP: pTotalXP,
+            currentProgress: pProgress,
+            targetXP: pDeltaXP,
+            likes: uData.likes || 0,
+            dislikes: uData.dislikes || 0,
             muteExpiresAt: uData.muteExpiresAt || null,
-            muteReason: uData.muteReason || null
+            muteReason: uData.muteReason || null,
+            jammerCount: uData.jammerCount || 0,
+            hasMugKnife: !!uData.hasMugKnife,
+            bodyguardsEquipped: (uData.bodyguardsEquipped !== undefined) ? uData.bodyguardsEquipped : (uData.bodyguardCount || 0),
+            bodyguardCount: uData.bodyguardCount || 0,
+            hasDoberman: !!uData.hasDoberman,
+            dobermanEquipped: (uData.dobermanEquipped !== false),
+            anonMaskExpiresAt: uData.anonMaskExpiresAt || 0,
+            anonMaskCount: uData.anonMaskCount || 0
         });
 
+        // Bekleyen seviye atlama ödülleri varsa oyuncuya ilet
+        if (Array.isArray(uData.pendingBadgeLevelUps) && uData.pendingBadgeLevelUps.length > 0) {
+            uData.pendingBadgeLevelUps.forEach(popup => {
+                socket.emit('badgeLevelUp', popup);
+            });
+            uData.pendingBadgeLevelUps = [];
+            dataManager.savePersistentData();
+        }
+
         fatherPetManager.handleLogin(socket, username);
-        petManager.handleLogin(socket, username);
+        petManager.handleLogin(socket, username, uData);
         socket.emit('currentPlayers', getPlayersInRoom("sokak"));
         socket.emit('activeFatherPets', fatherPetManager.getPetsInRoom("sokak"));
         socket.emit('activeCompanionPets', petManager.getPetsInRoom("sokak"));
@@ -150,8 +209,8 @@ function registerAuthHandlers(io, socket, players, helpers) {
             return;
         }
 
-        const inputName = dataManager.sanitizeString(data.name || "Oyuncu", 20, false);
-        const pass = typeof data.pass === 'string' ? data.pass.trim() : "";
+        const inputName = dataManager.sanitizeString(data.name || data.username || "Oyuncu", 20, false);
+        const pass = typeof data.pass === 'string' ? data.pass.trim() : (typeof data.password === 'string' ? data.password.trim() : "");
 
         const authResult = await dataManager.loginUser(inputName, pass, players);
 
@@ -197,8 +256,8 @@ function registerAuthHandlers(io, socket, players, helpers) {
             return;
         }
 
-        const inputName = dataManager.sanitizeString(data.name || "", 20, false);
-        const pass = typeof data.pass === 'string' ? data.pass.trim() : "";
+        const inputName = dataManager.sanitizeString(data.name || data.username || "", 20, false);
+        const pass = typeof data.pass === 'string' ? data.pass.trim() : (typeof data.password === 'string' ? data.password.trim() : "");
         const chosenGender = (data.gender === 'female') ? 'female' : 'male';
 
         const regResult = await dataManager.registerUser(inputName, pass, chosenGender);

@@ -1,5 +1,8 @@
 const AudioContextClass = (typeof window !== 'undefined') ? (window.AudioContext || window.webkitAudioContext) : null;
 const audioCtx = AudioContextClass ? new AudioContextClass() : null;
+if (typeof window !== 'undefined') {
+    window.audioCtx = audioCtx;
+}
 
 // Ana Ses Düzeyi Yöneticisi (Settings Paneli ile Senkron)
 const sfxGainNode = audioCtx ? audioCtx.createGain() : null;
@@ -7,6 +10,11 @@ if (sfxGainNode && audioCtx) sfxGainNode.connect(audioCtx.destination);
 
 const musicGainNode = audioCtx ? audioCtx.createGain() : null;
 if (musicGainNode && audioCtx) musicGainNode.connect(audioCtx.destination);
+
+if (typeof window !== 'undefined') {
+    window.sfxGainNode = sfxGainNode;
+    window.musicGainNode = musicGainNode;
+}
 
 let sfxVolume = parseFloat((typeof localStorage !== 'undefined' ? localStorage.getItem('mm_sfxVolume') : null) ?? '0.8');
 let musicVolume = parseFloat((typeof localStorage !== 'undefined' ? localStorage.getItem('mm_musicVolume') : null) ?? '0.7');
@@ -663,6 +671,29 @@ function playSound(type, param) {
                 osc.stop(now + idx * 0.08 + 0.2);
             });
         }
+        else if (type === 'levelUp' || type === 'level_up') {
+            // Seviye Atlama Retro Fanfarı (A4 -> C#5 -> E5 -> A5 -> C#6 Parıltı)
+            const notes = [
+                { f: 440.00, t: 0.00, d: 0.12, type: 'triangle' },
+                { f: 554.37, t: 0.10, d: 0.12, type: 'triangle' },
+                { f: 659.25, t: 0.20, d: 0.14, type: 'triangle' },
+                { f: 880.00, t: 0.32, d: 0.40, type: 'triangle' },
+                { f: 1108.73, t: 0.44, d: 0.60, type: 'sine' }
+            ];
+            notes.forEach(n => {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = n.type || 'triangle';
+                osc.frequency.setValueAtTime(n.f, now + n.t);
+                gain.gain.setValueAtTime(0.0001, now + n.t);
+                gain.gain.linearRampToValueAtTime(0.22, now + n.t + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + n.t + n.d);
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now + n.t);
+                osc.stop(now + n.t + n.d + 0.02);
+            });
+        }
         else if (type === 'splash') {
             // Su şapırtısı sesi (balık vurma / olta atma - Havuzlanmış tampon)
             if (!splashNoiseBuffer) initNoiseBuffers();
@@ -696,18 +727,19 @@ function playSound(type, param) {
             }
         }
         else if (type === 'coin') {
-            // Para kazanma şıngırtısı
+            // Para kazanma / harcama şıngırtısı (Pürüzsüz ipeksi attack, sıfır cızırtı)
             [1046.50, 1318.51, 1567.98].forEach((freq, idx) => {
                 let osc = audioCtx.createOscillator();
                 let gain = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now + idx * 0.06);
-                gain.gain.setValueAtTime(0.25, now + idx * 0.06);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.2);
+                gain.gain.setValueAtTime(0.0001, now + idx * 0.06);
+                gain.gain.linearRampToValueAtTime(0.16, now + idx * 0.06 + 0.008);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.2);
                 osc.connect(gain);
                 gain.connect(sfxGainNode);
                 osc.start(now + idx * 0.06);
-                osc.stop(now + idx * 0.06 + 0.2);
+                osc.stop(now + idx * 0.06 + 0.21);
             });
         }
         else if (type === 'okeyTile') {
@@ -824,6 +856,127 @@ function playSound(type, param) {
         else if (type === 'pocket') {
             playRealisticPocket(now);
         }
+        else if (type === 'uiClick' || type === 'click') {
+            if (window._lastUiClickAudioTime && (now - window._lastUiClickAudioTime) < 0.06) return;
+            window._lastUiClickAudioTime = now;
+            // Şık, modern dokunsal UI tıklama sesi (Pürüzsüz 4ms attack rampalı, sıfır DC cızırtı)
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1400, now);
+            osc.frequency.exponentialRampToValueAtTime(600, now + 0.035);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(0.09, now + 0.004);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+            osc.connect(gain);
+            gain.connect(sfxGainNode);
+            osc.start(now);
+            osc.stop(now + 0.04);
+        }
+        else if (type === 'vip_entry' || type === 'vip_door_enter') {
+            // Lüks VIP Gece Kulübü Giriş ve 1000 TL Ödeme Efekti (İpeksi Çift Altın Sikke + Kadife Rezonans)
+            // 1. Katman: Şık Çift Altın Sikke Şıngırtısı
+            [1318.51, 1760.00].forEach((freq, idx) => {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+                gain.gain.setValueAtTime(0.0001, now + idx * 0.05);
+                gain.gain.linearRampToValueAtTime(0.14, now + idx * 0.05 + 0.008);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.05 + 0.28);
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now + idx * 0.05);
+                osc.stop(now + idx * 0.05 + 0.29);
+            });
+            // 2. Katman: Kadife Kapı Açılış Rezonansı (Tok ve Derin Whoosh)
+            let subOsc = audioCtx.createOscillator();
+            let subGain = audioCtx.createGain();
+            let subFilter = audioCtx.createBiquadFilter();
+            subFilter.type = 'lowpass';
+            subFilter.frequency.setValueAtTime(280, now);
+            subFilter.frequency.exponentialRampToValueAtTime(90, now + 0.35);
+            subOsc.type = 'triangle';
+            subOsc.frequency.setValueAtTime(180, now);
+            subOsc.frequency.exponentialRampToValueAtTime(80, now + 0.35);
+            subGain.gain.setValueAtTime(0.0001, now);
+            subGain.gain.linearRampToValueAtTime(0.12, now + 0.015);
+            subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+            subOsc.connect(subFilter);
+            subFilter.connect(subGain);
+            subGain.connect(sfxGainNode);
+            subOsc.start(now);
+            subOsc.stop(now + 0.36);
+        }
+        else if (type === 'pop') {
+            playSound('chatPop');
+        }
+        else if (type === 'coins') {
+            // Hızlı çoklu altın şıngırtısı şelalesi
+            [1046.50, 1318.51, 1567.98, 2093.00].forEach((freq, idx) => {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+                gain.gain.setValueAtTime(0.0001, now + idx * 0.04);
+                gain.gain.linearRampToValueAtTime(0.16, now + idx * 0.04 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.04 + 0.22);
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now + idx * 0.04);
+                osc.stop(now + idx * 0.04 + 0.23);
+            });
+        }
+        else if (type === 'tea_sip') {
+            // Sıcak çay / kahve yudumlama ve hafif bardak tınısı
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            let filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(850, now);
+            filter.Q.setValueAtTime(3.0, now);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(420, now);
+            osc.frequency.exponentialRampToValueAtTime(260, now + 0.12);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.08, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(sfxGainNode);
+            osc.start(now);
+            osc.stop(now + 0.13);
+        }
+        else if (type === 'error') {
+            // Hata / geçersiz işlem yumuşak uyarı sesi
+            [220, 196].forEach((freq, idx) => {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+                gain.gain.setValueAtTime(0.06, now + idx * 0.07);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.09);
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now + idx * 0.07);
+                osc.stop(now + idx * 0.07 + 0.1);
+            });
+        }
+        else if (type === 'bell') {
+            // Yarış başlangıç mekanik çan sesi (Ganyan Start Bell)
+            [1760.00, 3520.00].forEach((freq, idx) => {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(idx === 0 ? 0.22 : 0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+                osc.connect(gain);
+                gain.connect(sfxGainNode);
+                osc.start(now);
+                osc.stop(now + 0.56);
+            });
+        }
         else if (CASINO_SOUND_FILES[type] || ['chip', 'wheel', 'roulette_spin', 'bet_start', 'card_deal', 'lose', 'spin', 'slot_spin', 'jackpot'].includes(type)) {
             playCasinoSound(type);
         }
@@ -833,6 +986,7 @@ function playSound(type, param) {
 }
 
 window.playSound = playSound;
+window.playLevelUpSound = function() { playSound('levelUp'); };
 
 // ============================================================================
 // KAPSAMLI CASINO SES SİSTEMİ (public/assets/sounds/ Desteği & Web Audio Fallback)
@@ -1083,6 +1237,24 @@ function playSynthesizedCasinoSound(name) {
         else if (name === 'pocket') {
             playRealisticPocket(now);
         }
+        else if (name === 'radio_static') {
+            playRadioStatic(now);
+        }
+        else if (name === 'radio_burnout') {
+            playRadioBurnout(now);
+        }
+        else if (name === 'doberman_growl') {
+            playDobermanGrowl(now);
+        }
+        else if (name === 'doberman_bark') {
+            playDobermanBark(now);
+        }
+        else if (name === 'wind_whoosh') {
+            playWindWhoosh(now);
+        }
+        else if (name === 'shield_clang') {
+            playShieldClang(now);
+        }
     } catch (e) {}
 }
 
@@ -1280,5 +1452,253 @@ function playRealisticPocket(now) {
     gainRattle.connect(sfxGainNode);
     oscRattle.start(t + 0.02);
     oscRattle.stop(t + 0.13);
+}
+
+/**
+ * 📡 TELSİZ FREKANS CIZIRTISI & DEŞİFRE SESİ (Radio Static & Frequency Decoding)
+ */
+function playRadioStatic(now) {
+    if (!audioCtx) return;
+    const t = now || audioCtx.currentTime;
+    try {
+        const bufSize = Math.floor(audioCtx.sampleRate * 0.75);
+        const noiseBuf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const output = noiseBuf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+            const mod = Math.sin(i * 0.05) > 0.15 ? 1 : 0.22;
+            output[i] = (Math.random() * 2 - 1) * mod;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = noiseBuf;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1900, t);
+        filter.Q.setValueAtTime(3.2, t);
+
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.24, t + 0.08);
+        gain.gain.setValueAtTime(0.18, t + 0.5);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.74);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(sfxGainNode);
+        noise.start(t);
+        noise.stop(t + 0.75);
+    } catch (_) {}
+}
+
+/**
+ * 💥 TELSİZİN AŞIRI YÜKTEN YANMASI / PUF SESİ (Overloaded Radio Burnout & Smoke Pop)
+ */
+function playRadioBurnout(now) {
+    if (!audioCtx) return;
+    const t = now || audioCtx.currentTime;
+    try {
+        // 1. Elektriksel kıvılcım & cızırtı
+        const bufSize = Math.floor(audioCtx.sampleRate * 0.22);
+        const noiseBuf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const output = noiseBuf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+            output[i] = (Math.random() * 2 - 1);
+        }
+        const sizzle = audioCtx.createBufferSource();
+        sizzle.buffer = noiseBuf;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(3800, t);
+        filter.Q.setValueAtTime(4.0, t);
+
+        const sGain = audioCtx.createGain();
+        sGain.gain.setValueAtTime(0.35, t);
+        sGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+        sizzle.connect(filter);
+        filter.connect(sGain);
+        sGain.connect(sfxGainNode);
+        sizzle.start(t);
+        sizzle.stop(t + 0.2);
+
+        // 2. Devre patlaması / Puf sesi
+        const popOsc = audioCtx.createOscillator();
+        const popGain = audioCtx.createGain();
+        popOsc.type = 'triangle';
+        popOsc.frequency.setValueAtTime(260, t + 0.04);
+        popOsc.frequency.exponentialRampToValueAtTime(45, t + 0.24);
+
+        popGain.gain.setValueAtTime(0.45, t + 0.04);
+        popGain.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+
+        popOsc.connect(popGain);
+        popGain.connect(sfxGainNode);
+        popOsc.start(t + 0.04);
+        popOsc.stop(t + 0.25);
+    } catch (_) {}
+}
+
+/**
+ * 🐕‍🦺 DOBERMAN TEHLİKE HIRLAMASI (Canine Protective Growl)
+ */
+function playDobermanGrowl(now) {
+    if (!audioCtx) return;
+    const t = now || audioCtx.currentTime;
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(95, t);
+        osc.frequency.linearRampToValueAtTime(118, t + 0.35);
+        osc.frequency.exponentialRampToValueAtTime(70, t + 0.7);
+
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.frequency.setValueAtTime(22, t);
+        lfoGain.gain.setValueAtTime(28, t);
+        lfo.connect(osc.frequency);
+        lfo.start(t);
+        lfo.stop(t + 0.75);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(320, t);
+        filter.Q.setValueAtTime(2.5, t);
+
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.32, t + 0.15);
+        gain.gain.setValueAtTime(0.28, t + 0.45);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.75);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(sfxGainNode);
+        osc.start(t);
+        osc.stop(t + 0.76);
+    } catch (_) {}
+}
+
+/**
+ * 🐕‍🦺 DOBERMAN SALDIRI / KORUMA HAVLAMASI (Canine Attack Bark)
+ */
+function playDobermanBark(now) {
+    if (!audioCtx) return;
+    const t = now || audioCtx.currentTime;
+    try {
+        function singleBark(startTime, pitchMult, vol) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(340 * pitchMult, startTime);
+            osc.frequency.exponentialRampToValueAtTime(130 * pitchMult, startTime + 0.14);
+
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(750 * pitchMult, startTime);
+            filter.Q.setValueAtTime(2.2, startTime);
+
+            gain.gain.setValueAtTime(vol, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.16);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(sfxGainNode);
+            osc.start(startTime);
+            osc.stop(startTime + 0.18);
+        }
+        singleBark(t, 1.0, 0.45);
+        singleBark(t + 0.17, 0.94, 0.38);
+    } catch (_) {}
+}
+
+/**
+ * 💨 KÜLLERİN TOZ GİBİ SAVRULMA RÜZGARI (Ethereal Wind Whoosh / Dust Scatter)
+ */
+function playWindWhoosh(now) {
+    if (!audioCtx) return;
+    const t = now || audioCtx.currentTime;
+    try {
+        const dur = 1.8;
+        const bufSize = Math.floor(audioCtx.sampleRate * dur);
+        const noiseBuf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const output = noiseBuf.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0;
+        for (let i = 0; i < bufSize; i++) {
+            const white = Math.random() * 2 - 1;
+            b0 = 0.99765 * b0 + white * 0.0990460;
+            b1 = 0.96300 * b1 + white * 0.2965164;
+            b2 = 0.57000 * b2 + white * 1.0526913;
+            output[i] = (b0 + b1 + b2) * 0.18;
+        }
+        const wind = audioCtx.createBufferSource();
+        wind.buffer = noiseBuf;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(220, t);
+        filter.frequency.exponentialRampToValueAtTime(780, t + 0.6);
+        filter.frequency.exponentialRampToValueAtTime(140, t + dur);
+        filter.Q.setValueAtTime(2.8, t);
+
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.32, t + 0.45);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+        wind.connect(filter);
+        filter.connect(gain);
+        gain.connect(sfxGainNode);
+        wind.start(t);
+        wind.stop(t + dur);
+    } catch (_) {}
+}
+
+/**
+ * 🛡️ BIÇAK / DARBE ENGELLEME METALİK KALKAN ÇARPIŞMASI (Shield Clang & Knife Deflect)
+ */
+function playShieldClang(now) {
+    if (!audioCtx) return;
+    const t = now || audioCtx.currentTime;
+    try {
+        // 1. Metalik çınlama (Ping)
+        const oscHigh = audioCtx.createOscillator();
+        const gainHigh = audioCtx.createGain();
+        const filterHigh = audioCtx.createBiquadFilter();
+
+        oscHigh.type = 'triangle';
+        oscHigh.frequency.setValueAtTime(2350, t);
+        oscHigh.frequency.exponentialRampToValueAtTime(1750, t + 0.28);
+
+        filterHigh.type = 'bandpass';
+        filterHigh.frequency.setValueAtTime(2400, t);
+        filterHigh.Q.setValueAtTime(6.0, t);
+
+        gainHigh.gain.setValueAtTime(0.55, t);
+        gainHigh.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+
+        oscHigh.connect(filterHigh);
+        filterHigh.connect(gainHigh);
+        gainHigh.connect(sfxGainNode);
+        oscHigh.start(t);
+        oscHigh.stop(t + 0.34);
+
+        // 2. Tok kalkan gövde darbesi (Heavy armor thud)
+        const oscLow = audioCtx.createOscillator();
+        const gainLow = audioCtx.createGain();
+        oscLow.type = 'sine';
+        oscLow.frequency.setValueAtTime(190, t);
+        oscLow.frequency.exponentialRampToValueAtTime(50, t + 0.12);
+
+        gainLow.gain.setValueAtTime(0.65, t);
+        gainLow.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+
+        oscLow.connect(gainLow);
+        gainLow.connect(sfxGainNode);
+        oscLow.start(t);
+        oscLow.stop(t + 0.15);
+    } catch (_) {}
 }
 

@@ -6,45 +6,34 @@
  */
 const STATIC_ROOM_SEATS = {
     kafe: [
-        // Bar Tabureleri (Sol Üst Çay Ocağı)
-        { x: 50, y: 64, facing: 'up', label: 'Bar Taburesi' },
-        { x: 110, y: 64, facing: 'up', label: 'Bar Taburesi' },
-        { x: 170, y: 64, facing: 'up', label: 'Bar Taburesi' },
-        // Tavla Masası Sandalyeleri (x: 62, y: 300, w: 105, h: 74 - cx: 115, cy: 337)
-        { x: 115, y: 280, facing: 'down', label: 'Tavla Sandalyesi', game: 'tavla', tableId: 'tavla' },
-        { x: 115, y: 393, facing: 'up', label: 'Tavla Sandalyesi', game: 'tavla', tableId: 'tavla' },
-        // XOX Masası Sandalyeleri (x: 239, y: 120, w: 86, h: 74 - cx: 282, cy: 157)
-        { x: 282, y: 102, facing: 'down', label: 'XOX Sandalyesi', game: 'xox', tableId: 'xox' },
-        { x: 282, y: 212, facing: 'up', label: 'XOX Sandalyesi', game: 'xox', tableId: 'xox' },
-        // Amiral Battı Masası Sandalyeleri (x: 476, y: 120, w: 92, h: 74 - cx: 522, cy: 157)
-        { x: 522, y: 102, facing: 'down', label: 'Amiral Battı Sandalyesi', game: 'amiral', tableId: 'amiral' },
-        { x: 522, y: 212, facing: 'up', label: 'Amiral Battı Sandalyesi', game: 'amiral', tableId: 'amiral' },
-        // Satranç Masası Sandalyeleri (x: 650, y: 220, w: 96, h: 74 - cx: 698, cy: 257)
-        { x: 698, y: 198, facing: 'down', label: 'Satranç Sandalyesi', game: 'chess', tableId: 'chess', seatIndex: 0 },
-        { x: 698, y: 316, facing: 'up', label: 'Satranç Sandalyesi', game: 'chess', tableId: 'chess', seatIndex: 1 }
+        // Bar Tabureleri (Sol Üst VIP Çay & Kahve Barı: x: 35..270, y: 18..72)
+        { x: 65, y: 86, facing: 'up', label: 'Bar Taburesi' },
+        { x: 115, y: 86, facing: 'up', label: 'Bar Taburesi' },
+        { x: 165, y: 86, facing: 'up', label: 'Bar Taburesi' },
+        { x: 215, y: 86, facing: 'up', label: 'Bar Taburesi' },
+
+        // Tavla Masası Sandalyeleri (x: 110, y: 370, w: 115, h: 82 - cx: 167, cy: 411)
+        { x: 167, y: 350, facing: 'down', label: 'Tavla Sandalyesi', game: 'tavla', tableId: 'tavla' },
+        { x: 167, y: 472, facing: 'up', label: 'Tavla Sandalyesi', game: 'tavla', tableId: 'tavla' },
+
+        // XOX Masası Sandalyeleri (x: 315, y: 180, w: 95, h: 80 - cx: 362, cy: 220)
+        { x: 362, y: 160, facing: 'down', label: 'XOX Sandalyesi', game: 'xox', tableId: 'xox' },
+        { x: 362, y: 280, facing: 'up', label: 'XOX Sandalyesi', game: 'xox', tableId: 'xox' },
+
+        // Amiral Battı Masası Sandalyeleri (x: 590, y: 180, w: 100, h: 80 - cx: 640, cy: 220)
+        { x: 640, y: 160, facing: 'down', label: 'Amiral Battı Sandalyesi', game: 'amiral', tableId: 'amiral' },
+        { x: 640, y: 280, facing: 'up', label: 'Amiral Battı Sandalyesi', game: 'amiral', tableId: 'amiral' },
+
+        // Satranç Masası Sandalyeleri (x: 780, y: 175, w: 110, h: 82 - cx: 835, cy: 216)
+        { x: 835, y: 155, facing: 'down', label: 'Satranç Sandalyesi', game: 'chess', tableId: 'chess', seatIndex: 0 },
+        { x: 835, y: 277, facing: 'up', label: 'Satranç Sandalyesi', game: 'chess', tableId: 'chess', seatIndex: 1 },
+
+        // Chesterfield Seyirci Lounge Koltuğu (x: 745..935, y: 390..455)
+        { x: 790, y: 422, facing: 'down', label: 'Chesterfield Deri Koltuk' },
+        { x: 840, y: 422, facing: 'down', label: 'Chesterfield Deri Koltuk' },
+        { x: 890, y: 422, facing: 'down', label: 'Chesterfield Deri Koltuk' }
     ],
-    nargile_cafe: [
-        // Sol Üst Nargile Locası (Chesterfield Sedir)
-        { x: 110, y: 84, facing: 'down', label: 'Sol Loca Koltuğu', tableId: 'lounge_sol', seatIndex: 0 },
-        { x: 155, y: 84, facing: 'down', label: 'Sol Loca Koltuğu', tableId: 'lounge_sol', seatIndex: 1 },
-        { x: 54, y: 115, facing: 'right', label: 'Sol Loca Koltuğu', tableId: 'lounge_sol', seatIndex: 2 },
-        { x: 54, y: 148, facing: 'right', label: 'Sol Loca Koltuğu', tableId: 'lounge_sol', seatIndex: 3 },
-        // Sağ Üst Nargile Locası (Chesterfield Sedir)
-        { x: 645, y: 84, facing: 'down', label: 'Sağ Loca Koltuğu', tableId: 'lounge_sag', seatIndex: 0 },
-        { x: 690, y: 84, facing: 'down', label: 'Sağ Loca Koltuğu', tableId: 'lounge_sag', seatIndex: 1 },
-        { x: 746, y: 115, facing: 'left', label: 'Sağ Loca Koltuğu', tableId: 'lounge_sag', seatIndex: 2 },
-        { x: 746, y: 148, facing: 'left', label: 'Sağ Loca Koltuğu', tableId: 'lounge_sag', seatIndex: 3 },
-        // Tekli 101 Okey Sandalyeleri (E basınca oturur ve 101 Okey açılır)
-        { x: 255, y: 155, facing: 'down', label: 'Tekli 101 Sandalyesi', tableId: 'okey101_tekli', game: 'okey101_tekli', seatIndex: 0 },
-        { x: 370, y: 242, facing: 'left', label: 'Tekli 101 Sandalyesi', tableId: 'okey101_tekli', game: 'okey101_tekli', seatIndex: 1 },
-        { x: 255, y: 330, facing: 'up', label: 'Tekli 101 Sandalyesi', tableId: 'okey101_tekli', game: 'okey101_tekli', seatIndex: 2 },
-        { x: 140, y: 242, facing: 'right', label: 'Tekli 101 Sandalyesi', tableId: 'okey101_tekli', game: 'okey101_tekli', seatIndex: 3 },
-        // Eşli 101 Okey Sandalyeleri (E basınca oturur ve 101 Okey açılır)
-        { x: 545, y: 155, facing: 'down', label: 'Eşli 101 Sandalyesi', tableId: 'okey101', game: 'okey101', seatIndex: 0 },
-        { x: 660, y: 242, facing: 'left', label: 'Eşli 101 Sandalyesi', tableId: 'okey101', game: 'okey101', seatIndex: 1 },
-        { x: 545, y: 330, facing: 'up', label: 'Eşli 101 Sandalyesi', tableId: 'okey101', game: 'okey101', seatIndex: 2 },
-        { x: 430, y: 242, facing: 'right', label: 'Eşli 101 Sandalyesi', tableId: 'okey101', game: 'okey101', seatIndex: 3 }
-    ],
+
     sokak: [
         { x: 292, y: 218, facing: 'down', label: 'Meydan Bankı' },
         { x: 512, y: 218, facing: 'down', label: 'Meydan Bankı' }
@@ -128,6 +117,49 @@ const STATIC_ROOM_SEATS = {
         { x: 772, y: 575, facing: 'down-left', label: 'Güneşlenme Havlusu' },
         { x: 885, y: 210, facing: 'down-left', label: 'Plaj Şemsiye Havlusu' }
     ],
+    sahil_yolu: [
+        { x: 260, y: 395, facing: 'down', label: 'Kordon Dinlenme Bankı' },
+        { x: 420, y: 395, facing: 'down', label: 'Kordon Dinlenme Bankı' },
+        { x: 580, y: 395, facing: 'down', label: 'Kordon Dinlenme Bankı' },
+        { x: 380, y: 220, facing: 'down', label: 'AVM Giriş Dinlenme Bankı' },
+        { x: 620, y: 220, facing: 'down', label: 'AVM Giriş Dinlenme Bankı' }
+    ],
+    avm_kat1: [
+        { x: 370, y: 355, facing: 'right', label: 'Fıskiye Batı Deri Pufu' },
+        { x: 630, y: 355, facing: 'left', label: 'Fıskiye Doğu Deri Pufu' },
+        { x: 500, y: 265, facing: 'down', label: 'Fıskiye Kuzey Deri Pufu' },
+        { x: 500, y: 455, facing: 'up', label: 'Fıskiye Güney Deri Pufu' }
+    ],
+    avm_kat2: [
+        { x: 240, y: 415, facing: 'right', label: 'VIP Lounge Batı Chesterfield Kanepe' },
+        { x: 760, y: 415, facing: 'left', label: 'VIP Lounge Doğu Chesterfield Kanepe' },
+        { x: 430, y: 480, facing: 'up', label: 'Atrium Seyir Balkonu Batı Koltuğu' },
+        { x: 570, y: 480, facing: 'up', label: 'Atrium Seyir Balkonu Doğu Koltuğu' }
+    ],
+    avm_magaza_kiyafet: [
+        { x: 280, y: 380, facing: 'right', label: 'Cadde Moda Kadife Koltuk' },
+        { x: 720, y: 380, facing: 'left', label: 'Cadde Moda Kadife Koltuk' }
+    ],
+    avm_magaza_sneaker: [
+        { x: 300, y: 380, facing: 'right', label: 'Sneaker Deneme Pufu' },
+        { x: 700, y: 380, facing: 'left', label: 'Sneaker Deneme Pufu' }
+    ],
+    avm_magaza_sapka: [
+        { x: 300, y: 380, facing: 'right', label: 'Şapka Deneme Koltuğu' },
+        { x: 700, y: 380, facing: 'left', label: 'Şapka Deneme Koltuğu' }
+    ],
+    avm_magaza_takim: [
+        { x: 280, y: 380, facing: 'right', label: 'Milano Deri Kanepe' },
+        { x: 720, y: 380, facing: 'left', label: 'Milano Deri Kanepe' }
+    ],
+    avm_magaza_saat: [
+        { x: 300, y: 380, facing: 'right', label: 'VIP Saatçi Koltuğu' },
+        { x: 700, y: 380, facing: 'left', label: 'VIP Saatçi Koltuğu' }
+    ],
+    avm_magaza_berber: [
+        { x: 360, y: 380, facing: 'up', label: 'VIP Kuaför Koltuğu #1', game: 'barber_studio' },
+        { x: 640, y: 380, facing: 'up', label: 'VIP Kuaför Koltuğu #2', game: 'barber_studio' }
+    ],
     dostlar_kiraathanesi: [
         // 4 Kişilik Normal Batak Masası Sandalyeleri (cx: 320, cy: 230)
         { x: 320, y: 165, facing: 'down', label: 'Batak Masası Sandalyesi (Kuzey)', game: 'batak4', tableId: 'batak4' },
@@ -159,6 +191,154 @@ const STATIC_ROOM_SEATS = {
         // Sedir Dinlenme Alanı (Sağ Duvar)
         { x: 945, y: 250, facing: 'left', label: 'Kıraathane Sediri' },
         { x: 945, y: 330, facing: 'left', label: 'Kıraathane Sediri' }
+    ],
+
+    // =====================================================================
+    // ATATÜRK KÜLTÜR MERKEZİ (CADDE 2) - SAHNE, KULİS VE SİNEMA KOLTUKLARI
+    // =====================================================================
+    kultur_merkezi_sahne: [
+        // Sıra 1 (y: 350)
+        { x: 221, y: 365, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 296, y: 365, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 371, y: 365, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 446, y: 365, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 521, y: 365, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 596, y: 365, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 671, y: 365, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 746, y: 365, facing: 'up', label: 'Tiyatro Koltuğu' },
+
+        // Sıra 2 (y: 420)
+        { x: 161, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 237, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 313, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 389, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 465, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 541, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 617, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 693, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 769, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 845, y: 435, facing: 'up', label: 'Tiyatro Koltuğu' },
+
+        // Sıra 3 (y: 490)
+        { x: 101, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 175, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 249, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 323, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 397, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 471, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 545, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 619, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 693, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 767, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 841, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' },
+        { x: 915, y: 505, facing: 'up', label: 'Tiyatro Koltuğu' }
+    ],
+
+    kultur_merkezi_kulis: [
+        // Chesterfield VIP Deri Koltuk (x: 350..650, y: 260..335)
+        { x: 400, y: 295, facing: 'down', label: 'VIP Kulis Koltuğu' },
+        { x: 470, y: 295, facing: 'down', label: 'VIP Kulis Koltuğu' },
+        { x: 540, y: 295, facing: 'down', label: 'VIP Kulis Koltuğu' },
+        { x: 610, y: 295, facing: 'down', label: 'VIP Kulis Koltuğu' },
+
+        // Hollywood Aynalı Makyaj Masası Tabureleri
+        { x: 190, y: 150, facing: 'up', label: 'Makyaj Taburesi' },
+        { x: 500, y: 150, facing: 'up', label: 'Makyaj Taburesi' },
+        { x: 810, y: 150, facing: 'up', label: 'Makyaj Taburesi' }
+    ],
+
+    kultur_merkezi_sinema: [
+        // Kademe 1 (y: 280)
+        { x: 151, y: 295, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 227, y: 295, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 303, y: 295, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 379, y: 295, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 607, y: 295, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 683, y: 295, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 759, y: 295, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 835, y: 295, facing: 'up', label: 'Sinema Koltuğu' },
+
+        // Kademe 2 (y: 350)
+        { x: 101, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 173, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 245, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 317, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 389, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 605, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 677, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 749, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 821, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 893, y: 365, facing: 'up', label: 'Sinema Koltuğu' },
+
+        // Kademe 3 (y: 425)
+        { x: 101, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 173, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 245, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 317, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 389, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 605, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 677, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 749, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 821, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 893, y: 440, facing: 'up', label: 'Sinema Koltuğu' },
+
+        // Kademe 4 (y: 500)
+        { x: 101, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 173, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 245, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 317, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 389, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 605, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 677, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 749, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 821, y: 515, facing: 'up', label: 'Sinema Koltuğu' },
+        { x: 893, y: 515, facing: 'up', label: 'Sinema Koltuğu' }
+    ],
+    vip_club: [
+        // 2.5D VIP Chesterfield U-Loca Koltukları (Sol Üst Taraf - Yukarı Küçültülmüş)
+        { x: 145, y: 236, facing: 'down', label: 'VIP Loca Koltuk (Arka-Sol)' },
+        { x: 215, y: 236, facing: 'down', label: 'VIP Loca Koltuk (Arka-Sağ)' },
+        { x: 112, y: 262, facing: 'right', label: 'VIP Loca Koltuk (Sol)' },
+        { x: 248, y: 262, facing: 'left', label: 'VIP Loca Koltuk (Sağ)' },
+
+        // YENİ: 2:1 Gerçek İzometrik Sanalika Bej Koltuk Grubu (Sol Alt Köşe - Büyütülmüş & Karşılıklı)
+        // Soldaki koltuk yüzü SAĞ-ALTA (down-right), Sağdaki koltuk yüzü SOL-ALTA (down-left) bakar.
+        // 1. Koltuk (Soldaki - Yüzü Sağ-Alta / down-right)
+        { x: 123, y: 407, facing: 'down-right', label: 'İzo Sanalika Bej Sol (İç)' },
+        { x: 97, y: 420, facing: 'down-right', label: 'İzo Sanalika Bej Sol (Dış)' },
+        // 2. Koltuk (Sağdaki - Yüzü Sol-Alta / down-left)
+        { x: 227, y: 447, facing: 'down-left', label: 'İzo Sanalika Bej Sağ (İç)' },
+        { x: 253, y: 460, facing: 'down-left', label: 'İzo Sanalika Bej Sağ (Dış)' },
+
+        // MEVCUT (Karşılaştırma İçin Korunan): 2.5D Sanalika L-Sectional Lounge Koltukları (Sağ Taraf Beyaz Deri Köşe Kanepe)
+        // Ana Koltuk (3 Minder - Güneye / Aşağıya Bakan)
+        { x: 741, y: 409, facing: 'down', label: 'Sanalika Lounge (Sol)' },
+        { x: 785, y: 409, facing: 'down', label: 'Sanalika Lounge (Orta)' },
+        { x: 829, y: 409, facing: 'down', label: 'Sanalika Lounge (Sağ)' },
+        // 2.5D İzometrik Yan Koltuk (2 Minder - Batıya / Odanın Soluna Bakan)
+        { x: 882, y: 443, facing: 'left', label: 'Sanalika Lounge Yan (Üst)' },
+        { x: 882, y: 487, facing: 'left', label: 'Sanalika Lounge Yan (Alt)' }
+    ],
+    pet_shop: [
+        // Müşteri Bekleme Koltuğu (Sittable Sofa)
+        { x: 320, y: 430, facing: 'down', label: 'Müşteri Bekleme Koltuğu' },
+        { x: 405, y: 430, facing: 'down', label: 'Müşteri Bekleme Koltuğu' },
+        { x: 490, y: 430, facing: 'down', label: 'Müşteri Bekleme Koltuğu' }
+    ],
+    optik: [
+        // 2:1 İzometrik Barcelona Deri Koltukları (Mies van der Rohe)
+        // Sol Koltuk: Banko sol yanı (x: 285, y: 405, facing: 'down-right')
+        { x: 285, y: 405, facing: 'down-right', label: 'Barcelona Koltuk (Sol)' },
+        // Sağ Koltuk: Banko sağ yanı (x: 440, y: 385, facing: 'down-left')
+        { x: 440, y: 385, facing: 'down-left', label: 'Barcelona Koltuk (Sağ)' },
+        // Bordo Kadife Yuvarlak Puf (x: 672, y: 395, facing: 'down-left')
+        { x: 672, y: 395, facing: 'down-left', label: 'Bordo Kadife Puf' }
+    ],
+    optika: [
+        // Geriye dönük uyumluluk alias
+        { x: 285, y: 405, facing: 'down-right', label: 'Barcelona Koltuk (Sol)' },
+        { x: 440, y: 385, facing: 'down-left', label: 'Barcelona Koltuk (Sağ)' },
+        { x: 672, y: 395, facing: 'down-left', label: 'Bordo Kadife Puf' }
     ]
 };
 
@@ -204,7 +384,7 @@ function findNearestSittableSeat() {
         for (let i = 0; i < house.furniture.length; i++) {
             let item = house.furniture[i];
             let cat = catTable[item.id] || { w: 60, h: 50 };
-            let rot = ((item.rotation || 0) % 4 + 4) % 4;
+            let rot = (((item.rotation !== undefined ? item.rotation : item.rot) || 0) % 4 + 4) % 4;
             let isTransposed = (rot === 1 || rot === 3);
             let effW = isTransposed ? cat.h : cat.w;
             let effH = isTransposed ? cat.w : cat.h;
@@ -297,13 +477,13 @@ function openGameForSeat(seat) {
                 }, 150);
             }
         }
-    } else if (gameType === 'batak' || gameType === 'batak4' || gameType === 'tavla' || gameType === 'chess' || gameType === 'okey101' || gameType === 'okey101_tekli' || gameType === 'billiard' || gameType === 'xox' || gameType === 'amiral' || gameType === 'dost_kazigi' || gameType === 'dost_kazigi_3p') {
+    } else if (gameType === 'xox') {
+        if (typeof openXoxModal === 'function') openXoxModal();
+    } else if (gameType === 'amiral') {
+        if (typeof openAmiralBattiModal === 'function') openAmiralBattiModal();
+    } else if (gameType === 'batak' || gameType === 'batak4' || gameType === 'tavla' || gameType === 'chess' || gameType === 'okey101' || gameType === 'okey101_tekli' || gameType === 'billiard' || gameType === 'dost_kazigi' || gameType === 'dost_kazigi_3p') {
         if (window.socket) {
             window.socket.emit('requestTableOptions', gameType);
-        } else if (gameType === 'xox' && typeof openXoxModal === 'function') {
-            openXoxModal();
-        } else if (gameType === 'amiral' && typeof openAmiralBattiModal === 'function') {
-            openAmiralBattiModal();
         }
     } else if (gameType === 'cocktail_bar') {
         if (typeof openCocktailBarModal === 'function') {
@@ -312,6 +492,10 @@ function openGameForSeat(seat) {
     } else if (gameType === 'kiraathane_bar') {
         if (typeof openKiraathaneBarModal === 'function') {
             openKiraathaneBarModal();
+        }
+    } else if (gameType === 'barber_studio') {
+        if (typeof openBarberStudioModal === 'function') {
+            openBarberStudioModal();
         }
     }
 }
@@ -357,10 +541,11 @@ function findSeatAtCoordinates(worldX, worldY, maxRadius = 36) {
         for (let i = 0; i < house.furniture.length; i++) {
             let item = house.furniture[i];
             let cat = catTable[item.id] || { w: 60, h: 50 };
-            let rot = ((item.rotation || 0) % 4 + 4) % 4;
-            let isTransposed = (rot === 1 || rot === 3);
+            let rot = (((item.rotation !== undefined ? item.rotation : item.rot) || 0) % 4 + 4) % 4;
+            let isIso = (cat.isIsometric || item.id === 'sedir');
+            let isTransposed = !isIso && (rot === 1 || rot === 3);
             let effW = isTransposed ? cat.h : cat.w;
-            let effH = isTransposed ? cat.w : cat.h;
+            let effH = isTransposed ? cat.w : (isIso ? (cat.isoH || 64) : cat.h);
             let left = item.x - effW / 2;
             let right = item.x + effW / 2;
             let top = item.y - effH / 2;
@@ -375,23 +560,27 @@ function findSeatAtCoordinates(worldX, worldY, maxRadius = 36) {
 
             if (item.id === 'sedir') {
                 if (rot === 0) {
-                    sitX = Math.max(left + 16, Math.min(right - 16, worldX));
-                    sitY = Math.round(item.y - 2);
-                    facing = 'down';
+                    let t = Math.max(-0.7, Math.min(0.7, ((worldX - item.x) + (worldY - item.y) * 2) / 48));
+                    sitX = Math.round(item.x + t * 20);
+                    sitY = Math.round(item.y + 4 + t * 10);
+                    facing = 'down-right';
                 } else if (rot === 1) {
-                    sitX = Math.round(item.x + 8);
-                    sitY = Math.max(top + 16, Math.min(bottom - 16, worldY));
-                    facing = 'right';
+                    let t = Math.max(-0.7, Math.min(0.7, ((worldX - item.x) - (worldY - item.y) * 2) / 48));
+                    sitX = Math.round(item.x + t * 20);
+                    sitY = Math.round(item.y + 4 - t * 10);
+                    facing = 'down-left';
                 } else if (rot === 2) {
-                    sitX = Math.max(left + 16, Math.min(right - 16, worldX));
-                    sitY = Math.round(item.y + 12);
-                    facing = 'up';
+                    let t = Math.max(-0.7, Math.min(0.7, ((worldX - item.x) + (worldY - item.y) * 2) / 48));
+                    sitX = Math.round(item.x + t * 20);
+                    sitY = Math.round(item.y - 4 + t * 10);
+                    facing = 'up-left';
                 } else if (rot === 3) {
-                    sitX = Math.round(item.x - 8);
-                    sitY = Math.max(top + 16, Math.min(bottom - 16, worldY));
-                    facing = 'left';
+                    let t = Math.max(-0.7, Math.min(0.7, ((worldX - item.x) - (worldY - item.y) * 2) / 48));
+                    sitX = Math.round(item.x + t * 20);
+                    sitY = Math.round(item.y - 4 - t * 10);
+                    facing = 'up-right';
                 }
-                label = 'Sedir';
+                label = 'Otantik Şark Sediri';
             } else if (item.id === 'berjer') {
                 let dirs = ['down', 'right', 'up', 'left'];
                 facing = dirs[rot];

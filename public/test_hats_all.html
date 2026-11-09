@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Karakter 2 - Tüm Şapkalar & Saç Uyumu Testi</title>
+<style>
+  body { background: #0f172a; color: #fff; font-family: sans-serif; padding: 25px; }
+  h1 { font-size: 24px; color: #f8fafc; margin-bottom: 6px; }
+  .desc { color: #94a3b8; font-size: 13px; margin-bottom: 25px; line-height: 1.5; }
+  h2 { color: #38bdf8; margin: 18px 0 10px 0; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; }
+  .card { background: #1e293b; padding: 10px; border-radius: 10px; text-align: center; border: 1.5px solid #334155; }
+  canvas { background: #f8fafc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+  .label { font-size: 11px; font-weight: 800; margin-top: 6px; color: #0f172a; }
+  .hair-tag { font-size: 10px; color: #64748b; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Karakter 2: Tüm Şapkaların 8 Açılı & Kusursuz Saç Kırpma Doğrulama Testi</h1>
+<p class="desc">
+  Barette uygulanan anatomik kırpma ve başı kucaklayan kubbe formu tüm şapkalara (Bucket Hat, Bere, Kasket, Kovboy, Fes, Korsan, Taç, Sihirbaz) uygulanmıştır.<br>
+  Şapkanın kapattığı kubbe ve arkadan hiçbir saç teli taşamazken; alt taraftaki ense, omuz dalgaları ve atkuyruğu %100 doğal korunmaktadır.
+</p>
+
+<div id="container"></div>
+
+<script src="js/avatarRenderer.js"></script>
+<script src="js/renderers/karakter2Renderer.js"></script>
+<script src="js/renderers/k2/k2Fx.js"></script>
+<script src="js/renderers/k2/k2Limbs.js"></script>
+<script src="js/renderers/k2/k2Torso.js"></script>
+<script src="js/renderers/k2/k2Head.js?v=20261109_hats_redesign"></script>
+
+<script>
+window.onload = function() {
+    const hats = [
+        { id: 'k2_skater_bucket', name: 'Sokak Kova Şapka (Bucket Hat - Kullanıcı Bildirimi)' },
+        { id: 'bere', name: 'Kırmızı Bere (Pompomlu Yün Bere)' },
+        { id: 'beret_pink', name: 'Pembe Fransız Bere' },
+        { id: 'kasket', name: 'Kıraathane Kasketi (Flat Cap)' },
+        { id: 'cowboy', name: 'Kovboy Şapkası (Geniş Kıvrık Siperlik)' },
+        { id: 'fes', name: 'Osmanlı Fesi (Püsküllü)' },
+        { id: 'korsan', name: 'Korsan Kaptanı (Tricorne & Altın Sırma)' },
+        { id: 'crown', name: 'Prenses Tacı' },
+        { id: 'baret_sari', name: 'Sarı Madenci Bareti (Referans Baret)' }
+    ];
+
+    const facings = ['right', 'down-right', 'down', 'up-right', 'up'];
+    const container = document.getElementById('container');
+
+    hats.forEach(h => {
+        const section = document.createElement('div');
+        section.innerHTML = `<h2>🧢 ${h.name} (ID: ${h.id})</h2><div class="grid" id="grid_${h.id}"></div>`;
+        container.appendChild(section);
+
+        const grid = document.getElementById('grid_' + h.id);
+        facings.forEach(f => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const cv = document.createElement('canvas');
+            cv.width = 110;
+            cv.height = 145;
+            const ctx = cv.getContext('2d');
+            ctx.save();
+            ctx.translate(55, 95);
+            ctx.scale(1.8, 1.8);
+
+            const p = {
+                model: 'karakter_2',
+                hair: 'hair_k2_anime_spiky',
+                hairColor: '#ec4899',
+                skinColor: '#ffd1a4',
+                shirtColor: '#84cc16',
+                pants: 'pants_classic_jeans',
+                shoes: 'sneakers',
+                hat: h.id,
+                hatColor: 'original',
+                gender: 'female',
+                heldItem: 'flower_red'
+            };
+
+            if (typeof Karakter2Renderer !== 'undefined') {
+                Karakter2Renderer.draw(ctx, 0, 0, p, f, false, 0, 0, false, false);
+            }
+            ctx.restore();
+
+            card.appendChild(cv);
+            const lbl = document.createElement('div');
+            lbl.className = 'label';
+            lbl.innerText = f;
+            card.appendChild(lbl);
+            grid.appendChild(card);
+        });
+    });
+
+    // 2. Kadın Uzun Saç ve Topuz Kombinasyonları Testi
+    const comboSection = document.createElement('div');
+    comboSection.innerHTML = `<h2>👩 Kadın Saçları ile Şapka / Baret Uyumu (Wavy Shoulder, Ponytail, Messy Bun)</h2><div class="grid" id="grid_combos"></div>`;
+    container.appendChild(comboSection);
+    const comboGrid = document.getElementById('grid_combos');
+
+    const combos = [
+        { hat: 'k2_skater_bucket', hair: 'hair_k2_wavy_shoulder', hairColor: '#b45309', label: 'Bucket Hat + Dalgalı Saç (Profil)', facing: 'right' },
+        { hat: 'k2_skater_bucket', hair: 'hair_k2_wavy_shoulder', hairColor: '#b45309', label: 'Bucket Hat + Dalgalı Saç (Ön)', facing: 'down' },
+        { hat: 'bere', hair: 'hair_k2_ponytail', hairColor: '#26150b', label: 'Bere + Atkuyruğu (Profil)', facing: 'right' },
+        { hat: 'bere', hair: 'hair_k2_ponytail', hairColor: '#26150b', label: 'Bere + Atkuyruğu (Sırt)', facing: 'up' },
+        { hat: 'baret_sari', hair: 'hair_k2_messy_bun', hairColor: '#d97706', label: 'Baret + Dağınık Topuz (Profil)', facing: 'right' },
+        { hat: 'cowboy', hair: 'hair_k2_wavy_shoulder', hairColor: '#7c2d12', label: 'Kovboy + Dalgalı Saç (Profil)', facing: 'right' }
+    ];
+
+    combos.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        const cv = document.createElement('canvas');
+        cv.width = 135;
+        cv.height = 150;
+        const ctx = cv.getContext('2d');
+        ctx.save();
+        ctx.translate(67, 98);
+        ctx.scale(1.8, 1.8);
+
+        const p = {
+            model: 'karakter_2',
+            hair: c.hair,
+            hairColor: c.hairColor,
+            skinColor: '#ffd1a4',
+            shirtColor: '#ec4899',
+            pants: 'pants_classic_jeans',
+            shoes: 'sneakers',
+            hat: c.hat,
+            hatColor: 'original',
+            gender: 'female'
+        };
+
+        if (typeof Karakter2Renderer !== 'undefined') {
+            Karakter2Renderer.draw(ctx, 0, 0, p, c.facing, false, 0, 0, false, false);
+        }
+        ctx.restore();
+
+        card.appendChild(cv);
+        const lbl = document.createElement('div');
+        lbl.className = 'label';
+        lbl.innerText = c.label;
+        card.appendChild(lbl);
+        comboGrid.appendChild(card);
+    });
+};
+</script>
+</body>
+</html>

@@ -76,43 +76,54 @@ function getEffectiveTile(tile, okeyDef) {
     };
 }
 
-// Sıralı Per Kontrolü (Aynı Renk, Ardışık: 4-5-6 veya 11-12-13-1, Okey Her Yere Joker Olarak Geçer)
-function isValidSeries(tiles, okeyDef) {
-    if (!tiles || tiles.length < 3 || tiles.length > 13) return false;
+// Sıralı Per Çözümleyici: Taşlar karışık sırada olsa bile en yüksek puanlı geçerli seriyi bulur ve taşları sıralar
+function resolveSeries(tiles, okeyDef) {
+    if (!tiles || tiles.length < 3 || tiles.length > 13) return null;
 
-    let nonOkey = tiles.filter(t => !isRealOkey(t, okeyDef));
-    if (nonOkey.length === 0) return true; // Hepsi okeyse geçerli
-
-    // Tüm normal taşların rengi aynı olmalı
-    let baseColor = nonOkey[0].isFakeOkey ? okeyDef.color : nonOkey[0].color;
-    for (let t of nonOkey) {
-        let effColor = t.isFakeOkey ? okeyDef.color : t.color;
-        if (effColor !== baseColor) return false;
+    let nonOkeys = [];
+    let okeys = [];
+    for (let t of tiles) {
+        if (!t) return null;
+        if (isRealOkey(t, okeyDef)) okeys.push(t);
+        else nonOkeys.push(t);
     }
 
-    let nonOkeyVals = nonOkey.map(t => t.isFakeOkey ? okeyDef.value : t.value);
-    let okeyCount = tiles.length - nonOkey.length;
     let n = tiles.length;
-
-    // Olası her başlangıç değerini (1'den 13'e) dene
-    for (let startVal = 1; startVal <= 13; startVal++) {
+    if (nonOkeys.length === 0) {
         let req = [];
-        let possible = true;
-        for (let i = 0; i < n; i++) {
-            let v = startVal + i;
-            if (v > 13) {
-                if (v === 14 && i === n - 1) {
-                    v = 1; // 12-13-1 veya 11-12-13-1 kuralı
-                } else {
-                    possible = false;
-                    break;
-                }
-            }
-            req.push(v);
-        }
-        if (!possible) continue;
+        let start = Math.max(1, 14 - n);
+        for (let i = 0; i < n; i++) req.push(start + i);
+        return {
+            sortedTiles: [...tiles],
+            req: req,
+            score: req.reduce((a, b) => a + b, 0)
+        };
+    }
 
-        // nonOkeyVals listesindeki her değer req içinde birebir eşleşmeli
+    let baseColor = nonOkeys[0].isFakeOkey ? (okeyDef ? okeyDef.color : nonOkeys[0].color) : nonOkeys[0].color;
+    let nonOkeyVals = [];
+    let seenVals = new Set();
+
+    for (let t of nonOkeys) {
+        let effColor = t.isFakeOkey ? (okeyDef ? okeyDef.color : t.color) : t.color;
+        if (effColor !== baseColor) return null;
+        let effVal = t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value;
+        if (seenVals.has(effVal)) return null; // Tek bir seride aynı sayı iki kez yer alamaz
+        seenVals.add(effVal);
+        nonOkeyVals.push(effVal);
+    }
+
+    let okeyCount = okeys.length;
+    let bestReq = null;
+    let bestScore = -1;
+
+    // 101 Okey'de 12-13-1 peri YOKTUR! Seriler en fazla 13'e kadar uzayabilir (örn: 10-11-12-13).
+    for (let startVal = 1; startVal <= 13 - n + 1; startVal++) {
+        let req = [];
+        for (let i = 0; i < n; i++) {
+            req.push(startVal + i);
+        }
+
         let tempReq = [...req];
         let matched = true;
         for (let val of nonOkeyVals) {
@@ -123,13 +134,46 @@ function isValidSeries(tiles, okeyDef) {
             }
             tempReq.splice(idx, 1);
         }
-        // Kalan boşluk sayısı tam olarak okeyCount'a eşit mi?
+
         if (matched && tempReq.length === okeyCount) {
-            return true;
+            let sum = req.reduce((a, b) => a + b, 0);
+            if (sum > bestScore) {
+                bestScore = sum;
+                bestReq = req;
+            }
         }
     }
 
-    return false;
+    if (!bestReq) return null;
+
+    let sortedTiles = [];
+    let nonOkeyPool = [...nonOkeys];
+    let okeyPool = [...okeys];
+
+    for (let v of bestReq) {
+        let foundIdx = nonOkeyPool.findIndex(t => {
+            let val = t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value;
+            return val === v;
+        });
+        if (foundIdx !== -1) {
+            sortedTiles.push(nonOkeyPool.splice(foundIdx, 1)[0]);
+        } else if (okeyPool.length > 0) {
+            sortedTiles.push(okeyPool.shift());
+        }
+    }
+    if (nonOkeyPool.length > 0) sortedTiles.push(...nonOkeyPool);
+    if (okeyPool.length > 0) sortedTiles.push(...okeyPool);
+
+    return {
+        sortedTiles: sortedTiles,
+        req: bestReq,
+        score: bestScore
+    };
+}
+
+// Sıralı Per Kontrolü (Aynı Renk, Ardışık: 4-5-6 veya 10-11-12-13 (101 de 12-13-1 yoktur), Okey Her Yere Joker Olarak Geçer)
+function isValidSeries(tiles, okeyDef) {
+    return resolveSeries(tiles, okeyDef) !== null;
 }
 
 // Grup Per Kontrolü (Aynı Sayı, Farklı Renkler: 7-7-7 gibi 3 veya 4 taş)
@@ -139,18 +183,110 @@ function isValidGroup(tiles, okeyDef) {
     let nonOkey = tiles.filter(t => !isRealOkey(t, okeyDef));
     if (nonOkey.length === 0) return true;
 
-    let baseVal = nonOkey[0].isFakeOkey ? okeyDef.value : nonOkey[0].value;
+    let baseVal = nonOkey[0].isFakeOkey ? (okeyDef ? okeyDef.value : nonOkey[0].value) : nonOkey[0].value;
     let colorsUsed = new Set();
 
     for (let t of nonOkey) {
-        let effVal = t.isFakeOkey ? okeyDef.value : t.value;
-        let effCol = t.isFakeOkey ? okeyDef.color : t.color;
+        let effVal = t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value;
+        let effCol = t.isFakeOkey ? (okeyDef ? okeyDef.color : t.color) : t.color;
         if (effVal !== baseVal) return false;
         if (colorsUsed.has(effCol)) return false; // Aynı renkten birden fazla olamaz
         colorsUsed.add(effCol);
     }
 
     return true;
+}
+
+// Grup Per Taşlarını Düzenli Renk Sırasına Diz (Gerçek Okey Sonda)
+function sortGroupTiles(tiles, okeyDef) {
+    if (!tiles || tiles.length === 0) return [];
+    let nonOkeys = [];
+    let okeys = [];
+    for (let t of tiles) {
+        if (isRealOkey(t, okeyDef)) okeys.push(t);
+        else nonOkeys.push(t);
+    }
+    nonOkeys.sort((a, b) => {
+        let colA = a.isFakeOkey ? (okeyDef ? okeyDef.color : a.color) : a.color;
+        let colB = b.isFakeOkey ? (okeyDef ? okeyDef.color : b.color) : b.color;
+        return COLORS.indexOf(colA) - COLORS.indexOf(colB);
+    });
+    return [...nonOkeys, ...okeys];
+}
+
+// Çift Taşlarını Düzenli Sırala (Normal Taş Önde, Okey / Gösterge Joker Sonda)
+function sortPairTiles(tiles, okeyDef, gostergeTile = null) {
+    if (!tiles || tiles.length <= 1) return tiles ? [...tiles] : [];
+    let [t1, t2] = tiles;
+    let o1 = isRealOkey(t1, okeyDef);
+    let o2 = isRealOkey(t2, okeyDef);
+    if (o1 && !o2) return [t2, t1];
+    if (!o1 && o2) return [t1, t2];
+    if (gostergeTile) {
+        let g1 = !t1.isFakeOkey && t1.color === gostergeTile.color && t1.value === gostergeTile.value;
+        let g2 = !t2.isFakeOkey && t2.color === gostergeTile.color && t2.value === gostergeTile.value;
+        if (g1 && !g2) return [t2, t1];
+    }
+    return [t1, t2];
+}
+
+function getPairScore(tiles, okeyDef) {
+    if (!tiles || tiles.length === 0) return 0;
+    if (tiles.length === 1) {
+        let eff = getEffectiveTile(tiles[0], okeyDef);
+        return (eff ? eff.value : 0) * 2;
+    }
+    let nonOkey = tiles.find(t => !isRealOkey(t, okeyDef));
+    if (nonOkey) {
+        let eff = getEffectiveTile(nonOkey, okeyDef);
+        return (eff ? eff.value : 0) * 2;
+    }
+    return (okeyDef ? okeyDef.value : 10) * 2;
+}
+
+// Per Türünü, Sıralı Taş Dizilimini ve En Yüksek Geçerli Puanını Tek Seferde Hesapla
+function classifyAndSortPer(tiles, okeyDef) {
+    if (!tiles || tiles.length < 3) return null;
+    let seriRes = resolveSeries(tiles, okeyDef);
+    let grupValid = isValidGroup(tiles, okeyDef);
+    if (!seriRes && !grupValid) return null;
+
+    let grupScore = -1;
+    if (grupValid) {
+        let nonOkey = tiles.find(t => !isRealOkey(t, okeyDef));
+        let val = nonOkey ? (nonOkey.isFakeOkey ? (okeyDef ? okeyDef.value : 10) : nonOkey.value) : 13;
+        grupScore = val * tiles.length;
+    }
+
+    if (seriRes && (!grupValid || seriRes.score >= grupScore)) {
+        return {
+            type: 'seri',
+            sortedTiles: seriRes.sortedTiles,
+            req: seriRes.req,
+            score: seriRes.score
+        };
+    }
+
+    return {
+        type: 'grup',
+        sortedTiles: sortGroupTiles(tiles, okeyDef),
+        score: grupScore
+    };
+}
+
+// Herhangi Bir Perin Taşlarını Türüne Göre Sırala
+function sortPerTiles(tiles, type, okeyDef) {
+    if (!tiles || tiles.length === 0) return [];
+    if (type === 'cift') return sortPairTiles(tiles, okeyDef);
+    if (type === 'seri') {
+        let res = resolveSeries(tiles, okeyDef);
+        if (res) return res.sortedTiles;
+    }
+    if (type === 'grup' && isValidGroup(tiles, okeyDef)) {
+        return sortGroupTiles(tiles, okeyDef);
+    }
+    let classified = classifyAndSortPer(tiles, okeyDef);
+    return classified ? classified.sortedTiles : [...tiles];
 }
 
 // Çift Kontrolü (Tamamen aynı renk ve aynı sayı 2 taş, Okey veya Gösterge Joker desteği)
@@ -173,86 +309,141 @@ function isValidPair(tileA, tileB, okeyDef, gostergeTile = null) {
 
 // Per Puanı Hesaplama
 function getPerScore(tiles, okeyDef) {
-    let score = 0;
-    // Okey taşları yerine girdiği taşın sayı değerini alır
-    if (isValidSeries(tiles, okeyDef)) {
-        let nonOkey = tiles.filter(t => !isRealOkey(t, okeyDef));
-        let nonOkeyVals = nonOkey.map(t => t.isFakeOkey ? okeyDef.value : t.value);
-        let okeyCount = tiles.length - nonOkey.length;
-        let n = tiles.length;
+    let classified = classifyAndSortPer(tiles, okeyDef);
+    if (classified) return classified.score;
 
-        for (let startVal = 1; startVal <= 13; startVal++) {
-            let req = [];
-            let possible = true;
-            for (let i = 0; i < n; i++) {
-                let v = startVal + i;
-                if (v > 13) {
-                    if (v === 14 && i === n - 1) v = 1;
-                    else { possible = false; break; }
-                }
-                req.push(v);
-            }
-            if (!possible) continue;
-            let tempReq = [...req];
-            let matched = true;
-            for (let val of nonOkeyVals) {
-                let idx = tempReq.indexOf(val);
-                if (idx === -1) { matched = false; break; }
-                tempReq.splice(idx, 1);
-            }
-            if (matched && tempReq.length === okeyCount) {
-                return req.reduce((a, b) => a + b, 0);
-            }
-        }
-    } else if (isValidGroup(tiles, okeyDef)) {
-        let nonOkey = tiles.find(t => !isRealOkey(t, okeyDef));
-        let val = nonOkey ? (nonOkey.isFakeOkey ? okeyDef.value : nonOkey.value) : 10;
-        return val * tiles.length;
-    }
-    tiles.forEach(t => {
+    let score = 0;
+    (tiles || []).forEach(t => {
         let eff = getEffectiveTile(t, okeyDef);
         score += eff.value;
     });
     return score;
 }
 
-// Otomatik Çoklu Per Çözücü (Partitioner)
+// Otomatik Çoklu Per Çözücü (Partitioner - Karışık Taş Kümesini En Yüksek Puanlı Perlere Böler)
 function findValidPartition(tiles, okeyDef) {
     if (!tiles || tiles.length < 3) return null;
 
     function getCombinations(arr, k) {
         if (k === 0) return [[]];
-        if (arr.length === 0) return [];
-        let head = arr[0];
-        let tail = arr.slice(1);
-        let withHead = getCombinations(tail, k - 1).map(c => [head, ...c]);
-        let withoutHead = getCombinations(tail, k);
-        return [...withHead, ...withoutHead];
+        if (arr.length < k) return [];
+        let result = [];
+        function helper(start, combo) {
+            if (combo.length === k) {
+                result.push([...combo]);
+                return;
+            }
+            for (let i = start; i <= arr.length - (k - combo.length); i++) {
+                combo.push(arr[i]);
+                helper(i + 1, combo);
+                combo.pop();
+            }
+        }
+        helper(0, []);
+        return result;
     }
 
+    // Normal taşları öne al ki head sabitlemesi renk/sayı filtrelemesiyle anında dalları budasın
+    let orderedInput = [...tiles].sort((a, b) => {
+        let oa = isRealOkey(a, okeyDef) ? 1 : 0;
+        let ob = isRealOkey(b, okeyDef) ? 1 : 0;
+        return oa - ob;
+    });
+
+    let memo = new Map();
+
     function search(remaining) {
-        if (remaining.length === 0) return [];
+        if (remaining.length === 0) return { pers: [], score: 0 };
         if (remaining.length < 3) return null;
 
-        let n = remaining.length;
-        for (let size of [3, 4, 5]) {
-            if (size > n) continue;
-            let combs = getCombinations(remaining, size);
-            for (let comb of combs) {
-                if (isValidSeries(comb, okeyDef) || isValidGroup(comb, okeyDef)) {
-                    let combIds = new Set(comb.map(t => t.id));
-                    let rest = remaining.filter(t => !combIds.has(t.id));
+        let key = remaining.map(t => t.id).sort().join(',');
+        if (memo.has(key)) return memo.get(key);
+
+        let head = remaining[0];
+        let tail = remaining.slice(1);
+        let headIsOkey = isRealOkey(head, okeyDef);
+
+        let best = null;
+
+        if (headIsOkey) {
+            // Kalanların hepsi gerçek okeyse
+            let classified = classifyAndSortPer(remaining, okeyDef);
+            if (classified) {
+                best = { pers: [classified.sortedTiles], score: classified.score };
+            }
+            memo.set(key, best);
+            return best;
+        }
+
+        let headColor = head.isFakeOkey ? (okeyDef ? okeyDef.color : head.color) : head.color;
+        let headVal = head.isFakeOkey ? (okeyDef ? okeyDef.value : head.value) : head.value;
+
+        // 1) Head'i içeren olası SERİ kombinasyonları (yalnızca aynı renk veya gerçek Okey taşları)
+        let seriPool = tail.filter(t => {
+            if (isRealOkey(t, okeyDef)) return true;
+            let c = t.isFakeOkey ? (okeyDef ? okeyDef.color : t.color) : t.color;
+            return c === headColor;
+        });
+
+        let maxSeriSize = Math.min(13, 1 + seriPool.length);
+        for (let size = maxSeriSize; size >= 3; size--) {
+            let combs = getCombinations(seriPool, size - 1);
+            for (let c of combs) {
+                let cand = [head, ...c];
+                let seriRes = resolveSeries(cand, okeyDef);
+                if (seriRes) {
+                    let usedSet = new Set(cand.map(t => t.id));
+                    let rest = tail.filter(t => !usedSet.has(t.id));
                     let sub = search(rest);
                     if (sub !== null) {
-                        return [comb, ...sub];
+                        let total = seriRes.score + sub.score;
+                        if (!best || total > best.score) {
+                            best = {
+                                pers: [seriRes.sortedTiles, ...sub.pers],
+                                score: total
+                            };
+                        }
                     }
                 }
             }
         }
-        return null;
+
+        // 2) Head'i içeren olası GRUP kombinasyonları (yalnızca aynı sayı veya gerçek Okey taşları, boy 3 veya 4)
+        let grupPool = tail.filter(t => {
+            if (isRealOkey(t, okeyDef)) return true;
+            let v = t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value;
+            return v === headVal;
+        });
+
+        let maxGrupSize = Math.min(4, 1 + grupPool.length);
+        for (let size = 3; size <= maxGrupSize; size++) {
+            let combs = getCombinations(grupPool, size - 1);
+            for (let c of combs) {
+                let cand = [head, ...c];
+                if (isValidGroup(cand, okeyDef)) {
+                    let gScore = headVal * cand.length;
+                    let usedSet = new Set(cand.map(t => t.id));
+                    let rest = tail.filter(t => !usedSet.has(t.id));
+                    let sub = search(rest);
+                    if (sub !== null) {
+                        let total = gScore + sub.score;
+                        if (!best || total > best.score) {
+                            best = {
+                                pers: [sortGroupTiles(cand, okeyDef), ...sub.pers],
+                                score: total
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        memo.set(key, best);
+        return best;
     }
 
-    return search(tiles);
+    let res = search(orderedInput);
+    return res ? res.pers : null;
 }
 
 // Takım ve Partner Yardımcıları
@@ -271,8 +462,12 @@ function getHandSum(hand, okeyDef) {
     if (!hand || hand.length === 0) return 0;
     let sum = 0;
     hand.forEach(t => {
-        let eff = getEffectiveTile(t, okeyDef);
-        sum += eff.value;
+        if (isRealOkey(t, okeyDef)) {
+            sum += 101; // 101 Okey Kuralı: Elde unutulan/kalan Okey taşı 101 ceza puanı sayılır
+        } else {
+            let eff = getEffectiveTile(t, okeyDef);
+            sum += eff.value;
+        }
     });
     return sum;
 }
@@ -555,6 +750,12 @@ function takeDiscardedTile(gameData, playerId) {
     if (gameData.gameOver) return { success: false, msg: "Oyun bitti!" };
     if (gameData.players[gameData.turnIndex] !== playerId) return { success: false, msg: "Sıra sende değil!" };
     if (gameData.drawnThisTurn) return { success: false, msg: "Bu tur zaten taş çektin!" };
+    if (!gameData.drawPile || gameData.drawPile.length === 0) {
+        gameData.gameOver = true;
+        gameData.winner = null;
+        calculateRoundEndScores(gameData, null, false);
+        return { success: false, finished: true, roundEnded: true, msg: "Destedeki taşlar bitti! El sona erdi." };
+    }
 
     let prevPlayerIndex = (gameData.turnIndex + 3) % 4;
     let prevPid = gameData.players[prevPlayerIndex];
@@ -597,7 +798,14 @@ function revealGosterge(gameData, playerId, tileId) {
         return { success: false, msg: "Göstergeyi sadece oyunun başında ilk el taş çekmeden önce gösterebilirsiniz!" };
     }
     // İlk oyuncu için (elinde 22 taşla başlayan): İlk taşını atmadan önce gösterebilir!
-    if (gameData.players[0] === playerId && (gameData.discardPiles[playerId] && gameData.discardPiles[playerId].length > 0)) {
+    let starterIndex = ((gameData.roundNumber || 1) - 1) % gameData.players.length;
+    let starterPid = gameData.players[starterIndex];
+    let isStarterWith22 = (starterPid === playerId);
+
+    if (!isStarterWith22 && gameData.hasDrawnEver && gameData.hasDrawnEver[playerId]) {
+        return { success: false, msg: "Göstergeyi sadece oyunun başında ilk el taş çekmeden önce gösterebilirsiniz!" };
+    }
+    if (isStarterWith22 && gameData.discardPiles[playerId] && gameData.discardPiles[playerId].length > 0) {
         return { success: false, msg: "İlk taşınızı attıktan sonra gösterge gösteremezsiniz!" };
     }
 
@@ -725,15 +933,16 @@ function openHand(gameData, playerId, persPayload, typeFallback) {
             }
         }
 
-        // Başarılı Çiftleri Masaya Ekle
+        // Başarılı Çiftleri Masaya Sıralı Ekle
         validPairs.forEach(pair => {
-            let score = pair.length === 1 ? (pair[0].value * 2) : (pair[0].value + pair[1].value);
+            let sortedPair = sortPairTiles(pair, okeyDef, gameData.gosterge);
+            let score = getPairScore(sortedPair, okeyDef);
             gameData.tableOpenedPers.push({
                 id: `per_${Date.now()}_${Math.floor(Math.random()*1000)}`,
                 ownerId: playerId,
                 type: 'cift',
-                isGostergePair: pair.length === 1,
-                tiles: pair,
+                isGostergePair: sortedPair.length === 1,
+                tiles: sortedPair,
                 score: score
             });
         });
@@ -788,12 +997,14 @@ function openHand(gameData, playerId, persPayload, typeFallback) {
         return { success: false, msg: "Açılacak per seçilmedi!" };
     }
 
-    // Eğer tek bir per içine çoklu per atıldıysa otomatik olarak geçerli per kombinasyonlarına böl
+    // Eğer tek bir per içine çoklu per atıldıysa (ve tek başına tek bir seri değilse) otomatik olarak geçerli perlere böl
     if (pers.length === 1 && pers[0].tileIds.length >= 6) {
         let allTiles = pers[0].tileIds.map(tid => hand.find(t => t.id === tid)).filter(Boolean);
-        let partitioned = findValidPartition(allTiles, okeyDef);
-        if (partitioned && partitioned.length >= 2) {
-            pers = partitioned.map(group => ({ tileIds: group.map(t => t.id) }));
+        if (!isValidSeries(allTiles, okeyDef) && !isValidGroup(allTiles, okeyDef)) {
+            let partitioned = findValidPartition(allTiles, okeyDef);
+            if (partitioned && partitioned.length >= 2) {
+                pers = partitioned.map(group => ({ tileIds: group.map(t => t.id) }));
+            }
         }
     }
 
@@ -809,10 +1020,9 @@ function openHand(gameData, playerId, persPayload, typeFallback) {
             usedTileIds.add(t.id);
         }
 
-        let isSeri = isValidSeries(pTiles, okeyDef);
-        let isGrup = isValidGroup(pTiles, okeyDef);
+        let classified = classifyAndSortPer(pTiles, okeyDef);
 
-        if (!isSeri && !isGrup) {
+        if (!classified) {
             if (!isAlreadyOpened) {
                 gameData.roundPenalties[playerId] = (gameData.roundPenalties[playerId] || 0) + 101;
                 addPenaltyToYazboz(gameData, playerId, 101, "Geçersiz Per Açma");
@@ -822,12 +1032,11 @@ function openHand(gameData, playerId, persPayload, typeFallback) {
             }
         }
 
-        let pScore = getPerScore(pTiles, okeyDef);
-        totalScore += pScore;
+        totalScore += classified.score;
         validPersToAdd.push({
-            type: isSeri ? 'seri' : 'grup',
-            tiles: pTiles,
-            score: pScore
+            type: classified.type,
+            tiles: classified.sortedTiles,
+            score: classified.score
         });
     }
 
@@ -907,57 +1116,10 @@ function openHand(gameData, playerId, persPayload, typeFallback) {
     };
 }
 
-// Seri Per Taşlarını Mantıksal Sıralamada Dizme (Örn: 9-10-11-12 veya 11-12-13-1)
+// Seri Per Taşlarını Mantıksal Sıralamada Dizme (Örn: 8-9-10-11, 5-6-Okey-8 veya 10-11-12-13)
 function sortSeriesTiles(tiles, okeyDef) {
-    let nonOkey = tiles.filter(t => !isRealOkey(t, okeyDef));
-    if (nonOkey.length === 0) return tiles;
-    let nonOkeyVals = nonOkey.map(t => t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value);
-    let okeyCount = tiles.length - nonOkey.length;
-    let n = tiles.length;
-
-    for (let startVal = 1; startVal <= 13; startVal++) {
-        let req = [];
-        let possible = true;
-        for (let i = 0; i < n; i++) {
-            let v = startVal + i;
-            if (v > 13) {
-                if (v === 14 && i === n - 1) v = 1;
-                else { possible = false; break; }
-            }
-            req.push(v);
-        }
-        if (!possible) continue;
-
-        let tempReq = [...req];
-        let matched = true;
-        for (let val of nonOkeyVals) {
-            let idx = tempReq.indexOf(val);
-            if (idx === -1) { matched = false; break; }
-            tempReq.splice(idx, 1);
-        }
-        if (matched && tempReq.length === okeyCount) {
-            let sorted = [];
-            let remainingPool = [...tiles];
-            for (let v of req) {
-                let foundIdx = remainingPool.findIndex(t => {
-                    if (isRealOkey(t, okeyDef)) return false;
-                    let val = t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value;
-                    return val === v;
-                });
-                if (foundIdx !== -1) {
-                    sorted.push(remainingPool.splice(foundIdx, 1)[0]);
-                } else {
-                    let okeyIdx = remainingPool.findIndex(t => isRealOkey(t, okeyDef));
-                    if (okeyIdx !== -1) {
-                        sorted.push(remainingPool.splice(okeyIdx, 1)[0]);
-                    }
-                }
-            }
-            if (remainingPool.length > 0) sorted.push(...remainingPool);
-            return sorted;
-        }
-    }
-    return tiles;
+    let res = resolveSeries(tiles, okeyDef);
+    return res ? res.sortedTiles : tiles;
 }
 
 // Masadaki Açılmış Perlere Taş Ekleme (İşler Yapma / İşleme - Sürükle-Bırak veya Butonla)
@@ -1019,7 +1181,7 @@ function addTileToTablePer(gameData, playerId, tileIdOrIds, targetPerIndex, posi
     if (!testTilesBest && isGrup) {
         let combined = [...targetPer.tiles, ...selectedTiles];
         if (isValidGroup(combined, okeyDef)) {
-            testTilesBest = combined;
+            testTilesBest = sortGroupTiles(combined, okeyDef);
             targetPer.type = 'grup';
         }
     }
@@ -1082,29 +1244,51 @@ function takeOkeyFromTablePer(gameData, playerId, perIndex, tileIdInHand) {
     let myTile = hand[tileIndex];
 
     let okeyDef = gameData.okeyDef;
-    let okeyIndexInPer = targetPer.tiles.findIndex(t => isRealOkey(t, okeyDef));
-    if (okeyIndexInPer === -1) return { success: false, msg: "Bu per grubunda Okey taşı bulunmuyor!" };
+    let okeyIndices = [];
+    targetPer.tiles.forEach((t, idx) => {
+        if (isRealOkey(t, okeyDef)) okeyIndices.push(idx);
+    });
+    if (okeyIndices.length === 0) return { success: false, msg: "Bu per grubunda Okey taşı bulunmuyor!" };
 
-    let realOkeyTile = targetPer.tiles[okeyIndexInPer];
+    let chosenOkeyIndex = -1;
+    let chosenSortedTiles = null;
 
-    // Okeyin yerine myTile koyup per geçerli mi test et
-    let testTiles = [...targetPer.tiles];
-    testTiles[okeyIndexInPer] = myTile;
+    for (let oIdx of okeyIndices) {
+        let testTiles = [...targetPer.tiles];
+        testTiles[oIdx] = myTile;
+        let valid = (targetPer.type === 'seri') ? isValidSeries(testTiles, okeyDef) : isValidGroup(testTiles, okeyDef);
+        if (valid) {
+            chosenOkeyIndex = oIdx;
+            chosenSortedTiles = sortPerTiles(testTiles, targetPer.type, okeyDef);
+            break;
+        }
+    }
 
-    let valid = (targetPer.type === 'seri') ? isValidSeries(testTiles, okeyDef) : isValidGroup(testTiles, okeyDef);
-    if (!valid) {
+    if (chosenOkeyIndex === -1) {
         return { success: false, msg: "Elinizdeki taş bu perdeki Okey'in yerine uymuyor!" };
     }
 
-    // Takası uygula
-    targetPer.tiles = testTiles;
-    targetPer.score = getPerScore(testTiles, okeyDef);
+    let realOkeyTile = targetPer.tiles[chosenOkeyIndex];
+    targetPer.tiles = chosenSortedTiles;
+    targetPer.score = getPerScore(chosenSortedTiles, okeyDef);
 
     hand.splice(tileIndex, 1);
     hand.push(realOkeyTile);
 
+    // Yandan alınan taşla Okey alınmışsa kilitlenmeyi çöz
+    if (gameData.lastDiscardTaken && gameData.takenDiscardTileId && myTile.id === gameData.takenDiscardTileId) {
+        gameData.takenDiscardTileProcessed = true;
+        gameData.lastDiscardTaken = false;
+    }
+
+    // Yandan taş alma cezası kontrolü
+    if (gameData.pendingDiscardTaker && gameData.pendingDiscardTaker.takerId === playerId) {
+        checkDiscardTakerPenalty(gameData, playerId, false);
+    }
+
     // Rakibe 101 Ceza Yaz
     let perOwner = targetPer.ownerId;
+    let partnerId = (gameData.mode === 'esli') ? getPartnerId(gameData, playerId) : null;
     let isOpponent = (perOwner !== playerId && perOwner !== partnerId);
     if (isOpponent) {
         gameData.roundPenalties[perOwner] = (gameData.roundPenalties[perOwner] || 0) + 101;
@@ -1141,6 +1325,7 @@ function returnDiscardTile(gameData, playerId) {
     let prevPid = gameData.players[prevPlayerIndex];
     if (!gameData.discardPiles[prevPid]) gameData.discardPiles[prevPid] = [];
     gameData.discardPiles[prevPid].push(returnedTile);
+    gameData.lastDiscard = { tile: returnedTile, fromPlayerId: prevPid };
 
     // Desteden normal taş çek
     if (gameData.drawPile && gameData.drawPile.length > 0) {
@@ -1151,10 +1336,23 @@ function returnDiscardTile(gameData, playerId) {
         if (!gameData.lastDrawnTile) gameData.lastDrawnTile = {};
         gameData.lastDrawnTile[playerId] = newTile;
     } else {
-        // Deste bittiyse geri al
-        hand.push(returnedTile);
-        gameData.discardPiles[prevPid].pop();
-        return { success: false, msg: "Destedeki taşlar bittiği için taş çekilemiyor!" };
+        // Destede taş kalmadıysa taşı yan desteye iade edilmiş halde bırak ve eli güvenli şekilde bitir
+        gameData.lastDiscardTaken = false;
+        gameData.takenDiscardTile = null;
+        gameData.takenDiscardTileId = null;
+        gameData.takenDiscardTileProcessed = false;
+        gameData.pendingDiscardTaker = null;
+        gameData.drawnThisTurn = false;
+        gameData.gameOver = true;
+        gameData.winner = null;
+        calculateRoundEndScores(gameData, null, false);
+        return {
+            success: true,
+            finished: true,
+            roundEnded: true,
+            winner: null,
+            msg: "Yandan alınan taş geri bırakıldı. Destede taş kalmadığı için el sona erdi!"
+        };
     }
 
     // Durumu sıfırla (artık desteden çekilmiş sayılır, açma zorunluluğu kalkar)
@@ -1222,16 +1420,19 @@ function discardTile(gameData, playerId, tileId) {
 
     // 1. CEZA KONTROLÜ: Okey Atma Cezası
     let threwOkey = isRealOkey(tile, okeyDef);
-    if (threwOkey && hand.length > 1) { // Son taşla biterken okey atılabilir
-        gameData.roundPenalties[playerId] = (gameData.roundPenalties[playerId] || 0) + 101;
-        addPenaltyToYazboz(gameData, playerId, 101, "Okey Atma Cezası");
-    }
-
-    // 2. CEZA KONTROLÜ: İşler Taş Atma Cezası (Masada açılmış per varken işleyen taşı yere atma)
-    let isIshler = isTileIshler(gameData, tile);
-    if (isIshler && hand.length > 1) {
-        gameData.roundPenalties[playerId] = (gameData.roundPenalties[playerId] || 0) + 101;
-        addPenaltyToYazboz(gameData, playerId, 101, "İşlek Atma Cezası");
+    let isIshler = false;
+    if (threwOkey) {
+        if (hand.length > 1) { // Son taşla biterken okey atılabilir
+            gameData.roundPenalties[playerId] = (gameData.roundPenalties[playerId] || 0) + 101;
+            addPenaltyToYazboz(gameData, playerId, 101, "Okey Atma Cezası");
+        }
+    } else {
+        // 2. CEZA KONTROLÜ: İşler Taş Atma Cezası (Masada açılmış per varken işleyen normal taşı yere atma)
+        isIshler = isTileIshler(gameData, tile);
+        if (isIshler && hand.length > 1) {
+            gameData.roundPenalties[playerId] = (gameData.roundPenalties[playerId] || 0) + 101;
+            addPenaltyToYazboz(gameData, playerId, 101, "İşlek Atma Cezası");
+        }
     }
 
     // Taşı elden çıkar ve oyuncunun atılanlar destesine koy
@@ -1251,6 +1452,27 @@ function discardTile(gameData, playerId, tileId) {
         gameData.winner = playerId;
         calculateRoundEndScores(gameData, playerId, threwOkey);
         return { success: true, finished: true, roundEnded: true, winner: playerId, threwOkey: threwOkey };
+    }
+
+    // 4. DESTE BİTİŞ KONTROLÜ (Ortada taş kalmadıysa ve son taşı çeken oyuncu bitiremediyse el anında sona erer!)
+    if (!gameData.drawPile || gameData.drawPile.length === 0) {
+        gameData.drawnThisTurn = false;
+        gameData.lastDiscardTaken = false;
+        gameData.takenDiscardTile = null;
+        gameData.takenDiscardTileId = null;
+        gameData.takenDiscardTileProcessed = false;
+        gameData.pendingDiscardTaker = null;
+        gameData.gameOver = true;
+        gameData.winner = null;
+        calculateRoundEndScores(gameData, null, false);
+        return {
+            success: true,
+            finished: true,
+            roundEnded: true,
+            winner: null,
+            penaltyAdded: (threwOkey || isIshler) ? 101 : 0,
+            msg: "Destedeki taşlar bitti! El sona erdi."
+        };
     }
 
     // Sıradaki oyuncuya devret
@@ -1405,37 +1627,58 @@ function makeBotMove(gameData, botId) {
     // 1. Taş Çek
     if (!gameData.drawnThisTurn) {
         drawTileFromDeck(gameData, botId);
+        if (gameData.gameOver) return true;
     }
 
     let hand = gameData.hands[botId] || [];
     let okeyDef = gameData.okeyDef;
 
-    // 2. El Açma Adaylarını Bul (Eğer henüz açmadıysa)
-    if (!gameData.hasOpened[botId]) {
-        let candidatePers = findBotValidPers(hand, okeyDef);
-        let totalScore = candidatePers.reduce((sum, p) => sum + p.score, 0);
+    function tryBotOpenAndProcess() {
+        hand = gameData.hands[botId] || [];
+        // 2. El Açma Adaylarını Bul (Eğer henüz açmadıysa)
+        if (!gameData.hasOpened[botId]) {
+            let candidatePers = findBotValidPers(hand, okeyDef);
+            let totalScore = candidatePers.reduce((sum, p) => sum + p.score, 0);
 
-        if (totalScore >= 101) {
-            openHand(gameData, botId, candidatePers);
+            if (totalScore >= 101) {
+                openHand(gameData, botId, candidatePers);
+                hand = gameData.hands[botId] || [];
+            }
+        }
+
+        // 3. Masaya İşler Taşları Ekle (Eğer açtıysa)
+        if (gameData.hasOpened[botId] && gameData.tableOpenedPers.length > 0) {
+            let currentTiles = [...(gameData.hands[botId] || [])];
+            for (let i = currentTiles.length - 1; i >= 0; i--) {
+                let t = currentTiles[i];
+                if (isRealOkey(t, okeyDef)) continue; // Okeyi elde sakla
+                for (let pIdx = 0; pIdx < gameData.tableOpenedPers.length; pIdx++) {
+                    let res = addTileToTablePer(gameData, botId, t.id, pIdx, 'end');
+                    if (!res.success) {
+                        res = addTileToTablePer(gameData, botId, t.id, pIdx, 'start');
+                    }
+                    if (res.success) break;
+                }
+                if (gameData.gameOver) return;
+            }
+            hand = gameData.hands[botId] || [];
         }
     }
 
-    // 3. Masaya İşler Taşları Ekle (Eğer açtıysa)
-    if (gameData.hasOpened[botId] && gameData.tableOpenedPers.length > 0) {
-        for (let i = hand.length - 1; i >= 0; i--) {
-            let t = hand[i];
-            if (isRealOkey(t, okeyDef)) continue; // Okeyi elde sakla
-            for (let pIdx = 0; pIdx < gameData.tableOpenedPers.length; pIdx++) {
-                let res = addTileToTablePer(gameData, botId, t.id, pIdx, 'end');
-                if (!res.success) {
-                    res = addTileToTablePer(gameData, botId, t.id, pIdx, 'start');
-                }
-                if (res.success) break;
-            }
-        }
+    tryBotOpenAndProcess();
+    if (gameData.gameOver) return true;
+
+    // 3.5. Yandan taş alınmış halde (AFK/Bot devri) el açılamadıysa veya alınan taş işlenemediyse,
+    // taş atma kilidine takılmamak için yandan alınan taşı geri bırakıp desteden çek!
+    if (gameData.lastDiscardTaken) {
+        returnDiscardTile(gameData, botId);
+        if (gameData.gameOver) return true;
+        tryBotOpenAndProcess();
+        if (gameData.gameOver) return true;
     }
 
     // 4. En Önemsiz Taşı At
+    hand = gameData.hands[botId] || [];
     let discardTileObj = chooseBotDiscardTile(hand, gameData, okeyDef);
     if (discardTileObj) {
         discardTile(gameData, botId, discardTileObj.id);
@@ -1446,7 +1689,12 @@ function makeBotMove(gameData, botId) {
 
 // Bot İçin Elindeki Geçerli Perleri Bulan Algoritma
 function findBotValidPers(hand, okeyDef) {
-    let sortedHand = [...hand].sort((a, b) => {
+    let pool = hand.filter(t => !isRealOkey(t, okeyDef)).map(t => {
+        let eff = getEffectiveTile(t, okeyDef);
+        return { id: t.id, color: eff.color, value: eff.value, raw: t };
+    });
+
+    let sortedHand = [...pool].sort((a, b) => {
         if (a.color !== b.color) return a.color.localeCompare(b.color);
         return a.value - b.value;
     });
@@ -1456,7 +1704,7 @@ function findBotValidPers(hand, okeyDef) {
 
     // Renklere göre serileri ara
     for (let color of COLORS) {
-        let colorTiles = sortedHand.filter(t => t.color === color && !t.isFakeOkey && !isRealOkey(t, okeyDef));
+        let colorTiles = sortedHand.filter(t => t.color === color);
         let streak = [];
         for (let i = 0; i < colorTiles.length; i++) {
             if (streak.length === 0) {
@@ -1467,7 +1715,7 @@ function findBotValidPers(hand, okeyDef) {
                     streak.push(colorTiles[i]);
                 } else if (colorTiles[i].value !== last.value) {
                     if (streak.length >= 3) {
-                        foundPers.push({ tileIds: streak.map(t => t.id), score: getPerScore(streak, okeyDef) });
+                        foundPers.push({ tileIds: streak.map(t => t.id), score: getPerScore(streak.map(t => t.raw), okeyDef) });
                         streak.forEach(t => usedIds.add(t.id));
                     }
                     streak = [colorTiles[i]];
@@ -1475,14 +1723,14 @@ function findBotValidPers(hand, okeyDef) {
             }
         }
         if (streak.length >= 3) {
-            foundPers.push({ tileIds: streak.map(t => t.id), score: getPerScore(streak, okeyDef) });
+            foundPers.push({ tileIds: streak.map(t => t.id), score: getPerScore(streak.map(t => t.raw), okeyDef) });
             streak.forEach(t => usedIds.add(t.id));
         }
     }
 
     // Aynı sayılı grupları ara (farklı renkler)
     for (let v = 1; v <= 13; v++) {
-        let sameValTiles = sortedHand.filter(t => t.value === v && !usedIds.has(t.id) && !isRealOkey(t, okeyDef));
+        let sameValTiles = sortedHand.filter(t => t.value === v && !usedIds.has(t.id));
         let distinctColors = [];
         let seenColors = new Set();
         for (let t of sameValTiles) {
@@ -1531,6 +1779,12 @@ module.exports = {
     takeOkeyFromTablePer,
     getTeamIndex,
     getPartnerId,
+    resolveSeries,
+    sortPerTiles,
+    sortSeriesTiles,
+    sortGroupTiles,
+    sortPairTiles,
+    classifyAndSortPer,
     isValidSeries,
     isValidGroup,
     isValidPair,
@@ -1541,5 +1795,7 @@ module.exports = {
     revealGosterge,
     addPenaltyToYazboz,
     addSilerToYazboz,
-    calculateRoundEndScores
+    updateYazbozTotals,
+    calculateRoundEndScores,
+    getHandSum
 };

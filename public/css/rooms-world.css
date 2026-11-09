@@ -1,0 +1,536 @@
+/* ==========================================================================
+   MINI METAVERSE - ROOMS & WORLD INTERACTIONS
+   Balıkçılık, ev ve mobilya yönetimi, baba peti, Zeus şimşeği/gasp FX, Kültür Merkezi sahnesi
+   ========================================================================== */
+
+/* 12. BALIK TUTMA VE KAZANÇ ANİMASYONLARI */
+@keyframes popIn {
+    0% { transform: scale(0.65); opacity: 0; }
+    70% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes floatBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.fishing-float-anim {
+    animation: floatBob 1.5s ease-in-out infinite;
+}
+
+
+/* 13. SOSYAL ETKİLEŞİM, EMLAK VE MOBİLYA STILLERI */
+.social-toast-popup {
+    animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
+}
+
+.gift-item-card:hover {
+    border-color: #ec4899 !important;
+    background: rgba(30, 41, 59, 1) !important;
+    transform: translateY(-2px);
+    transition: all 0.2s;
+}
+
+.real-estate-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    transition: all 0.2s;
+}
+
+.furniture-card:hover {
+    border-color: #38bdf8 !important;
+    transform: translateY(-2px);
+    transition: all 0.2s;
+}
+
+@keyframes pulseBadge {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 6px #ef4444; }
+    50% { transform: scale(1.15); box-shadow: 0 0 14px #ef4444; }
+}
+
+#friendRequestsBadge {
+    animation: pulseBadge 1.4s infinite ease-in-out;
+}
+
+
+/* --- DENİZDEN BABAM ÇIKTI (BABA PETİ & ANİMASYONLARI) --- */
+@keyframes slideDownNotice {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -40px);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.father-pet-speech-bubble {
+    position: absolute;
+    background: #ffffff;
+    color: #1e293b;
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 100;
+    border: 2px solid #f59e0b;
+}
+
+.father-pet-speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0;
+    border-style: solid;
+    border-color: #ffffff transparent;
+    display: block;
+    width: 0;
+}
+
+
+/* 1. ⚡ ZEUS'UN ŞİMŞEĞİ (YILDIRIM GİBİ ÇAKAN & YANIP SÖNEN STROBE FLICKER) */
+.profile-side-tab.tab-zeus.animated-zeus {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: 1.5px solid rgba(254, 240, 138, 0.7);
+    animation: zeusLightningFlicker 2.4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: visible;
+}
+
+.profile-side-tab.tab-zeus.animated-zeus .tab-icon {
+    display: inline-block;
+    animation: zeusIconJitter 2.4s infinite ease-in-out;
+}
+
+@keyframes zeusLightningFlicker {
+    0%, 50%, 100% {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-color: rgba(254, 240, 138, 0.5);
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+        transform: scale(1);
+    }
+    54% {
+        background: linear-gradient(135deg, #fde047, #f59e0b);
+        border-color: #ffffff;
+        box-shadow: 0 0 22px rgba(254, 240, 138, 0.95), 0 0 32px rgba(56, 189, 248, 0.8);
+        transform: scale(1.08) rotate(1deg);
+        filter: brightness(1.35);
+    }
+    58% {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-color: rgba(254, 240, 138, 0.5);
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+        transform: scale(1);
+    }
+    63% {
+        background: linear-gradient(135deg, #ffffff, #fef08a);
+        border-color: #38bdf8;
+        box-shadow: 0 0 28px rgba(255, 255, 255, 1), 0 0 45px rgba(250, 204, 21, 0.95);
+        transform: scale(1.12) rotate(-1.5deg);
+        filter: brightness(1.5);
+    }
+    68% {
+        background: linear-gradient(135deg, #38bdf8, #0284c7);
+        border-color: #bae6fd;
+        box-shadow: 0 0 18px rgba(56, 189, 248, 0.85);
+        transform: scale(1.04);
+    }
+    72% {
+        background: linear-gradient(135deg, #fde047, #eab308);
+        box-shadow: 0 0 16px rgba(250, 204, 21, 0.7);
+        transform: scale(1.02);
+    }
+    78% {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+        transform: scale(1);
+    }
+}
+
+@keyframes zeusIconJitter {
+    0%, 52%, 100% {
+        transform: scale(1) translate(0, 0);
+        filter: drop-shadow(0 0 2px #facc15);
+    }
+    54% {
+        transform: scale(1.28) translate(-1px, 1px) rotate(-3deg);
+        filter: drop-shadow(0 0 8px #ffffff) drop-shadow(0 0 14px #38bdf8);
+    }
+    63% {
+        transform: scale(1.35) translate(1.5px, -1px) rotate(4deg);
+        filter: drop-shadow(0 0 12px #fef08a) drop-shadow(0 0 18px #ffffff);
+    }
+    68% {
+        transform: scale(1.18) translate(-1px, 0) rotate(-1deg);
+        filter: drop-shadow(0 0 8px #38bdf8);
+    }
+    75% {
+        transform: scale(1.05) translate(0, 0);
+        filter: drop-shadow(0 0 4px #facc15);
+    }
+}
+
+/* 2. 📡 SİNYAL KESİCİ (RADAR ELEKTROMANYETİK DALGA & GLITCH EFEKTİ) */
+.profile-side-tab.tab-jammer.animated-jammer {
+    background: linear-gradient(135deg, #ef4444, #991b1b);
+    border: 1.5px solid rgba(254, 202, 202, 0.6);
+    animation: jammerRadarPulse 1.9s infinite ease-out;
+    position: relative;
+}
+
+.profile-side-tab.tab-jammer.animated-jammer .tab-icon {
+    display: inline-block;
+    animation: jammerIconGlitch 1.9s infinite ease-in-out;
+}
+
+@keyframes jammerRadarPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.75), 0 0 10px rgba(220, 38, 38, 0.5);
+        border-color: rgba(254, 202, 202, 0.6);
+    }
+    40% {
+        box-shadow: 0 0 0 7px rgba(239, 68, 68, 0), 0 0 18px rgba(239, 68, 68, 0.7);
+        border-color: #f87171;
+    }
+    65% {
+        background: linear-gradient(135deg, #f87171, #b91c1c);
+        box-shadow: 0 0 0 12px rgba(239, 68, 68, 0), 0 0 22px rgba(248, 113, 113, 0.85);
+        filter: brightness(1.22);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 0 10px rgba(220, 38, 38, 0.5);
+        border-color: rgba(254, 202, 202, 0.6);
+    }
+}
+
+@keyframes jammerIconGlitch {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 3px #ef4444);
+    }
+    30% {
+        transform: scale(1.15) rotate(5deg) skewX(2deg);
+        filter: drop-shadow(0 0 8px #f87171);
+    }
+    55% {
+        transform: scale(1.08) rotate(-4deg) skewX(-2deg);
+        filter: drop-shadow(0 0 10px #ffffff);
+    }
+    75% {
+        transform: scale(1.18) skewY(2deg);
+        filter: drop-shadow(0 0 9px #ef4444);
+    }
+}
+
+/* 3. 🗡️ GASP BIÇAĞI (MENACING KARANLIK KAN / ÇELİK PARILTI GEÇİŞİ EFEKTİ) */
+.profile-side-tab.tab-mug.animated-mug {
+    background: linear-gradient(135deg, #334155, #1e293b);
+    border: 1.5px solid rgba(203, 213, 225, 0.5);
+    animation: gaspKnifeGlint 2.6s infinite ease-in-out;
+    position: relative;
+}
+
+.profile-side-tab.tab-mug.animated-mug .tab-icon {
+    display: inline-block;
+    animation: knifeSlashTwitch 2.6s infinite ease-in-out;
+}
+
+@keyframes gaspKnifeGlint {
+    0%, 100% {
+        background: linear-gradient(135deg, #334155, #1e293b);
+        border-color: rgba(203, 213, 225, 0.4);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+    }
+    35% {
+        background: linear-gradient(135deg, #475569, #0f172a);
+        box-shadow: 0 0 12px rgba(225, 29, 72, 0.4);
+    }
+    48% {
+        background: linear-gradient(135deg, #94a3b8, #e11d48);
+        border-color: #fda4af;
+        box-shadow: 0 0 20px rgba(225, 29, 72, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.7);
+        filter: brightness(1.28);
+    }
+    56% {
+        background: linear-gradient(135deg, #ffffff, #be123c);
+        border-color: #ffffff;
+        box-shadow: 0 0 25px rgba(244, 63, 94, 0.95);
+        transform: scale(1.08);
+    }
+    68% {
+        background: linear-gradient(135deg, #475569, #881337);
+        box-shadow: 0 0 14px rgba(136, 19, 55, 0.6);
+        transform: scale(1.02);
+    }
+    80% {
+        background: linear-gradient(135deg, #334155, #1e293b);
+        border-color: rgba(203, 213, 225, 0.4);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+        transform: scale(1);
+    }
+}
+
+@keyframes knifeSlashTwitch {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 2px #94a3b8);
+    }
+    42% {
+        transform: scale(1.06) rotate(-8deg);
+        filter: drop-shadow(0 0 6px #f43f5e);
+    }
+    52% {
+        transform: scale(1.3) rotate(14deg);
+        filter: drop-shadow(0 0 12px #ffffff) drop-shadow(0 0 18px #e11d48);
+    }
+    62% {
+        transform: scale(1.12) rotate(-2deg);
+        filter: drop-shadow(0 0 8px #e11d48);
+    }
+    72% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 3px #94a3b8);
+    }
+}
+@keyframes zeusPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 25px rgba(234, 179, 8, 0.5); }
+    50% { transform: translateX(-50%) scale(1.03); box-shadow: 0 0 38px rgba(250, 204, 21, 0.85); }
+}
+
+/* Like & Dislike Butonları */
+.profile-rate-btn {
+    flex: 1;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: 1.5px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.rate-btn-like {
+    background: #f1f5f9;
+    color: #334155;
+    border-color: #e2e8f0;
+}
+.rate-btn-like:hover {
+    background: #e2e8f0;
+}
+.rate-btn-like.active {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
+    border-color: #059669;
+    box-shadow: 0 2px 7px rgba(16, 185, 129, 0.35);
+}
+
+.rate-btn-dislike {
+    background: #f1f5f9;
+    color: #334155;
+    border-color: #e2e8f0;
+}
+.rate-btn-dislike:hover {
+    background: #e2e8f0;
+}
+.rate-btn-dislike.active {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #ffffff;
+    border-color: #dc2626;
+    box-shadow: 0 2px 7px rgba(239, 68, 68, 0.35);
+}
+
+/* Rozetler Seviye Efektleri & Animasyonları */
+@keyframes blackAuraPulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 18px rgba(88, 28, 135, 0.65);
+        border-color: #581c87;
+    }
+    50% {
+        box-shadow: 0 0 18px rgba(0, 0, 0, 1), 0 0 28px rgba(126, 34, 206, 0.9);
+        border-color: #9333ea;
+    }
+}
+
+@keyframes silverGlowPulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(148, 163, 184, 0.65), 0 0 18px rgba(203, 213, 225, 0.4);
+        border-color: #94a3b8;
+    }
+    50% {
+        box-shadow: 0 0 18px rgba(226, 232, 240, 0.95), 0 0 28px rgba(241, 245, 249, 0.75);
+        border-color: #f1f5f9;
+    }
+}
+
+.badge-glow-silver {
+    background: linear-gradient(135deg, #334155 0%, #64748b 50%, #94a3b8 100%) !important;
+    color: #f8fafc !important;
+    animation: silverGlowPulse 1.8s infinite ease-in-out !important;
+}
+
+@keyframes bronzeGlowPulse {
+    0%, 100% {
+        box-shadow: 0 0 8px rgba(217, 119, 6, 0.6), 0 0 16px rgba(180, 83, 9, 0.4);
+        border-color: #b45309;
+    }
+    50% {
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.85), 0 0 25px rgba(217, 119, 6, 0.65);
+        border-color: #f59e0b;
+    }
+}
+
+@keyframes goldGlowPulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(234, 179, 8, 0.7), 0 0 20px rgba(202, 138, 4, 0.5);
+        border-color: #eab308;
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(250, 204, 21, 0.95), 0 0 32px rgba(234, 179, 8, 0.75);
+        border-color: #fef08a;
+    }
+}
+
+@keyframes diamondSparklePulse {
+    0%, 100% {
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.8), 0 0 26px rgba(236, 72, 153, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.6);
+        border-color: #67e8f9;
+    }
+    50% {
+        box-shadow: 0 0 24px rgba(56, 189, 248, 1), 0 0 38px rgba(236, 72, 153, 0.9), 0 0 46px rgba(168, 85, 247, 0.8), inset 0 0 16px rgba(255, 255, 255, 0.9);
+        border-color: #ffffff;
+    }
+}
+
+@keyframes diamondShimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.badge-glow-black {
+    background: linear-gradient(135deg, #09090b 0%, #18181b 100%) !important;
+    color: #f8fafc !important;
+    animation: blackAuraPulse 2s infinite ease-in-out !important;
+}
+
+.badge-glow-bronze {
+    background: linear-gradient(135deg, #451a03 0%, #78350f 100%) !important;
+    color: #ffedd5 !important;
+    animation: bronzeGlowPulse 1.8s infinite ease-in-out !important;
+}
+
+.badge-glow-gold {
+    background: linear-gradient(135deg, #ca8a04 0%, #eab308 50%, #a16207 100%) !important;
+    color: #422006 !important;
+    animation: goldGlowPulse 1.5s infinite ease-in-out !important;
+}
+
+.badge-glow-diamond {
+    background: linear-gradient(120deg, #38bdf8, #818cf8, #ec4899, #f43f5e, #38bdf8) !important;
+    background-size: 300% 300% !important;
+    color: #ffffff !important;
+    animation: diamondSparklePulse 1.4s infinite ease-in-out, diamondShimmer 3s infinite linear !important;
+}
+
+
+/* ============================================================== */
+/* 🎭 KÜLTÜR MERKEZİ & STAND-UP SANAT SAHNESİ STİLLERİ           */
+/* ============================================================== */
+.kultur-mode-btn {
+    padding: 7px 4px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(30, 41, 59, 0.6);
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.kultur-mode-btn:hover {
+    color: white;
+    border-color: #f59e0b;
+    transform: translateY(-1px);
+}
+.kultur-mode-btn.active {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-color: #fbbf24;
+    color: #000;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.kultur-dur-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(30, 41, 59, 0.6);
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.kultur-dur-btn.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    color: #38bdf8;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.kultur-gise-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #94a3b8;
+    font-weight: 800;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.kultur-gise-tab:hover {
+    color: white;
+}
+.kultur-gise-tab.active {
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.kultur-bufe-item {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.kultur-bufe-item:hover {
+    transform: translateY(-2px);
+    border-color: #ec4899;
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.25);
+    background: rgba(30, 41, 59, 0.9);
+}
+

@@ -1,6 +1,6 @@
 // Modüler Mimari: Çoklu ev desteği, özgün estetik mobilyalar ve canlı oda dekorasyonu
 
-var socket = window.socket || (typeof io !== 'undefined' ? io() : null);
+var socket = window.socket || (typeof socket !== 'undefined' ? socket : null);
 window.socket = socket;
 
 window.myHouses = window.myHouses || {};
@@ -61,6 +61,22 @@ function updateHouseEditButtonVisibility() {
     let isTour = cRoom.startsWith('house_ornek_');
     let isMine = isCurrentlyInMyHouse();
 
+    if ((!isMine || isTour) && window.isHouseEditMode) {
+        window.isHouseEditMode = false;
+        window.selectedFurnitureIndex = null;
+        isFurnitureDragging = false;
+        window.isFurnitureDragging = false;
+        draggedFurnitureIndex = null;
+        const gCanvas = document.getElementById('gameCanvas');
+        if (gCanvas) gCanvas.style.touchAction = '';
+        const dock = document.getElementById('furnitureBottomDock');
+        if (dock) dock.style.display = 'none';
+        if (editBtn) {
+            editBtn.innerHTML = "🛋️ Evi Düzenle";
+            editBtn.style.background = "linear-gradient(135deg, #8b5cf6, #6d28d9)";
+        }
+    }
+
     if (editBtn) editBtn.style.display = (isMine && !isTour) ? 'flex' : 'none';
     if (leaveBtn) {
         leaveBtn.style.display = inAnyHouse ? 'flex' : 'none';
@@ -103,7 +119,7 @@ const HOUSE_INFO = {
         price: (SHARED_PRICES.HOUSE_PRICES && SHARED_PRICES.HOUSE_PRICES.garden) || 11000,
         emoji: '🏡',
         color: '#22c55e',
-        desc: 'Doğayla iç içe müstakil yaşam! Geniş ahşap veranda, elma ağaçları ve yemyeşil bahçe manzarası.'
+        desc: 'Doğayla iç içe bahçe yaşamı! Geniş ahşap veranda, elma ağaçları ve 3x3 ekim alanı.'
     },
     'pool': {
         name: 'Bahçeli & Havuzlu Villa',
@@ -241,6 +257,20 @@ function closeHouseConfirmModal() {
 }
 window.closeHouseConfirmModal = closeHouseConfirmModal;
 
+const DEMO_HOUSES = {
+    'garden': [
+        { id: 'sedir', x: 270, y: 310, rotation: 0 }
+    ],
+    'standart': [
+        { id: 'sedir', x: 380, y: 260, rotation: 0 },
+        { id: 'tv', x: 400, y: 180, rotation: 0 }
+    ],
+    'pool': [
+        { id: 'sedir', x: 350, y: 280, rotation: 0 }
+    ]
+};
+window.DEMO_HOUSES = DEMO_HOUSES;
+
 // --- 1.1 ÖRNEK DAİRE GEZİSİ (DEMO TUR) FONKSİYONLARI ---
 function previewHouseTour(type) {
     let h = HOUSE_INFO[type];
@@ -248,6 +278,12 @@ function previewHouseTour(type) {
     closeRealEstateModal();
     closeMaketInspectModal();
     window.activeHouseTourType = type;
+    window.currentViewingHouse = {
+        owner: 'Örnek Daire',
+        type: type,
+        furniture: (typeof DEMO_HOUSES !== 'undefined' && DEMO_HOUSES[type]) ? DEMO_HOUSES[type] : [],
+        isDemo: true
+    };
 
     const banner = document.getElementById('houseTourBanner');
     const titleEl = document.getElementById('houseTourTitle');
@@ -336,7 +372,7 @@ window.closeMaketInspectModal = closeMaketInspectModal;
 const FURNITURE_CATALOG = {
     'bitki': { name: 'Dev Salon Deve Tabanı', price: SHARED_PRICES.FURNITURE_PRICES.bitki, emoji: '🪴', w: 48, h: 62, desc: 'Seramik saksıda dekoratif parlak yapraklı Monstera.' },
     'hali': { name: 'Anadolu Dokuma Halısı', price: SHARED_PRICES.FURNITURE_PRICES.hali, emoji: '🧶', w: 126, h: 76, desc: 'Saçaklı, çift bordürlü otantik el dokuma salon halısı.' },
-    'sedir': { name: 'Otantik Şark Sediri', price: SHARED_PRICES.FURNITURE_PRICES.sedir, emoji: '🛋️', w: 94, h: 54, desc: 'Kadife minderli, altın püsküllü otantik şark sediri.' },
+    'sedir': { name: 'Otantik Şark Sediri', price: SHARED_PRICES.FURNITURE_PRICES.sedir, emoji: '🛋️', w: 94, h: 64, isIsometric: true, isoH: 64, desc: '2.5D İzometrik, kadife minderli, altın püsküllü ve oymalı otantik şark sediri.' },
     'kitaplik': { name: 'Masif Ahşap Kütüphane', price: SHARED_PRICES.FURNITURE_PRICES.kitaplik, emoji: '📚', w: 74, h: 80, desc: 'Deri ciltli kitaplar ve antika küreli oymalı meşe kitaplık.' },
     'berjer': { name: 'Lüks Deri Berjer', price: SHARED_PRICES.FURNITURE_PRICES.berjer, emoji: '🪑', w: 56, h: 52, desc: 'Hakiki kapitone deri dikişli, konforlu berjer koltuk.' },
     'yemek_masasi': { name: 'Masif Ahşap Yemek Masası', price: SHARED_PRICES.FURNITURE_PRICES.yemek_masasi, emoji: '🪑', w: 92, h: 60, desc: 'Dantel runner örtülü, vazolu ve sandalyeli yemek masası.' },
@@ -393,9 +429,10 @@ function drawSingleFurnitureMarketPreview(id, rot, now) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    let isTransposed = (r === 1 || r === 3);
+    let isIso = (cat.isIsometric || id === 'sedir');
+    let isTransposed = !isIso && (r === 1 || r === 3);
     let effW = isTransposed ? cat.h : cat.w;
-    let effH = isTransposed ? cat.w : cat.h;
+    let effH = isTransposed ? cat.w : (isIso ? (cat.isoH || 64) : cat.h);
 
     let cX = canvas.width / 2;
     let cY = canvas.height / 2 + 10;
@@ -713,6 +750,9 @@ function enterHouse(ownerUsername, houseType) {
     closeHousingPortalModal();
     let roomName = houseType ? `house_${ownerUsername}_${houseType}` : `house_${ownerUsername}`;
     socket.emit('getHouseData', { owner: ownerUsername, type: houseType });
+    if (houseType === 'garden') {
+        socket.emit('get_farm_plots', { owner: ownerUsername });
+    }
     if (typeof changeRoom === 'function') {
         changeRoom(roomName);
     }
@@ -846,6 +886,16 @@ function moveFurnitureToPlayer(index) {
     });
 
     let house = getCurrentViewingHouse();
+    if (!house && cRoom.startsWith('house_ornek_')) {
+        let tourType = cRoom.substring(12);
+        house = {
+            owner: 'Örnek Daire',
+            type: tourType,
+            furniture: (typeof DEMO_HOUSES !== 'undefined' && DEMO_HOUSES[tourType]) ? JSON.parse(JSON.stringify(DEMO_HOUSES[tourType])) : [],
+            isDemo: true
+        };
+        window.currentViewingHouse = house;
+    }
     if (house && house.furniture && house.furniture[index]) {
         house.furniture[index].x = placeX;
         house.furniture[index].y = placeY;
@@ -876,8 +926,9 @@ function setupFurnitureCanvasInteractions() {
     canvasInteractionSetupDone = true;
 
     function getCanvasCoords(e) {
+        let pt = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
         if (typeof window.getCanvasEventCoords === 'function') {
-            return window.getCanvasEventCoords(e);
+            return window.getCanvasEventCoords({ clientX: pt.clientX, clientY: pt.clientY });
         }
         let rect = gCanvas.getBoundingClientRect();
         const borderLeft = gCanvas.clientLeft || 0;
@@ -885,8 +936,8 @@ function setupFurnitureCanvasInteractions() {
         const clientW = gCanvas.clientWidth || (rect.width - borderLeft * 2);
         const clientH = gCanvas.clientHeight || (rect.height - borderTop * 2);
         return {
-            x: ((e.clientX - rect.left - borderLeft) / (clientW || 1)) * gCanvas.width,
-            y: ((e.clientY - rect.top - borderTop) / (clientH || 1)) * gCanvas.height
+            x: ((pt.clientX - rect.left - borderLeft) / (clientW || 1)) * gCanvas.width,
+            y: ((pt.clientY - rect.top - borderTop) / (clientH || 1)) * gCanvas.height
         };
     }
 
@@ -900,10 +951,11 @@ function setupFurnitureCanvasInteractions() {
         for (let i = house.furniture.length - 1; i >= 0; i--) {
             let item = house.furniture[i];
             let cat = FURNITURE_CATALOG[item.id] || { w: 60, h: 50 };
-            let rot = ((item.rotation || 0) % 4 + 4) % 4;
-            let isTransposed = (rot === 1 || rot === 3);
+            let rot = (((item.rotation !== undefined ? item.rotation : item.rot) || 0) % 4 + 4) % 4;
+            let isIso = (cat.isIsometric || item.id === 'sedir');
+            let isTransposed = !isIso && (rot === 1 || rot === 3);
             let w = isTransposed ? cat.h : cat.w;
-            let h = isTransposed ? cat.w : cat.h;
+            let h = isTransposed ? cat.w : (isIso ? (cat.isoH || 64) : cat.h);
             let hw = Math.max(26, w / 2 + 6);
             let hh = Math.max(26, h / 2 + 6);
             if (x >= item.x - hw && x <= item.x + hw && y >= item.y - hh && y <= item.y + hh) {
@@ -913,7 +965,10 @@ function setupFurnitureCanvasInteractions() {
         return null;
     }
 
-    gCanvas.addEventListener('mousedown', (e) => {
+    gCanvas.addEventListener('pointerdown', (e) => {
+        if (!e.isPrimary) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+
         let isOwner = isCurrentlyInMyHouse();
         let coords = getCanvasCoords(e);
         let targetIdx = findFurnitureAt(coords.x, coords.y);
@@ -926,7 +981,7 @@ function setupFurnitureCanvasInteractions() {
             if (item.id === 'gramofon') {
                 socket.emit('toggleGramophone');
                 if (!window.isHouseEditMode) {
-                    e.preventDefault();
+                    if (e.cancelable) e.preventDefault();
                     e.stopPropagation();
                     return;
                 }
@@ -938,7 +993,7 @@ function setupFurnitureCanvasInteractions() {
                     if (typeof openLemonadeStandModal === 'function') {
                         openLemonadeStandModal(house);
                     }
-                    e.preventDefault();
+                    if (e.cancelable) e.preventDefault();
                     e.stopPropagation();
                     return;
                 }
@@ -951,7 +1006,7 @@ function setupFurnitureCanvasInteractions() {
                         window.currentSlotHouseOwner = house ? house.owner : null;
                         openSlotModal();
                     }
-                    e.preventDefault();
+                    if (e.cancelable) e.preventDefault();
                     e.stopPropagation();
                     return;
                 }
@@ -963,7 +1018,7 @@ function setupFurnitureCanvasInteractions() {
                     if (typeof openRouletteModal === 'function') {
                         openRouletteModal();
                     }
-                    e.preventDefault();
+                    if (e.cancelable) e.preventDefault();
                     e.stopPropagation();
                     return;
                 }
@@ -991,24 +1046,29 @@ function setupFurnitureCanvasInteractions() {
             dragOffsetX = item.x - coords.x;
             dragOffsetY = item.y - coords.y;
             isFurnitureDragging = true;
+            window.isFurnitureDragging = true;
             window.wasFurnitureDragged = false;
             gCanvas.style.cursor = 'grabbing';
-            e.preventDefault();
+            if (e.cancelable) e.preventDefault();
             e.stopPropagation();
         } else {
-            // Düzenleme modundayken boş zemine tıklandığında seçimi kaldır
+            // Düzenleme modundayken boş zemine tıklandığında seçimi kaldır (karakter yürüyüp uzaklaşmasın)
             if (isOwner && window.isHouseEditMode && window.selectedFurnitureIndex !== null) {
                 window.selectedFurnitureIndex = null;
                 renderSelectedFurniturePanel();
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
             }
         }
     }, true);
 
-    gCanvas.addEventListener('mousemove', (e) => {
+    const handleFurniturePointerMove = (e) => {
+        if (!e.isPrimary) return;
         if (!isCurrentlyInMyHouse()) return;
         let coords = getCanvasCoords(e);
 
         if (isFurnitureDragging && draggedFurnitureIndex !== null && window.isHouseEditMode) {
+            if (e.cancelable) e.preventDefault();
             if (Math.hypot(coords.x - dragStartX, coords.y - dragStartY) > 5) {
                 hasActuallyMoved = true;
                 window.wasFurnitureDragged = true;
@@ -1072,9 +1132,11 @@ function setupFurnitureCanvasInteractions() {
                 gCanvas.style.cursor = 'pointer';
             }
         }
-    });
+    };
 
-    window.addEventListener('mouseup', () => {
+    window.addEventListener('pointermove', handleFurniturePointerMove, { passive: false });
+
+    const finishFurnitureDrag = () => {
         if (isFurnitureDragging && draggedFurnitureIndex !== null) {
             let house = getCurrentViewingHouse();
             if (house && house.furniture && house.furniture[draggedFurnitureIndex]) {
@@ -1089,11 +1151,9 @@ function setupFurnitureCanvasInteractions() {
                         rotation: ((item.rotation || 0) % 4 + 4) % 4
                     });
                 }
-                // TIKLAMA TESPİT EDİLDİ (!hasActuallyMoved):
-                // EŞYA DÖNDÜRÜLMEZ! Eşya sadece seçili kalır.
-                // Döndürme için aşağıdaki "🔄 Eşyayı Döndür" butonuna basılır veya R tuşu kullanılır.
             }
             isFurnitureDragging = false;
+            window.isFurnitureDragging = false;
             draggedFurnitureIndex = null;
             hasActuallyMoved = false;
             if (gCanvas) gCanvas.style.cursor = 'default';
@@ -1103,7 +1163,10 @@ function setupFurnitureCanvasInteractions() {
             }
             setTimeout(() => { window.wasFurnitureDragged = false; }, 100);
         }
-    });
+    };
+
+    window.addEventListener('pointerup', finishFurnitureDrag);
+    window.addEventListener('pointercancel', finishFurnitureDrag);
 }
 
 function rotateFurniture(index) {
@@ -1181,7 +1244,7 @@ function renderSelectedFurniturePanel() {
 
     let item = house.furniture[window.selectedFurnitureIndex];
     let cat = FURNITURE_CATALOG[item.id] || { name: item.id, emoji: '📦' };
-    let rot = ((item.rotation || 0) % 4 + 4) % 4;
+    let rot = (((item.rotation !== undefined ? item.rotation : item.rot) || 0) % 4 + 4) % 4;
     let rotInfo = getFurnitureRotationInfo(rot);
 
     box.style.border = "1.5px solid #38bdf8";
@@ -1248,6 +1311,8 @@ window.toggleHouseEditMode = toggleHouseEditMode;
 function openHouseEditDock() {
     window.isHouseEditMode = true;
     window.selectedFurnitureIndex = null;
+    const gCanvas = document.getElementById('gameCanvas');
+    if (gCanvas) gCanvas.style.touchAction = 'none';
     const dock = document.getElementById('furnitureBottomDock');
     if (dock) dock.style.display = 'flex';
 
@@ -1274,6 +1339,11 @@ window.openHouseEditDock = openHouseEditDock;
 function saveAndCloseHouseEditDock() {
     window.isHouseEditMode = false;
     window.selectedFurnitureIndex = null;
+    isFurnitureDragging = false;
+    window.isFurnitureDragging = false;
+    draggedFurnitureIndex = null;
+    const gCanvas = document.getElementById('gameCanvas');
+    if (gCanvas) gCanvas.style.touchAction = '';
     const dock = document.getElementById('furnitureBottomDock');
     if (dock) dock.style.display = 'none';
 
@@ -1406,67 +1476,10 @@ function renderStaticHouseTo(bctx, type, width, height) {
         bctx.fillRect(0, 134, width, 46);
 
     } else if (type === 'garden') {
-        // --- VERANDALI BAHÇELİ EV ---
-        let lawnGrad = bctx.createLinearGradient(0, 0, 0, 130);
-        lawnGrad.addColorStop(0, '#14532d');
-        lawnGrad.addColorStop(0.7, '#16a34a');
-        lawnGrad.addColorStop(1, '#22d3ee');
-        bctx.fillStyle = lawnGrad;
-        bctx.fillRect(0, 0, width, 130);
-
-        bctx.fillStyle = "#fef08a";
-        for (let fx = 12; fx < width; fx += 24) {
-            bctx.beginPath();
-            bctx.moveTo(fx, 45);
-            bctx.lineTo(fx + 5, 38);
-            bctx.lineTo(fx + 10, 45);
-            bctx.lineTo(fx + 10, 75);
-            bctx.lineTo(fx, 75);
-            bctx.closePath();
-            bctx.fill();
+        // --- SIFIRDAN 2.5D İZOMETRİK VERANDALI BAHÇELİ EV ---
+        if (typeof renderStaticGardenHouse === 'function') {
+            renderStaticGardenHouse(bctx, width, height);
         }
-        bctx.fillStyle = "#fef9c3";
-        bctx.fillRect(0, 50, width, 5);
-        bctx.fillRect(0, 65, width, 5);
-
-        let flowerColors = ['#f43f5e', '#facc15', '#a855f7', '#fb923c', '#ec4899'];
-        for (let i = 0; i < 28; i++) {
-            bctx.fillStyle = flowerColors[i % flowerColors.length];
-            let flX = 20 + i * 27;
-            let flY = 78 + Math.sin(i * 3) * 3;
-            bctx.beginPath(); bctx.arc(flX, flY, 3.5, 0, Math.PI * 2); bctx.fill();
-            bctx.fillStyle = "#fef08a";
-            bctx.beginPath(); bctx.arc(flX, flY, 1.2, 0, Math.PI * 2); bctx.fill();
-        }
-
-        drawMiniFruitTree(bctx, 110, 32);
-        drawMiniFruitTree(bctx, 670, 32);
-
-        bctx.fillStyle = "#5c2c16";
-        bctx.fillRect(0, 122, width, 14);
-
-        let deckGrad = bctx.createLinearGradient(0, 136, 0, height);
-        deckGrad.addColorStop(0, '#b45309');
-        deckGrad.addColorStop(0.5, '#92400e');
-        deckGrad.addColorStop(1, '#78350f');
-        bctx.fillStyle = deckGrad;
-        bctx.fillRect(0, 136, width, height - 136);
-
-        bctx.strokeStyle = "rgba(40, 15, 5, 0.45)";
-        bctx.lineWidth = 1.5;
-        for (let y = 136; y < height; y += 28) {
-            bctx.beginPath(); bctx.moveTo(0, y); bctx.lineTo(width, y); bctx.stroke();
-        }
-        for (let x = 60; x < width; x += 110) {
-            bctx.beginPath(); bctx.moveTo(x, 136); bctx.lineTo(x, height); bctx.stroke();
-        }
-
-        let porchLight = bctx.createRadialGradient(width / 2, 136, 10, width / 2, 220, 260);
-        porchLight.addColorStop(0, 'rgba(251, 191, 36, 0.28)');
-        porchLight.addColorStop(1, 'rgba(251, 191, 36, 0)');
-        bctx.fillStyle = porchLight;
-        bctx.fillRect(0, 136, width, height - 136);
-
     } else {
         // --- STANDART ŞEHİR DAİRESİ ---
         let wallGrad = bctx.createLinearGradient(0, 0, 0, 136);
@@ -1549,10 +1562,41 @@ function drawHouseEnvironment() {
     setupFurnitureCanvasInteractions();
 
     let house = getCurrentViewingHouse();
-    let type = house ? house.type : 'standart';
-    let owner = house ? house.owner : 'Bilinmeyen';
+    let cRoom = (typeof currentRoom !== 'undefined' ? currentRoom : (window.currentRoom || '')).toLowerCase();
+    let type = house ? house.type : (cRoom.endsWith('_garden') || cRoom.includes('_garden') ? 'garden' : (cRoom.endsWith('_pool') || cRoom.includes('_pool') ? 'pool' : 'standart'));
+    let owner = house ? house.owner : (cRoom.startsWith('house_ornek_') ? 'Örnek Daire' : 'Bilinmeyen');
     let isOwner = isCurrentlyInMyHouse();
     let now = Date.now();
+
+    // 2.5D İzometrik Bahçe ve Veranda Çok Katmanlı Renderı
+    if (type === 'garden' && typeof drawIsometricGardenHouseEnvironment === 'function') {
+        drawIsometricGardenHouseEnvironment(ctx);
+        // Üst Başlık ve Bilgilendirme Bandı
+        let titleText = `🌳 ${owner}'in Bahçeli Verandası`;
+        let bannerH = isOwner ? 46 : 34;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+        ctx.beginPath();
+        ctx.roundRect(canvas.width / 2 - 220, 8, 440, bannerH, 10);
+        ctx.fill();
+        ctx.strokeStyle = isOwner ? "#10b981" : "#38bdf8";
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        ctx.fillStyle = "#facc15";
+        ctx.font = "bold 14px 'Plus Jakarta Sans', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(titleText, canvas.width / 2, 28);
+
+        if (isOwner) {
+            ctx.fillStyle = window.isHouseEditMode ? "#34d399" : "#94a3b8";
+            ctx.font = "bold 11px 'Plus Jakarta Sans', sans-serif";
+            let subMsg = window.isHouseEditMode
+                ? "🛠️ Düzenleme Modu • Eşyaları Verandaya veya Bahçeye yerleştirebilirsiniz"
+                : "🌱 3x3 İzometrik Tarla • Fide/Çiçek sistemi yakında • Verandada dinlenin!";
+            ctx.fillText(subMsg, canvas.width / 2, 45);
+        }
+        return;
+    }
 
     // 1. Önbellekli Statik Ev Tabanı ve Zemin Renderı
     let bg = (typeof bgCache !== 'undefined') ? bgCache.getCanvas('house_' + type, canvas.width, canvas.height) : null;
@@ -1729,13 +1773,14 @@ function drawCustomIsometricFurniture(ctx, item, isHovered, isDragged, isSelecte
     let x = item.x;
     let y = item.y;
     let id = item.id;
-    let rot = ((item.rotation || 0) % 4 + 4) % 4;
+    let rot = (((item.rotation !== undefined ? item.rotation : item.rot) || 0) % 4 + 4) % 4;
     let now = Date.now();
     let cat = FURNITURE_CATALOG[id] || { w: 60, h: 45 };
 
-    let isTransposed = (rot === 1 || rot === 3);
+    let isIso = (cat.isIsometric || id === 'sedir');
+    let isTransposed = !isIso && (rot === 1 || rot === 3);
     let effW = isTransposed ? cat.h : cat.w;
-    let effH = isTransposed ? cat.w : cat.h;
+    let effH = isTransposed ? cat.w : (isIso ? (cat.isoH || 64) : cat.h);
 
     ctx.save();
 
@@ -2003,6 +2048,13 @@ if (typeof socket !== 'undefined') {
         if (house) house.privacy = data.privacy;
         const privSelect = document.getElementById('houseDoorPrivacySelect');
         if (privSelect) privSelect.value = data.privacy;
+    });
+
+    socket.on('housePrivacyUpdated', (data) => {
+        let house = getCurrentViewingHouse();
+        if (house && data && data.privacy) house.privacy = data.privacy;
+        const privSelect = document.getElementById('houseDoorPrivacySelect');
+        if (privSelect && data && data.privacy) privSelect.value = data.privacy;
     });
 }
 

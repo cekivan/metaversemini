@@ -1,3 +1,19 @@
+// Global Oyuncu Cinsiyeti Yardimcisi
+function getPlayerGender(p) {
+    if (p && p.gender) return p.gender;
+    if (p && p.isFemale !== undefined) return p.isFemale ? 'female' : 'male';
+    if (typeof window !== 'undefined') {
+        if (window.myGender) return window.myGender;
+        if (window.selectedGender) return window.selectedGender;
+    }
+    if (typeof myAvatar !== 'undefined' && myAvatar && myAvatar.gender) return myAvatar.gender;
+    if (typeof players !== 'undefined' && typeof myId !== 'undefined' && players[myId] && players[myId].gender) {
+        return players[myId].gender;
+    }
+    return 'male';
+}
+window.getPlayerGender = getPlayerGender;
+
 // public/js/main.js - Ana Oyun Orkestratörü, Game Loop & Soket Yöneticisi
 // (Modüler mimariye ayrılmıştır: authUI.js, wardrobe.js, avatarRenderer.js, chatBubbles.js, worldRenderer.js, fishing.js, adminPanel.js, mobileControls.js)
 
@@ -6,8 +22,28 @@
 var socket = window.socket || (typeof io !== 'undefined' ? io() : null);
 window.socket = socket;
 
+// Canvas roundRect Polyfill (Eski Tarayıcı ve Mobil Cihaz Desteği)
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, radii) {
+        if (!radii) radii = 0;
+        let r = typeof radii === 'number' ? radii : (Array.isArray(radii) ? radii[0] : 0);
+        r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+    };
+}
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+window.ctx = ctx;
+window.players = players;
+window.myId = myId;
 
 var myId = null;
 var players = {};
@@ -22,6 +58,10 @@ let myUsername = "";
 
 socket.on('loginSuccess', (data) => {
     try { const loginEl = document.getElementById('loginScreen'); if (loginEl) loginEl.style.display = 'none'; } catch(e) {}
+    if (socket && socket.id) {
+        myId = socket.id;
+        window.myId = socket.id;
+    }
     if (data) {
         if (data.username) {
             myUsername = data.username;
@@ -31,9 +71,13 @@ socket.on('loginSuccess', (data) => {
             window.myGender = data.gender;
         }
         if (data.money !== undefined) updateMoneyDisplay(data.money);
+        if (data.diamonds !== undefined && typeof updateDiamondDisplay === 'function') updateDiamondDisplay(data.diamonds);
         if (data.inventory) myInventory = data.inventory;
         if (data.avatar) {
             myAvatar = data.avatar;
+            if (!myAvatar.gender && (data.gender || window.myGender)) {
+                myAvatar.gender = data.gender || window.myGender;
+            }
             if (!myAvatar.shoes) myAvatar.shoes = (window.myGender === 'female' ? 'flats' : 'sneakers');
             if (players[myId]) Object.assign(players[myId], myAvatar);
         }
@@ -44,6 +88,23 @@ socket.on('loginSuccess', (data) => {
         if (data.propInventory) {
             window.myPropInventory = data.propInventory;
             if (typeof updatePropsCountBadge === 'function') updatePropsCountBadge();
+        }
+        if (data.jammerCount !== undefined) window.myJammerCount = data.jammerCount;
+        if (data.hasMugKnife !== undefined) window.myHasMugKnife = data.hasMugKnife;
+        if (data.bodyguardsEquipped !== undefined) window.myBodyguardsEquipped = data.bodyguardsEquipped;
+        if (data.bodyguardCount !== undefined) window.myBodyguardCount = data.bodyguardCount;
+        if (data.hasDoberman !== undefined) window.myHasDoberman = data.hasDoberman;
+        if (data.dobermanEquipped !== undefined) window.myDobermanEquipped = data.dobermanEquipped;
+        if (data.anonMaskExpiresAt !== undefined) {
+            window.myAnonMaskExpiresAt = data.anonMaskExpiresAt;
+            if (myAvatar) myAvatar.anonMaskExpiresAt = data.anonMaskExpiresAt;
+        }
+        if (data.level !== undefined) {
+            window.myLevel = data.level;
+            window.myTotalXP = data.totalXP;
+            if (window.LevelClient && typeof window.LevelClient.initFromLogin === 'function') {
+                window.LevelClient.initFromLogin(data);
+            }
         }
         if (data.friendRequests) {
             window.myFriendRequests = data.friendRequests;
@@ -98,135 +159,150 @@ socket.on('loginSuccess', (data) => {
                 openUpdatesModal();
             }
         }, 350);
+
+        // 5 Saniye Sonra Günlük Ödül Kontrolü ve Açılışı (Eğer bugünkü ödül alınmamışsa)
+        setTimeout(() => {
+            if (window.DailyRewardClient && typeof window.DailyRewardClient.checkAndShow === 'function') {
+                window.DailyRewardClient.checkAndShow();
+            }
+        }, 5000);
     }
 });
 
 socket.on('moneyUpdate', (money) => {
-    updateMoneyDisplay(money);
+    const amt = (typeof money === 'object' && money !== null && money.money !== undefined) ? money.money : money;
+    const num = (typeof amt === 'number') ? amt : (parseInt(amt, 10) || 0);
+    window.myMoney = num;
+    window.userMoney = num;
+    if (typeof myId !== 'undefined' && players && players[myId]) {
+        players[myId].money = num;
+    }
+    if (typeof updateMoneyDisplay === 'function') {
+        updateMoneyDisplay(num);
+    } else {
+        const uBadge = document.getElementById('userMoneyDisplay');
+        if (uBadge) uBadge.innerText = num.toLocaleString('tr-TR');
+    }
+});
+
+socket.on('diamondUpdate', (diamonds) => {
+    const amt = (typeof diamonds === 'object' && diamonds !== null && diamonds.diamonds !== undefined) ? diamonds.diamonds : diamonds;
+    const num = (typeof amt === 'number') ? amt : (parseInt(amt, 10) || 0);
+    window.myDiamonds = num;
+    if (typeof myId !== 'undefined' && players && players[myId]) {
+        players[myId].diamonds = num;
+    }
+    if (typeof updateDiamondDisplay === 'function') {
+        updateDiamondDisplay(num);
+    } else {
+        const dEl = document.getElementById('myDiamonds');
+        if (dEl) dEl.innerText = num.toLocaleString('tr-TR');
+    }
+});
+
+socket.on('playerLevelBadgeUpdate', (data) => {
+    if (data && data.id && typeof players !== 'undefined' && players && players[data.id]) {
+        players[data.id].level = data.level;
+    }
 });
 
 
-// --- 3. SÜRÜKLE BIRAK (DRAGGABLE) İŞLEMLERİ ---
-document.addEventListener('DOMContentLoaded', () => {
+// --- 3. SÜRÜKLE BIRAK (DRAGGABLE) İŞLEMLERİ & EVRENSEL YARDIMCI ---
+function makeModalDraggable(modal, header, options = {}) {
+    const modalEl = typeof modal === 'string' ? document.getElementById(modal) : modal;
+    const headerEl = typeof header === 'string' ? document.getElementById(header) : header;
+    if (!modalEl || !headerEl || modalEl._draggableInit) return;
+    modalEl._draggableInit = true;
 
-    // A) CHAT PANELİNİ SÜRÜKLEME
-    const chatPanel = document.getElementById('sideChatContainer');
-    const chatHeader = document.getElementById('chatHeader');
-    let isChatDragging = false, cStartX, cStartY, cInitialLeft, cInitialTop;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initialLeft = 0, initialTop = 0;
+    let hasMoved = false;
 
-    if (chatHeader && chatPanel) {
-        chatHeader.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-            isChatDragging = true;
-            cStartX = e.clientX; cStartY = e.clientY;
-            cInitialLeft = chatPanel.offsetLeft; cInitialTop = chatPanel.offsetTop;
-            e.preventDefault();
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (!isChatDragging) return;
-            chatPanel.style.left = (cInitialLeft + (e.clientX - cStartX)) + 'px';
-            chatPanel.style.top = (cInitialTop + (e.clientY - cStartY)) + 'px';
-            chatPanel.style.right = 'auto';
-        });
-        document.addEventListener('mouseup', () => { isChatDragging = false; });
-
-        // Mobil Dokunmatik Desteği
-        chatHeader.addEventListener('touchstart', (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-            isChatDragging = true;
-            cStartX = e.touches[0].clientX; cStartY = e.touches[0].clientY;
-            cInitialLeft = chatPanel.offsetLeft; cInitialTop = chatPanel.offsetTop;
-        });
-        document.addEventListener('touchmove', (e) => {
-            if (!isChatDragging) return;
-            chatPanel.style.left = (cInitialLeft + (e.touches[0].clientX - cStartX)) + 'px';
-            chatPanel.style.top = (cInitialTop + (e.touches[0].clientY - cStartY)) + 'px';
-            chatPanel.style.right = 'auto';
-        });
-        document.addEventListener('touchend', () => { isChatDragging = false; });
-    }
-
-    // B) OYUN MASASINI (MODAL) SÜRÜKLEME
-    const gameModal = document.getElementById('gameModal');
-    const modalHeader = document.getElementById('modalHeader');
-    let isModalDragging = false, mStartX = 0, mStartY = 0, mInitialLeft = 0, mInitialTop = 0;
-    let mHasMoved = false;
-
-    function startModalDrag(clientX, clientY, target) {
-        if (!gameModal) return false;
-        if (target && (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.in-game-zoom-ctrl') || target.closest('.game-window-controls'))) {
+    function startDrag(clientX, clientY, target) {
+        if (!modalEl) return false;
+        if (target && (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.in-game-zoom-ctrl') || target.closest('.game-window-controls') || target.closest('.close-btn'))) {
             return false;
         }
-        isModalDragging = true;
-        mHasMoved = false;
-        mStartX = clientX;
-        mStartY = clientY;
+        isDragging = true;
+        hasMoved = false;
+        startX = clientX;
+        startY = clientY;
 
-        const rect = gameModal.getBoundingClientRect();
-        mInitialLeft = rect.left;
-        mInitialTop = rect.top;
+        const rect = modalEl.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
         return true;
     }
 
-    function moveModalDrag(clientX, clientY) {
-        if (!isModalDragging || !gameModal) return;
-        const dist = Math.hypot(clientX - mStartX, clientY - mStartY);
-        if (dist > 3 && !mHasMoved) {
-            mHasMoved = true;
-            gameModal.style.animation = 'none';
-            gameModal.style.transform = 'none';
-            gameModal.style.margin = '0';
-            gameModal.style.left = mInitialLeft + 'px';
-            gameModal.style.top = mInitialTop + 'px';
+    function moveDrag(clientX, clientY) {
+        if (!isDragging || !modalEl) return;
+        const dist = Math.hypot(clientX - startX, clientY - startY);
+        if (dist > 3 && !hasMoved) {
+            hasMoved = true;
+            modalEl.style.animation = 'none';
+            modalEl.style.transform = 'none';
+            modalEl.style.margin = '0';
+            modalEl.style.left = initialLeft + 'px';
+            modalEl.style.top = initialTop + 'px';
         }
-        if (!mHasMoved) return;
+        if (!hasMoved) return;
 
-        const dx = clientX - mStartX;
-        const dy = clientY - mStartY;
-        let newLeft = mInitialLeft + dx;
-        let newTop = mInitialTop + dy;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        let newLeft = initialLeft + dx;
+        let newTop = initialTop + dy;
 
-        // Ekran dışına kaçmasını engelle (Clamping)
-        const modalW = gameModal.offsetWidth || 500;
+        // Ekran dışına taşmayı engelle (Viewport Clamping)
+        const modalW = modalEl.offsetWidth || 400;
         const maxL = Math.max(10, window.innerWidth - 60);
-        const minL = Math.min(10, 10 - modalW + 100);
-        const maxT = Math.max(10, window.innerHeight - 50);
+        const minL = Math.min(10, 10 - modalW + 80);
+        const maxT = Math.max(10, window.innerHeight - 44);
         newLeft = Math.max(minL, Math.min(newLeft, maxL));
         newTop = Math.max(5, Math.min(newTop, maxT));
 
-        gameModal.style.left = newLeft + 'px';
-        gameModal.style.top = newTop + 'px';
+        modalEl.style.left = newLeft + 'px';
+        modalEl.style.top = newTop + 'px';
+        if (modalEl.style.right) modalEl.style.right = 'auto';
     }
 
-    function endModalDrag() {
-        isModalDragging = false;
-        mHasMoved = false;
+    function endDrag() {
+        isDragging = false;
+        hasMoved = false;
     }
 
-    if (modalHeader && gameModal) {
-        modalHeader.addEventListener('mousedown', (e) => {
-            if (startModalDrag(e.clientX, e.clientY, e.target)) {
-                e.preventDefault();
-            }
-        });
-        document.addEventListener('mousemove', (e) => {
-            moveModalDrag(e.clientX, e.clientY);
-        });
-        document.addEventListener('mouseup', endModalDrag);
+    headerEl.addEventListener('mousedown', (e) => {
+        if (startDrag(e.clientX, e.clientY, e.target)) {
+            e.preventDefault();
+        }
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) moveDrag(e.clientX, e.clientY);
+    });
+    document.addEventListener('mouseup', endDrag);
 
-        // Dokunmatik (Mobil / Tablet) Sürükleme Desteği
-        modalHeader.addEventListener('touchstart', (e) => {
-            if (e.touches && e.touches.length === 1) {
-                startModalDrag(e.touches[0].clientX, e.touches[0].clientY, e.target);
-            }
-        }, { passive: true });
-        document.addEventListener('touchmove', (e) => {
-            if (isModalDragging && e.touches && e.touches.length === 1) {
-                moveModalDrag(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }, { passive: true });
-        document.addEventListener('touchend', endModalDrag);
-    }
+    // Mobil Dokunmatik Desteği
+    headerEl.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1) {
+            startDrag(e.touches[0].clientX, e.touches[0].clientY, e.target);
+        }
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches && e.touches.length === 1) {
+            if (hasMoved && e.cancelable) e.preventDefault();
+            moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: false });
+    document.addEventListener('touchend', endDrag);
+    document.addEventListener('touchcancel', endDrag);
+}
+window.makeModalDraggable = makeModalDraggable;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // A) Sohbet Panelini Sürükleme
+    makeModalDraggable('sideChatContainer', 'chatHeader');
+    // B) Oyun Masasını (Modal) Sürükleme
+    makeModalDraggable('gameModal', 'modalHeader');
 
     // Enter tuşu desteği ve Karakter Sayacı
     const sideInput = document.getElementById('sideChatInput');
@@ -322,6 +398,7 @@ socket.on('currentPlayers', (serverPlayers) => {
     let oldMe = (typeof myId !== 'undefined' && players && players[myId]) ? players[myId] : null;
     players = serverPlayers || {};
     myId = socket.id;
+    window.myId = socket.id;
     if (!players[myId] && oldMe) {
         players[myId] = oldMe;
     }
@@ -386,9 +463,12 @@ socket.on('playerEmojiUpdate', (data) => {
 });
 
 const ROOM_TRANSITION_SPAWNS = {
-    kafe: { default: { x: 400, y: 410 } },
+    kafe: {
+        default: { x: 500, y: 530 }
+    },
     sokak: {
         sahil: { x: 85, y: 240 },
+        sahil_yolu: { x: 85, y: 250 },
         cadde: { x: 720, y: 240 },
         kafe: { x: 400, y: 125 },
         nargile_cafe: { x: 670, y: 125 },
@@ -398,10 +478,67 @@ const ROOM_TRANSITION_SPAWNS = {
     },
     cadde: {
         sokak: { x: 80, y: 230 },
+        cadde2: { x: 730, y: 230 },
         ganyan: { x: 240, y: 145 },
         dedenin_yeri: { x: 590, y: 145 },
         dostlar_kiraathanesi: { x: 650, y: 380 },
+        pet_shop: { x: 120, y: 395 },
         default: { x: 400, y: 230 }
+    },
+    pet_shop: {
+        cadde: { x: 500, y: 530 },
+        default: { x: 500, y: 530 }
+    },
+    cadde2: {
+        cadde: { x: 70, y: 235 },
+        vip_club: { x: 98, y: 140 },
+        mine_cave: { x: 880, y: 460 },
+        botanic_shop: { x: 320, y: 190 },
+        kultur_merkezi_lobi: { x: 780, y: 190 },
+        default: { x: 250, y: 235 }
+    },
+    mine_cave: {
+        cadde2: { x: 140, y: 520 },
+        default: { x: 140, y: 520 }
+    },
+    botanic_shop: {
+        cadde2: { x: 500, y: 550 },
+        default: { x: 500, y: 520 }
+    },
+    vip_club: {
+        cadde2: { x: 500, y: 530 },
+        default: { x: 500, y: 530 }
+    },
+    optik: {
+        avm_kat1: { x: 670, y: 490 },
+        cadde2: { x: 670, y: 490 },
+        default: { x: 670, y: 490 }
+    },
+    optika: {
+        avm_kat1: { x: 670, y: 490 },
+        cadde2: { x: 670, y: 490 },
+        default: { x: 670, y: 490 }
+    },
+    kultur_merkezi_lobi: {
+        cadde2: { x: 500, y: 550 },
+        kultur_merkezi_sahne: { x: 500, y: 220 },
+        kultur_merkezi_kulis: { x: 230, y: 220 },
+        kultur_merkezi_sinema: { x: 770, y: 220 },
+        default: { x: 500, y: 550 }
+    },
+    kultur_merkezi_sahne: {
+        kultur_merkezi_lobi: { x: 500, y: 560 },
+        kultur_merkezi_kulis: { x: 140, y: 240 },
+        default: { x: 500, y: 500 }
+    },
+    kultur_merkezi_kulis: {
+        kultur_merkezi_lobi: { x: 500, y: 550 },
+        kultur_merkezi_sahne: { x: 860, y: 240 },
+        default: { x: 500, y: 450 }
+    },
+    kultur_merkezi_sinema: {
+        kultur_merkezi_lobi: { x: 500, y: 560 },
+        default: { x: 500, y: 520 }
     },
     dostlar_kiraathanesi: {
         cadde: { x: 500, y: 530 },
@@ -410,6 +547,7 @@ const ROOM_TRANSITION_SPAWNS = {
     emlakci: { default: { x: 400, y: 410 } },
     sahil: {
         sokak: { x: 680, y: 270 },
+        sahil_yolu: { x: 680, y: 270 },
         default: { x: 420, y: 350 }
     },
     ganyan: { default: { x: 400, y: 410 } },
@@ -425,13 +563,49 @@ const ROOM_TRANSITION_SPAWNS = {
         sokak: { x: 500, y: 350 },
         cadde: { x: 920, y: 330 },
         sahil: { x: 500, y: 560 },
+        sahil_yolu: { x: 500, y: 560 },
         kafe: { x: 380, y: 195 },
         emlakci: { x: 140, y: 195 },
         nargile_cafe: { x: 640, y: 195 },
         market: { x: 880, y: 195 },
         housing_portal: { x: 180, y: 560 },
         default: { x: 500, y: 350 }
-    }
+    },
+    sahilv2: {
+        sahil_yolu: { x: 900, y: 520 },
+        default: { x: 500, y: 400 }
+    },
+    sahil_yolu: {
+        sokak: { x: 910, y: 260 },
+        sahil: { x: 85, y: 260 },
+        meydanv2: { x: 500, y: 70 },
+        sahilv2: { x: 880, y: 520 },
+        avm_kat1: { x: 500, y: 240 },
+        default: { x: 500, y: 260 }
+    },
+    avm_kat1: {
+        sahil_yolu: { x: 500, y: 560 },
+        avm_kat2: { x: 620, y: 220 },
+        optik: { x: 660, y: 240 },
+        optika: { x: 660, y: 240 },
+        avm_magaza_kiyafet: { x: 220, y: 280 },
+        avm_magaza_sapka: { x: 400, y: 220 },
+        avm_magaza_sneaker: { x: 740, y: 280 },
+        default: { x: 500, y: 560 }
+    },
+    avm_kat2: {
+        avm_kat1: { x: 620, y: 220 },
+        avm_magaza_takim: { x: 220, y: 280 },
+        avm_magaza_saat: { x: 400, y: 220 },
+        avm_magaza_berber: { x: 740, y: 280 },
+        default: { x: 620, y: 220 }
+    },
+    avm_magaza_kiyafet: { avm_kat1: { x: 500, y: 530 }, default: { x: 500, y: 530 } },
+    avm_magaza_sneaker: { avm_kat1: { x: 500, y: 530 }, default: { x: 500, y: 530 } },
+    avm_magaza_sapka: { avm_kat1: { x: 500, y: 530 }, default: { x: 500, y: 530 } },
+    avm_magaza_takim: { avm_kat2: { x: 500, y: 530 }, default: { x: 500, y: 530 } },
+    avm_magaza_saat: { avm_kat2: { x: 500, y: 530 }, default: { x: 500, y: 530 } },
+    avm_magaza_berber: { avm_kat2: { x: 500, y: 530 }, default: { x: 500, y: 530 } }
 };
 let sanalikaCamera = { x: 0, y: 0 };
 window.sanalikaCamera = sanalikaCamera;
@@ -449,6 +623,12 @@ function warnHouseEditActive() {
 window.warnHouseEditActive = warnHouseEditActive;
 
 function changeRoom(newRoom, targetSpawn) {
+    if (newRoom === 'mine_cave') {
+        const myP = (typeof myId !== 'undefined' && typeof players !== 'undefined' && players[myId]) ? players[myId] : (typeof myAvatar !== 'undefined' ? myAvatar : null);
+        if (typeof verifyMineCaveEntrance === 'function' && !verifyMineCaveEntrance(myP)) {
+            return;
+        }
+    }
     if (currentRoom && currentRoom.startsWith("house_") && window.isHouseEditMode && newRoom !== currentRoom) {
         warnHouseEditActive();
         return;
@@ -458,10 +638,17 @@ function changeRoom(newRoom, targetSpawn) {
         stopGramophoneMusic();
     }
     currentRoom = newRoom;
+    window.currentRoom = newRoom;
+    if (typeof updateRoomAmbienceMusic === 'function') {
+        updateRoomAmbienceMusic(newRoom);
+    }
+    if (typeof window.renderGardenQuickTray === 'function') {
+        window.renderGardenQuickTray();
+    }
     roomTransitionFadeAlpha = 0.95; // Sinematik mekan geçiş kararması (Fade in)
     // Dinamik Ekran Büyütme (Star Caddesi, Meydan v2, Dostlar Kıraathanesi, Sahil v2: 1000 x 625, Diğerleri: 800 x 500)
     if (canvas) {
-        if (newRoom === 'star_caddesi' || newRoom === 'meydanv2' || newRoom === 'dostlar_kiraathanesi' || newRoom === 'sahilv2') {
+        if (newRoom === 'star_caddesi' || newRoom === 'meydanv2' || newRoom === 'dostlar_kiraathanesi' || newRoom === 'sahilv2' || newRoom === 'kafe' || newRoom === 'sahil_yolu' || newRoom === 'cadde2' || newRoom === 'mine_cave' || newRoom === 'vip_club' || newRoom === 'optik' || newRoom === 'optika' || newRoom === 'botanic_shop' || newRoom === 'kultur_merkezi_lobi' || newRoom === 'kultur_merkezi_sahne' || newRoom === 'kultur_merkezi_kulis' || newRoom === 'kultur_merkezi_sinema' || newRoom === 'avm_kat1' || newRoom === 'avm_kat2' || (newRoom && newRoom.startsWith('avm_magaza_')) || (newRoom && newRoom.startsWith('house_')) || newRoom === 'pet_shop') {
             canvas.width = 1000;
             canvas.height = 625;
             canvas.style.aspectRatio = '1000 / 625';
@@ -542,7 +729,8 @@ function changeRoom(newRoom, targetSpawn) {
             if (roomMap) {
                 spawnPos = roomMap[oldRoom] || roomMap.default;
             } else if (newRoom.startsWith("house_")) {
-                spawnPos = { x: 400, y: 400 };
+                let isGardenRoom = newRoom.endsWith('_garden') || newRoom.includes('_garden') || newRoom === 'house_ornek_garden';
+                spawnPos = isGardenRoom ? { x: 330, y: 380 } : { x: 400, y: 400 };
             } else {
                 spawnPos = { x: 400, y: 300 };
             }
@@ -565,13 +753,19 @@ function changeRoom(newRoom, targetSpawn) {
             myPet.isMoving = false;
         }
 
-        // Sevimli Patiler Yoldaş Peti Varsa Oyuncuyla Beraber Yeni Mekana Geçsin
-        if (window.activeCompanionPets && window.activeCompanionPets[myId]) {
-            let myCompPet = window.activeCompanionPets[myId];
-            myCompPet.room = newRoom;
-            myCompPet.x = p.x + 24;
-            myCompPet.y = p.y + 6;
-            myCompPet.isMoving = false;
+        // Sevimli Patiler & Korumalar & Doberman Yoldaşları Oyuncuyla Beraber Yeni Mekana Geçsin
+        if (window.activeCompanionPets) {
+            for (let petKey in window.activeCompanionPets) {
+                let myCompPet = window.activeCompanionPets[petKey];
+                if (myCompPet && (myCompPet.ownerId === myId || petKey === myId)) {
+                    myCompPet.room = newRoom;
+                    myCompPet.curX = p.x + 24;
+                    myCompPet.curY = p.y + 6;
+                    myCompPet.x = p.x + 24;
+                    myCompPet.y = p.y + 6;
+                    myCompPet.isMoving = false;
+                }
+            }
         }
         // Kıraathane İçecekleri Sadece O Mekana Özeldir
         if (currentRoom === 'dostlar_kiraathanesi' && newRoom !== 'dostlar_kiraathanesi') {
@@ -605,6 +799,10 @@ function changeRoom(newRoom, targetSpawn) {
     } else if (editBtn) {
         let isMyHouse = (newRoom && myUsername && newRoom === `house_${myUsername}`);
         editBtn.style.display = isMyHouse ? 'flex' : 'none';
+    }
+
+    if (typeof updateKulturBarsUI === 'function') {
+        updateKulturBarsUI();
     }
 }
 
@@ -707,17 +905,16 @@ window.applyGameZoom = function(zoomPercent, save = true) {
         } catch (e) {}
     }
 
-    const isWide = (currentRoom === 'star_caddesi' || currentRoom === 'meydanv2' || currentRoom === 'dostlar_kiraathanesi' || currentRoom === 'sahilv2');
+    const isGarden = currentRoom && (currentRoom.endsWith('_garden') || currentRoom.includes('_garden') || currentRoom === 'house_ornek_garden');
+    const isWide = isGarden || (currentRoom === 'star_caddesi' || currentRoom === 'meydanv2' || currentRoom === 'dostlar_kiraathanesi' || currentRoom === 'sahilv2' || currentRoom === 'kafe' || currentRoom === 'sahil_yolu' || currentRoom === 'cadde2' || currentRoom === 'mine_cave' || (currentRoom && currentRoom.startsWith('kultur_merkezi_')) || currentRoom === 'avm_kat1' || currentRoom === 'avm_kat2' || (currentRoom && currentRoom.startsWith('avm_magaza_')) || currentRoom === 'pet_shop' || currentRoom === 'botanic_shop' || currentRoom === 'vip_club' || currentRoom === 'optik' || currentRoom === 'optika');
     const baseWidth = isWide ? 1000 : 800;
     const baseHeight = isWide ? 625 : 500;
     const scaledWidth = Math.round(baseWidth * (currentGameZoom / 100));
-    const scaledHeight = Math.round(baseHeight * (currentGameZoom / 100));
-
     if (canvas) {
         canvas.style.setProperty('width', scaledWidth + 'px', 'important');
-        canvas.style.setProperty('height', scaledHeight + 'px', 'important');
+        canvas.style.setProperty('height', 'auto', 'important');
         canvas.style.setProperty('max-width', '98vw');
-        canvas.style.setProperty('aspect-ratio', `${baseWidth} / ${baseHeight}`);
+        canvas.style.setProperty('aspect-ratio', baseWidth + ' / ' + baseHeight);
     }
     const bottomBar = document.getElementById('gameBottomControlBar');
     if (bottomBar) {
@@ -740,17 +937,17 @@ window.handleZoomSliderInput = function(val) {
 };
 
 window.fitZoomToScreen = function() {
-    const isWide = (currentRoom === 'star_caddesi' || currentRoom === 'meydanv2' || currentRoom === 'dostlar_kiraathanesi' || currentRoom === 'sahilv2');
+    const isGarden = currentRoom && (currentRoom.endsWith('_garden') || currentRoom.includes('_garden') || currentRoom === 'house_ornek_garden');
+    const isWide = isGarden || (currentRoom === 'star_caddesi' || currentRoom === 'meydanv2' || currentRoom === 'dostlar_kiraathanesi' || currentRoom === 'sahilv2' || currentRoom === 'kafe' || currentRoom === 'sahil_yolu' || currentRoom === 'cadde2' || currentRoom === 'mine_cave' || (currentRoom && currentRoom.startsWith('kultur_merkezi_')) || currentRoom === 'avm_kat1' || currentRoom === 'avm_kat2' || (currentRoom && currentRoom.startsWith('avm_magaza_')) || currentRoom === 'pet_shop' || currentRoom === 'botanic_shop' || currentRoom === 'vip_club' || currentRoom === 'optik' || currentRoom === 'optika');
     const baseWidth = isWide ? 1000 : 800;
     const baseHeight = isWide ? 625 : 500;
     const aspect = baseWidth / baseHeight;
 
-    // Üst panel, alt kontrol çubuğu ve marjinlerin gerçek yükseklik payı
     const topNav = document.querySelector('.top-nav');
     const bottomBar = document.getElementById('gameBottomControlBar');
     const topNavH = topNav ? (topNav.offsetHeight + 24) : 74;
     const bottomH = bottomBar ? (bottomBar.offsetHeight + 22) : 58;
-    const extraPadding = 36; // Tarayıcı scrollbar ve nefes payı
+    const extraPadding = 36;
 
     const maxAvailableWidth = window.innerWidth * 0.94;
     const maxAvailableHeight = Math.max(260, window.innerHeight - topNavH - bottomH - extraPadding);
@@ -758,9 +955,7 @@ window.fitZoomToScreen = function() {
     const widthFromHeight = maxAvailableHeight * aspect;
     const optimalWidth = Math.min(maxAvailableWidth, widthFromHeight);
 
-    // Kullanıcı talebi: Hesaplanan değerden %15 daha kompakt / rahat sığacak şekilde düşür
     let targetZoom = Math.round(((optimalWidth / baseWidth) * 100) * 0.85);
-    // 5'in katına yuvarlayarak temiz bir yüzde elde et (örn. 110%, 115%, 120%)
     targetZoom = Math.round(targetZoom / 5) * 5;
     targetZoom = Math.max(60, Math.min(200, targetZoom));
 
@@ -1048,10 +1243,41 @@ function triggerPlayerAction(action) {
     else if (action === 'clap' && window.playSound) window.playSound('card');
 }
 
+function isWearingZombieCostume(player = myAvatar) {
+    const costumeId = player && (player.costume || (player.outfit && player.outfit.startsWith('costume_') ? player.outfit : null));
+    return typeof ZombieCostumeRenderer !== 'undefined' && ZombieCostumeRenderer.isCostume(costumeId);
+}
+
+let lastZombieAttackAt = 0;
+function triggerZombieAttack() {
+    if (!players[myId] || !isWearingZombieCostume(players[myId])) return;
+    const now = Date.now();
+    if (now - lastZombieAttackAt < 650) return;
+    lastZombieAttackAt = now;
+    socket.emit('zombieAttack');
+}
+
 socket.on('playerActionUpdate', (data) => {
     if (players[data.id]) {
         players[data.id].action = data.action;
         players[data.id].hasTea = data.hasTea;
+    }
+});
+
+socket.on('zombieAnimationUpdate', (data) => {
+    if (!data || !players[data.id]) return;
+    Object.assign(players[data.id], {
+        zombieAnimation: data.animation,
+        zombieAnimationStartedAt: data.animationStartedAt,
+        zombieAnimationUntil: data.animationUntil,
+        zombieStunnedUntil: data.stunnedUntil,
+        zombieHits: data.hits
+    });
+    if (data.stunnedUntil > Date.now()) {
+        players[data.id].isMoving = false;
+        players[data.id].isSprinting = false;
+        players[data.id].vx = 0;
+        players[data.id].vy = 0;
     }
 });
 
@@ -1365,6 +1591,13 @@ function closeTopmostGeneralModal() {
     if (isVisible('tableSelectModal')) { if (typeof closeTableSelectModal === 'function') closeTableSelectModal(); return true; }
     if (isVisible('leaderboardModal')) { if (typeof closeLeaderboardModal === 'function') closeLeaderboardModal(); return true; }
     if (isVisible('petShopModal')) { if (typeof closePetShopModal === 'function') closePetShopModal(); return true; }
+    if (isVisible('petNurseryModal')) { if (typeof closePetNurseryModal === 'function') closePetNurseryModal(); return true; }
+    if (isVisible('petPolaroidModal')) { if (typeof closePetPolaroidModal === 'function') closePetPolaroidModal(); return true; }
+    if (isVisible('petWardrobeModal')) { if (typeof closePetWardrobeModal === 'function') closePetWardrobeModal(); return true; }
+    if (isVisible('petVetModal')) { if (typeof closePetVetModal === 'function') closePetVetModal(); return true; }
+    if (isVisible('petBreedingModal')) { if (typeof closePetBreedingModal === 'function') closePetBreedingModal(); return true; }
+    if (isVisible('petDerbyModal')) { if (typeof closePetDerbyModal === 'function') closePetDerbyModal(); return true; }
+    if (isVisible('petGardenModal')) { if (typeof closePetGardenModal === 'function') closePetGardenModal(); return true; }
     if (isVisible('adminPanelModal')) { if (typeof closeAdminPanelModal === 'function') closeAdminPanelModal(); return true; }
     if (isVisible('changePasswordModal')) { if (typeof closeChangePasswordModal === 'function') closeChangePasswordModal(); return true; }
     if (isVisible('settingsModal')) { if (typeof closeSettingsModal === 'function') closeSettingsModal(); return true; }
@@ -1379,6 +1612,8 @@ function closeTopmostGeneralModal() {
     if (isVisible('nargileCoalsModal')) { if (typeof closeNargileCoalsModal === 'function') closeNargileCoalsModal(); return true; }
     if (isVisible('batakYazbozModal')) { if (typeof closeBatakYazbozModal === 'function') closeBatakYazbozModal(); return true; }
     if (isVisible('okey101YazbozModal')) { if (typeof closeYazbozModal === 'function') closeYazbozModal(); return true; }
+    if (isVisible('vipClubEntryModal')) { if (typeof closeVipClubEntryModal === 'function') closeVipClubEntryModal(); return true; }
+    if (isVisible('tekinsizTekinModal')) { if (typeof closeTekinsizTekinModal === 'function') closeTekinsizTekinModal(); return true; }
 
     return false;
 }
@@ -1481,7 +1716,7 @@ window.addEventListener('resize', updateCanvasRect);
 window.addEventListener('scroll', updateCanvasRect, { passive: true });
 window.addEventListener('orientationchange', updateCanvasRect);
 
-// Herhangi bir zoom, border veya ölçeklendirmede canvasın tam piksel koordinatını hesaplar
+// Herhangi bir zoom, border veya ölçeklendirmede canvasın tam piksel koordinatını hesaplar (Dokunmatik & Mouse Hibrit)
 function getCanvasEventCoords(e) {
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
@@ -1490,11 +1725,86 @@ function getCanvasEventCoords(e) {
     const borderTop = canvas.clientTop || 0;
     const clientW = canvas.clientWidth || (rect.width - borderLeft * 2);
     const clientH = canvas.clientHeight || (rect.height - borderTop * 2);
-    const clickX = ((e.clientX - rect.left - borderLeft) / (clientW || 1)) * canvas.width;
-    const clickY = ((e.clientY - rect.top - borderTop) / (clientH || 1)) * canvas.height;
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+    if (clientX === undefined && e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else if (clientX === undefined && e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+    }
+    clientX = Number(clientX) || 0;
+    clientY = Number(clientY) || 0;
+    const clickX = ((clientX - rect.left - borderLeft) / (clientW || 1)) * canvas.width;
+    const clickY = ((clientY - rect.top - borderTop) / (clientH || 1)) * canvas.height;
     return { x: clickX, y: clickY };
 }
 window.getCanvasEventCoords = getCanvasEventCoords;
+
+// --- JAMMER VE OYUN İÇİ NON-POPUP BİLDİRİM YÖNETİCİSİ ---
+let jammerTimerInterval = null;
+
+function showGameNotificationText(msg, durationMs = 5000) {
+    const bar = document.getElementById('gameNotificationTextBar');
+    const content = document.getElementById('gameNotificationTextContent');
+    if (!bar || !content) return;
+    content.innerHTML = msg;
+    bar.style.display = 'block';
+    bar.style.opacity = '1';
+    bar.style.transform = 'translateX(-50%) translateY(0)';
+    if (window._gameNotifTimeout) clearTimeout(window._gameNotifTimeout);
+    window._gameNotifTimeout = setTimeout(() => {
+        bar.style.opacity = '0';
+        bar.style.transform = 'translateX(-50%) translateY(-10px)';
+        setTimeout(() => { bar.style.display = 'none'; }, 400);
+    }, durationMs);
+}
+window.showGameNotificationText = showGameNotificationText;
+
+function openJammerBlockedModal(expiresAt) {
+    window.myJammerExpiresAt = expiresAt;
+    const modal = document.getElementById('jammerBlockedModal');
+    const timerEl = document.getElementById('jammerCountdownTimer');
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    if (jammerTimerInterval) clearInterval(jammerTimerInterval);
+
+    function updateJammerTimer() {
+        const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+        const min = Math.floor(remaining / 60);
+        const sec = remaining % 60;
+        if (timerEl) {
+            timerEl.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+        if (remaining <= 0) {
+            clearInterval(jammerTimerInterval);
+            jammerTimerInterval = null;
+            window.myJammerExpiresAt = 0;
+            closeJammerBlockedModal();
+            showGameNotificationText("✅ Sinyaliniz yeniden bağlandı! Konuşabilir ve mikrofon kullanabilirsiniz.");
+        }
+    }
+    updateJammerTimer();
+    jammerTimerInterval = setInterval(updateJammerTimer, 1000);
+
+    // Mikrofonu ve sesli sohbeti derhal sonlandır
+    if (typeof leaveTableVoiceChat === 'function') {
+        leaveTableVoiceChat();
+    }
+}
+window.openJammerBlockedModal = openJammerBlockedModal;
+
+function closeJammerBlockedModal() {
+    if (typeof jammerTimerInterval !== 'undefined' && jammerTimerInterval) {
+        clearInterval(jammerTimerInterval);
+        jammerTimerInterval = null;
+    }
+    const modal = document.getElementById('jammerBlockedModal');
+    if (modal) modal.style.display = 'none';
+}
+window.closeJammerBlockedModal = closeJammerBlockedModal;
 
 canvas.addEventListener('mousemove', (e) => {
     let coords = getCanvasEventCoords(e);
@@ -1525,6 +1835,11 @@ canvas.addEventListener('mousemove', (e) => {
         }
     } else if (currentRoom === 'market') {
         setGameCursor('pointer');
+    } else if (currentRoom === 'pet_shop') {
+        const isInteractive = (canvasMouseX >= 710 && canvasMouseX <= 965 && canvasMouseY >= 160 && canvasMouseY <= 315)
+            || (canvasMouseX >= 40 && canvasMouseX <= 255 && canvasMouseY >= 360 && canvasMouseY <= 505)
+            || (canvasMouseX >= 350 && canvasMouseX <= 650 && canvasMouseY >= 570);
+        setGameCursor(isInteractive ? 'pointer' : 'default');
     }
 });
 
@@ -1537,11 +1852,11 @@ canvas.addEventListener('mouseleave', () => {
 // Kafedeki masaların koordinatları (VIP Ferah Salon & Genişletilmiş Açık Koridor Düzeni)
 // (Batak ve Gömmeli Batak masaları Dostlar Kıraathanesi'ne taşınmıştır)
 const cafeTables = [
-    { id: 'billiard', x: 35, y: 110, w: 145, h: 78, name: '8-Ball Bilardo' },
-    { id: 'tavla', x: 62, y: 300, w: 105, h: 74, name: 'Geleneksel Tavla' },
-    { id: 'xox', x: 239, y: 120, w: 86, h: 74, name: 'XOX Düellosu' },
-    { id: 'amiral', x: 476, y: 120, w: 92, h: 74, name: 'Amiral Battı' },
-    { id: 'chess', x: 650, y: 220, w: 96, h: 74, name: 'Satranç Masası' }
+    { id: 'billiard', x: 80, y: 145, w: 175, h: 95, name: '8-Ball Bilardo' },
+    { id: 'tavla', x: 110, y: 370, w: 115, h: 82, name: 'Geleneksel Tavla' },
+    { id: 'xox', x: 315, y: 180, w: 95, h: 80, name: 'XOX Düellosu' },
+    { id: 'amiral', x: 590, y: 180, w: 100, h: 80, name: 'Amiral Battı' },
+    { id: 'chess', x: 780, y: 175, w: 110, h: 82, name: 'Satranç Masası' }
 ];
 
 // Dedenin Yeri Kumarhanesindeki Canlı Masalar
@@ -1553,6 +1868,15 @@ const casinoTables = [
 let targetWalkPos = null;
 let tapRipples = [];
 let lastCanvasTapTime = 0;
+
+window.stopPlayerWalking = function() {
+    targetWalkPos = null;
+    if (typeof myId !== 'undefined' && typeof players !== 'undefined' && players[myId]) {
+        players[myId].isMoving = false;
+        players[myId].vx = 0;
+        players[myId].vy = 0;
+    }
+};
 
 // --- 7.5 KOLTUĞA, SANDALYEYE, TABUREYE VE BANKA OTURMA MEKANİĞİ ---
 function sitPlayerAt(seatX, seatY, facing = 'down') {
@@ -1606,13 +1930,15 @@ function sitPlayerAt(seatX, seatY, facing = 'down') {
 function standUpIfSitting(intendedDir = null) {
     if (!players[myId]) return;
     let p = players[myId];
-    if (p.action === 'sitting') {
+    if (p.action === 'sitting' || p.action === 'sit_floor') {
+        const wasFloor = (p.action === 'sit_floor');
         p.action = null;
         socket.emit('playerAction', { action: 'stand' });
         if (currentRoom === 'nargile_cafe') {
             socket.emit('nargile_stand_table');
         }
 
+        if (wasFloor) return;
         // Koltuktan/sandalyeden kalkarken katı çarpışma kutusunun dışına güvenli adım at
         let stepDist = 32;
         let testDirs = [];
@@ -1671,7 +1997,25 @@ function checkAndSitOnFurnitureOrChair(clickX, clickY) {
     return false;
 }
 
+function isAnyModalOpen() {
+    const modalIds = [
+        'gameModal', 'wardrobeModal', 'dressingRoomModal', 'settingsModal',
+        'itemInventoryModal', 'playerInteractionModal', 'playerProfileModalBox',
+        'petShopModal', 'optikaModal', 'furnitureMarketModal', 'botanicMarketModal',
+        'kulturGiseModal', 'kulturBufeModal', 'kulturBillboardModal', 'barberShopModal',
+        'housingPortalModal', 'realEstateModal', 'inGameAlertModal'
+    ];
+    for (let i = 0; i < modalIds.length; i++) {
+        const el = document.getElementById(modalIds[i]);
+        if (el && el.style.display !== 'none' && el.style.display !== '') return true;
+    }
+    return false;
+}
+window.isAnyModalOpen = isAnyModalOpen;
+
 function handleCanvasTapOrClick(clickX, clickY) {
+    if (isAnyModalOpen()) return;
+    if (window.isFurnitureDragging) return;
     if (window.wasFurnitureDragged) {
         window.wasFurnitureDragged = false;
         return;
@@ -1691,6 +2035,9 @@ function handleCanvasTapOrClick(clickX, clickY) {
     for (let id in players) {
         if (id === myId) continue;
         let p = players[id];
+        let isWearingInvis = !!(p.outfit === 'costume_invisibility' || p.outfit === 'outfit_invisibility' || p.costume === 'costume_invisibility');
+        let isInvis = !!isWearingInvis;
+        if (isInvis) continue; // Görünmez oyunculara tıklanamaz ve profilleri açılamaz!
         let dist = Math.hypot(worldX - p.x, worldY - p.y);
         if (dist <= 26) {
             clickedOtherPlayer = { id, player: p };
@@ -1704,11 +2051,17 @@ function handleCanvasTapOrClick(clickX, clickY) {
         return;
     }
 
-    // 2. ÖNCELİK: Kendi üzerine tıklayarak oturuyorsa ayağa kalkma
-    if (players[myId] && players[myId].action === 'sitting') {
+    // 2. ÖNCELİK: Kendi üzerine tıklama kontrolü (Oturuyorsa ayağa kalk, ayaktaysa profil aç)
+    if (players[myId]) {
         let myDist = Math.hypot(worldX - players[myId].x, worldY - players[myId].y);
         if (myDist <= 28) {
-            standUpIfSitting();
+            if (players[myId].action === 'sitting' || players[myId].action === 'sit_floor') {
+                standUpIfSitting();
+            } else {
+                if (typeof openMyPlayerProfile === 'function') {
+                    openMyPlayerProfile();
+                }
+            }
             return;
         }
     }
@@ -1721,7 +2074,7 @@ function handleCanvasTapOrClick(clickX, clickY) {
     if (clickedSeat && players[myId]) {
         let myP = players[myId];
         // Halihazırda oturuyorsa önce ayağa kalk
-        if (myP.action === 'sitting') {
+        if (myP.action === 'sitting' || myP.action === 'sit_floor') {
             standUpIfSitting();
         }
 
@@ -1765,7 +2118,7 @@ function handleCanvasTapOrClick(clickX, clickY) {
     // (openXoxModal(), openAmiralBattiModal(), openBlackjackModal() referansları)
     if (currentRoom === 'kafe' && typeof cafeTables !== 'undefined') {
         cafeTables.forEach(obj => {
-            if (clickX >= obj.x && clickX <= obj.x + obj.w && clickY >= obj.y && clickY <= obj.y + obj.h) {
+            if (clickX >= obj.x && clickX <= obj.x + obj.w && clickY >= obj.y && clickY <= obj.y + obj.h + 16) {
                 if (obj.id === 'xox' && typeof openXoxModal === 'function') openXoxModal();
                 else if (obj.id === 'amiral' && typeof openAmiralBattiModal === 'function') openAmiralBattiModal();
                 else if (obj.id === 'blackjack' && typeof openBlackjackModal === 'function') openBlackjackModal();
@@ -1781,7 +2134,7 @@ function handleCanvasTapOrClick(clickX, clickY) {
     }
 
     if (players[myId]) {
-        if (players[myId].action === 'sitting') {
+        if (players[myId].action === 'sitting' || players[myId].action === 'sit_floor') {
             standUpIfSitting();
         }
         let targetX, targetY;
@@ -1800,17 +2153,38 @@ function handleCanvasTapOrClick(clickX, clickY) {
     }
 }
 
-canvas.addEventListener('click', (e) => {
+canvas.addEventListener('pointerdown', (e) => {
+    if (!e.isPrimary) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (isAnyModalOpen()) return;
     const coords = getCanvasEventCoords(e);
     handleCanvasTapOrClick(coords.x, coords.y);
 });
 
-canvas.addEventListener('touchstart', (e) => {
-    if (e.touches && e.touches.length === 1) {
-        const coords = getCanvasEventCoords(e.touches[0]);
-        handleCanvasTapOrClick(coords.x, coords.y);
+// Tarayıcı yerel sürükleme ve seçim kutucuklarını (drag/select highlight) canvas üzerinde tamamen engelle
+canvas.addEventListener('mousedown', (e) => {
+    if (e.cancelable && e.button === 0) e.preventDefault();
+});
+canvas.addEventListener('dragstart', (e) => e.preventDefault());
+canvas.addEventListener('selectstart', (e) => e.preventDefault());
+
+// Global sayfa genelinde yeşil/mavi seçim çerçevelerini ve sürükleme hayaletlerini engelle
+document.addEventListener('dragstart', (e) => {
+    if (!e.target || !e.target.closest || !e.target.closest('[draggable="true"]')) {
+        e.preventDefault();
     }
-}, { passive: true });
+});
+document.addEventListener('selectstart', (e) => {
+    const tag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : '';
+    if (tag !== 'input' && tag !== 'textarea' && !e.target.isContentEditable) {
+        e.preventDefault();
+    }
+});
+
+// Mobil tarayıcılarda canvas üzerinde kaydırma ve çekme (pull-to-refresh / rubber-banding) engeli
+canvas.addEventListener('touchstart', (e) => {
+    if (e.cancelable) e.preventDefault();
+}, { passive: false });
 
 // Mekana / Kapıya / Koridora Tıklayınca Yürüyüp Öyle Geçiş Yapma Motoru
 function navigatePlayerToDoor(targetDoorX, targetDoorY, targetRoom, onReachAction) {
@@ -2091,6 +2465,28 @@ window.addEventListener('keydown', (e) => {
     if (rouletteModal && rouletteModal.style.display === 'flex') return;
     let slotModal = document.getElementById('slotModal');
     if (slotModal && slotModal.style.display === 'flex') return;
+    let petShopMod = document.getElementById('petShopModal');
+    if (petShopMod && petShopMod.style.display === 'flex') return;
+    let petNursery = document.getElementById('petNurseryModal');
+    if (petNursery && petNursery.style.display === 'flex') return;
+    let petPolaroid = document.getElementById('petPolaroidModal');
+    if (petPolaroid && petPolaroid.style.display === 'flex') return;
+    let petWardrobe = document.getElementById('petWardrobeModal');
+    if (petWardrobe && petWardrobe.style.display === 'flex') return;
+    let petVet = document.getElementById('petVetModal');
+    if (petVet && petVet.style.display === 'flex') return;
+    let petBreeding = document.getElementById('petBreedingModal');
+    if (petBreeding && petBreeding.style.display === 'flex') return;
+    let petDerby = document.getElementById('petDerbyModal');
+    if (petDerby && petDerby.style.display === 'flex') return;
+    let petGarden = document.getElementById('petGardenModal');
+    if (petGarden && petGarden.style.display === 'flex') return;
+
+    if (e.key.toLowerCase() === 'f' && isWearingZombieCostume(players[myId])) {
+        e.preventDefault();
+        if (!e.repeat) triggerZombieAttack();
+        return;
+    }
 
     let wasdAllowed = !window.movementSettings || window.movementSettings.wasdEnabled !== false;
     if (wasdAllowed) {
@@ -2102,7 +2498,9 @@ window.addEventListener('keydown', (e) => {
         update8WayFacingFromKeys();
     }
 
-    if (e.key === 'e' || e.key === 'E') { triggerMobileInteract(); }
+    if (e.key === 'e' || e.key === 'E') {
+        if (!e.repeat) triggerMobileInteract();
+    }
 });
 
 window.addEventListener('keyup', (e) => {
@@ -2138,11 +2536,15 @@ function triggerMobileInteract() {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
         try { navigator.vibrate(20); } catch (e) { }
     }
+    if (window.miningClient && typeof window.miningClient.handleMobileInteract === 'function') {
+        if (window.miningClient.handleMobileInteract()) return;
+    }
     if (!players[myId]) return;
     let p = players[myId];
 
     // 1. Zaten oturuyorsa E tuşuna basınca AYAĞA KALK
-    if (p.action === 'sitting') {
+    if (p.action === 'sitting' || p.action === 'sit_floor') {
+        const wasFloor = (p.action === 'sit_floor');
         standUpIfSitting();
         return;
     }
@@ -2197,6 +2599,7 @@ let lastEmittedSprinting = false;
 let lastGameLoopTime = 0;
 const MOVEMENT_EMIT_INTERVAL_MS = 38; // ~26 Hz (Ağı şişirmeyen, mükemmel pürüzsüz ağ güncelleme sıklığı)
 const _playerSortPool = []; // Sıfır Garbage Collection (GC) derinlik sıralama havuzu
+const _entitySortPool = []; // Sıfır Garbage Collection (GC) Oyuncu ve Pet Birleşik Derinlik Havuzu
 
 function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
@@ -2218,6 +2621,9 @@ function gameLoop(timestamp) {
         sanalikaCamera.y = 0;
     }
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     let isCamActive = (currentRoom === 'sanalika_cadde' && (sanalikaCamera.x !== 0 || sanalikaCamera.y !== 0));
@@ -2228,7 +2634,11 @@ function gameLoop(timestamp) {
 
     // 1. Ortamı Çiz
     if (currentRoom === "kafe") {
-        drawCafeEnvironment();
+        if (typeof drawOyunSalonuEnvironment === 'function') {
+            drawOyunSalonuEnvironment();
+        } else {
+            drawCafeEnvironment();
+        }
     } else if (currentRoom === "sahil") {
         drawBeachEnvironment();
     } else if (currentRoom === "nargile_cafe") {
@@ -2253,6 +2663,34 @@ function gameLoop(timestamp) {
         if (typeof drawMeydanV2Environment === 'function') drawMeydanV2Environment();
     } else if (currentRoom === "sahilv2") {
         if (typeof drawSahilV2Environment === 'function') drawSahilV2Environment();
+    } else if (currentRoom === "sahil_yolu") {
+        if (typeof drawSahilYoluEnvironment === 'function') drawSahilYoluEnvironment();
+    } else if (currentRoom === "cadde2") {
+        if (typeof drawCadde2Environment === 'function') drawCadde2Environment();
+    } else if (currentRoom === "vip_club") {
+        if (typeof drawVipClubEnvironment === 'function') drawVipClubEnvironment();
+    } else if (currentRoom === "optika" || currentRoom === "optik") {
+        if (typeof drawOptikaEnvironment === 'function') drawOptikaEnvironment(ctx, now);
+    } else if (currentRoom === 'mine_cave') {
+        if (typeof drawMineCaveEnvironment === 'function') drawMineCaveEnvironment();
+    } else if (currentRoom === 'botanic_shop') {
+        if (typeof drawBotanicShopEnvironment === 'function') drawBotanicShopEnvironment();
+    } else if (currentRoom === 'pet_shop') {
+        if (typeof drawPetShopInteriorEnvironment === 'function') drawPetShopInteriorEnvironment();
+    } else if (currentRoom === "kultur_merkezi_lobi") {
+        if (typeof drawKulturLobiEnvironment === 'function') drawKulturLobiEnvironment();
+    } else if (currentRoom === "kultur_merkezi_sahne") {
+        if (typeof drawKulturSahneEnvironment === 'function') drawKulturSahneEnvironment();
+    } else if (currentRoom === "kultur_merkezi_kulis") {
+        if (typeof drawKulturKulisEnvironment === 'function') drawKulturKulisEnvironment();
+    } else if (currentRoom === "kultur_merkezi_sinema") {
+        if (typeof drawKulturSinemaEnvironment === 'function') drawKulturSinemaEnvironment();
+    } else if (currentRoom === "avm_kat1") {
+        if (typeof drawAvmMallEnvironment === 'function') drawAvmMallEnvironment('avm_kat1');
+    } else if (currentRoom === "avm_kat2") {
+        if (typeof drawAvmMallEnvironment === 'function') drawAvmMallEnvironment('avm_kat2');
+    } else if (currentRoom && currentRoom.startsWith("avm_magaza_")) {
+        if (typeof drawAvmShopEnvironment === 'function') drawAvmShopEnvironment(currentRoom);
     } else if (currentRoom.startsWith("house_")) {
         if (typeof drawHouseEnvironment === 'function') drawHouseEnvironment();
     } else {
@@ -2301,7 +2739,8 @@ function gameLoop(timestamp) {
             ? (window.activeCompanionPets[myId] || Object.values(window.activeCompanionPets).find(pet => pet && (pet.ownerId === myId || pet.ownerName === players[myId].name)))
             : null;
         let hasCat = !!(myPet && myPet.petType === 'cat');
-        let speed = isMounted ? 5.2 : (hasCat ? 2.6 * 1.3 : 2.6);
+        let isSkateboarding = !!(players[myId] && players[myId].heldItem === 'k2_skateboard') && !isMounted && !players[myId].hasSwanBoat && (players[myId].action !== 'sitting') && (players[myId].action !== 'sit_floor');
+        let speed = isMounted ? 5.2 : (isSkateboarding ? 3.9 : (hasCat ? 2.6 * 1.3 : 2.6));
 
         // Kuğu Hız Kuralları (Sahil & Sahil V2): Kumsal/İskele 1x (2.6), Deniz/Su 2x (5.2)
         let isSwanInWater = false;
@@ -2325,8 +2764,20 @@ function gameLoop(timestamp) {
 
         let hasKeyInput = wasdAllowed && (keys.w || keys.s || keys.a || keys.d);
 
+        // Zeus'un Yıldırımı Kül / Çarpılma Hareketsizlik Kilidi
+        if (p && (p.isAshed || p.isElectrocuted || (p.ashedUntil && p.ashedUntil > Date.now()))) {
+            hasKeyInput = false;
+            targetWalkPos = null;
+        }
+        if (p.zombieStunnedUntil > Date.now()) {
+            hasKeyInput = false;
+            targetWalkPos = null;
+            p.vx = 0;
+            p.vy = 0;
+        }
+
         // 2. ADIM: Shift Tuşu ile Koşma (Sprint Dynamics - %42 Hız Artışı)
-        let isSprinting = !isMounted && !p.hasSwanBoat && hasKeyInput && !!(keys.shift) && (p.action !== 'sitting' && p.action !== 'dance' && !p.isFishing);
+        let isSprinting = !isMounted && !p.hasSwanBoat && hasKeyInput && !!(keys.shift) && (p.action !== 'sitting' && p.action !== 'sit_floor' && p.action !== 'dance' && !p.isFishing);
         if (isSprinting) {
             speed *= 1.42; // 2.6 -> ~3.70 Hız
         }
@@ -2607,12 +3058,13 @@ function gameLoop(timestamp) {
         if (pObj) {
             let entry = _playerSortPool[poolIdx];
             if (!entry) {
-                entry = { id: id, p: pObj, y: pObj.y || 0 };
+                entry = { id: id, p: pObj, y: pObj.y || 0, type: 'player' };
                 _playerSortPool[poolIdx] = entry;
             } else {
                 entry.id = id;
                 entry.p = pObj;
                 entry.y = pObj.y || 0;
+                entry.type = 'player';
             }
             poolIdx++;
         }
@@ -2625,9 +3077,89 @@ function gameLoop(timestamp) {
         Karakter2Renderer.updateAndDrawFootstepParticles(ctx);
     }
 
-    for (let i = 0; i < _playerSortPool.length; i++) {
-        let item = _playerSortPool[i];
-        drawAnimatedPlayer(item.p, item.id);
+    // Sauron Asası Lav Çatlakları (5 saniye boyunca zeminde akkor parlar, sonra söner)
+    if (typeof Karakter2Renderer !== 'undefined' && typeof Karakter2Renderer.updateAndDrawGroundCracks === 'function') {
+        Karakter2Renderer.updateAndDrawGroundCracks(ctx);
+    }
+
+    // Companion Pet'lerin (ve İzbandut Korumaların) Konum ve Animasyonlarını Güncelle
+    if (typeof updateCompanionPets === 'function') {
+        updateCompanionPets(dt);
+    }
+
+    // Bahçeli evde, Optik mağazasında veya AVM katlarında oyuncular Y-Sorting derinlik kuyruğuyla çizilir
+    let isGardenHouseActive = (typeof isCurrentlyInGardenHouse === 'function' && isCurrentlyInGardenHouse());
+    let isOptikActive = (typeof isCurrentlyInOptik === 'function' && isCurrentlyInOptik());
+    let isAvmActive = (currentRoom === 'avm_kat1' || currentRoom === 'avm_kat2');
+    if (isOptikActive && typeof drawOptikaForegroundAndPlayers === 'function') {
+        drawOptikaForegroundAndPlayers(ctx, now, _playerSortPool);
+    } else if (isAvmActive && typeof drawAvmMallForegroundAndPlayers === 'function') {
+        drawAvmMallForegroundAndPlayers(ctx, now, _playerSortPool, currentRoom);
+    } else if (!isGardenHouseActive) {
+        // Standart Odalarda (Cadde, VIP Club, Meydan, Botanik vb.) Oyuncu ve Petleri Birleşik Derinlik (Y) Sırasıyla Çiz
+        let entIdx = 0;
+        for (let i = 0; i < _playerSortPool.length; i++) {
+            let item = _playerSortPool[i];
+            let ent = _entitySortPool[entIdx];
+            if (!ent) {
+                ent = { type: 'player', y: item.y || 0, p: item.p, id: item.id, pet: null };
+                _entitySortPool[entIdx] = ent;
+            } else {
+                ent.type = 'player';
+                ent.y = item.y || 0;
+                ent.p = item.p;
+                ent.id = item.id;
+                ent.pet = null;
+            }
+            entIdx++;
+        }
+
+        if (window.activeCompanionPets) {
+            const curR = (typeof currentRoom !== 'undefined') ? currentRoom : window.currentRoom;
+            for (let petId in window.activeCompanionPets) {
+                let pet = window.activeCompanionPets[petId];
+                if (!pet) continue;
+                if (curR && pet.room && pet.room !== curR) continue;
+                let petSortY = (typeof pet.curY === 'number') ? pet.curY : (pet.y || 0);
+                let ent = _entitySortPool[entIdx];
+                if (!ent) {
+                    ent = { type: 'pet', y: petSortY, p: null, id: null, pet: pet };
+                    _entitySortPool[entIdx] = ent;
+                } else {
+                    ent.type = 'pet';
+                    ent.y = petSortY;
+                    ent.p = null;
+                    ent.id = null;
+                    ent.pet = pet;
+                }
+                entIdx++;
+            }
+        }
+        _entitySortPool.length = entIdx;
+        _entitySortPool.sort((a, b) => a.y - b.y);
+
+        window._companionPetsDrawnInDepthPool = true;
+        for (let i = 0; i < _entitySortPool.length; i++) {
+            let ent = _entitySortPool[i];
+            if (ent.type === 'player' && ent.p) {
+                const now = Date.now();
+                const hasRecoil = ent.p.recoilUntil && ent.p.recoilUntil > now;
+                if (hasRecoil) {
+                    ctx.save();
+                    const rem = (ent.p.recoilUntil - now) / 500;
+                    const rHop = Math.sin(rem * Math.PI);
+                    ctx.translate((ent.p.recoilX || 0) * rHop, (ent.p.recoilY || 0) * rHop);
+                }
+                drawAnimatedPlayer(ent.p, ent.id);
+                if (hasRecoil) {
+                    ctx.restore();
+                }
+            } else if (ent.type === 'pet' && ent.pet) {
+                if (typeof drawSingleCompanionPet === 'function') {
+                    drawSingleCompanionPet(ctx, ent.pet, ent.pet.curX, ent.pet.curY, Date.now());
+                }
+            }
+        }
     }
 
     if (typeof updateAndRenderFatherPets === 'function') {
@@ -2638,9 +3170,19 @@ function gameLoop(timestamp) {
         updateAndRenderCompanionPets(ctx, dt);
     }
 
+    // Fedai Can Siperi Savunma Efektleri (Kalkan şok dalgaları, kıvılcımlar ve telsiz dumanı)
+    if (typeof window.vipDefenseFx !== 'undefined' && typeof window.vipDefenseFx.draw === 'function') {
+        window.vipDefenseFx.draw(ctx, dt);
+    }
+
     // 5. Nargile Cafe Yoğun Ekran Dumanı (20. Fırt Felaketi: Tüm ekranı 5 sn kaplayıp kimseyi göstermez)
     if (currentRoom === 'nargile_cafe' && typeof window.drawNargileScreenSmoke === 'function') {
         window.drawNargileScreenSmoke(ctx);
+    }
+
+    // Zeus'un Yıldırımı İlahi Fırtına, Dönen Kara Bulut ve Şimşek Efektleri
+    if (typeof ZeusLightningEngine !== 'undefined' && typeof ZeusLightningEngine.drawSkyAndStorm === 'function') {
+        ZeusLightningEngine.drawSkyAndStorm(ctx, canvas.width, canvas.height);
     }
 
     // Kamera koordinat matrisini geri yükle
@@ -2760,3 +3302,78 @@ window.alert = function (msg) {
     showInGameAlert(msg, title, icon);
 };
 
+// --- 15. ODA DEĞİŞİMİ & GLOBAL TOAST BİLDİRİMLERİ ---
+// (VIP Club ve Tekinsiz Tekin Karaborsa istemci kodları public/js/vipClubClient.js modülüne taşınmıştır)
+(function initGlobalRoomAndToastSockets() {
+    const s = window.socket || (typeof io !== 'undefined' ? io() : null);
+    if (!s) return;
+
+    s.on('roomChanged', (data) => {
+        if (!data) return;
+        const targetRoom = typeof data === 'string' ? data : (data.room || null);
+        const targetSpawn = (typeof data === 'object' && data.spawn) ? data.spawn : null;
+        if (!targetRoom) return;
+        if (typeof changeRoom === 'function') {
+            changeRoom(targetRoom, targetSpawn);
+        }
+        if (typeof data === 'object' && data.money !== undefined) {
+            if (typeof userMoney !== 'undefined') userMoney = data.money;
+            let moneyEl = document.getElementById('userMoneyDisplay');
+            if (moneyEl) moneyEl.innerText = data.money.toLocaleString('tr-TR');
+        }
+    });
+
+    s.on('toastNotification', (data) => {
+        if (!data) return;
+        const msg = typeof data === 'string' ? data : (data.message || data.text || data.title || '');
+        if (typeof showFloatingToast === 'function') {
+            showFloatingToast(msg);
+        } else if (typeof showSocialNotificationToast === 'function') {
+            showSocialNotificationToast(data.icon || '🎰', data.title || 'Bildirim', msg);
+        }
+    });
+})();
+
+// --- 📱 MOBİL VIRTUAL KEYBOARD, BATARYA VE UYKU MODU OPTİMİZASYONU ---
+if (typeof window !== 'undefined' && window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+        const keyboardHeight = window.innerHeight - window.visualViewport.height;
+        const bottomBar = document.getElementById('gameBottomControlBar');
+        if (bottomBar) {
+            if (keyboardHeight > 140) {
+                bottomBar.style.transform = `translateY(-${keyboardHeight - 6}px)`;
+                bottomBar.style.zIndex = '15000';
+            } else {
+                bottomBar.style.transform = '';
+                bottomBar.style.zIndex = '';
+            }
+        }
+    });
+}
+
+document.addEventListener('focusout', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        setTimeout(() => {
+            window.scrollTo(0, 0);
+            const bottomBar = document.getElementById('gameBottomControlBar');
+            if (bottomBar) {
+                bottomBar.style.transform = '';
+                bottomBar.style.zIndex = '';
+            }
+        }, 80);
+    }
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        if (typeof players !== 'undefined' && typeof myId !== 'undefined' && players[myId]) {
+            players[myId].isMoving = false;
+        }
+    } else {
+        lastGameLoopTime = performance.now();
+        if (typeof window.audioCtx !== 'undefined' && window.audioCtx && window.audioCtx.state === 'suspended') {
+            window.audioCtx.resume().catch(() => {});
+        }
+        if (typeof updateCanvasRect === 'function') updateCanvasRect();
+    }
+});

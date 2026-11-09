@@ -8,9 +8,67 @@ const User = require('./models/User');
 const DATA_FILE = config.DATA_FILE;
 const BACKUP_FILE = config.BACKUP_FILE;
 
+// --- 0. DIRTY TRACKING (SADECE DEĞİŞEN VERİLERİ YAZMA) & PROXY MOTORU ---
+const dirtyUsers = new Set();
+
+function markUserDirty(username) {
+    if (!username || typeof username !== 'string') return;
+    const uKey = findUserKey(username) || username;
+    dirtyUsers.add(uKey);
+}
+
+function createDeepDirtyProxy(targetObj, rootUsername) {
+    if (!targetObj || typeof targetObj !== 'object') return targetObj;
+    return new Proxy(targetObj, {
+        get(target, prop) {
+            const val = target[prop];
+            if (val && typeof val === 'object') {
+                return createDeepDirtyProxy(val, rootUsername);
+            }
+            return val;
+        },
+        set(target, prop, value) {
+            target[prop] = value;
+            dirtyUsers.add(rootUsername);
+            return true;
+        },
+        deleteProperty(target, prop) {
+            delete target[prop];
+            dirtyUsers.add(rootUsername);
+            return true;
+        }
+    });
+}
+
+function createUsersProxy(rawObj = {}) {
+    return new Proxy(rawObj, {
+        get(target, prop) {
+            const val = target[prop];
+            if (val && typeof val === 'object' && typeof prop === 'string') {
+                return createDeepDirtyProxy(val, prop);
+            }
+            return val;
+        },
+        set(target, prop, value) {
+            target[prop] = value;
+            if (typeof prop === 'string') {
+                dirtyUsers.add(prop);
+            }
+            return true;
+        },
+        deleteProperty(target, prop) {
+            delete target[prop];
+            if (typeof prop === 'string') {
+                dirtyUsers.delete(prop);
+            }
+            return true;
+        }
+    });
+}
+
 // Bellek İçi Hızlı Erişim & Çalışma Zamanı Havuzu
 let persistentData = {
-    users: {},
+    users: createUsersProxy({}),
     leaderboard: {
         billiard: {},
         batak: {},
@@ -18,8 +76,34 @@ let persistentData = {
         okey101: {},
         xox: {},
         amiral: {}
+    },
+    botanicMarketStock: {
+        papatya: 20,
+        lale: 20,
+        gul: 20,
+        lavanta: 20,
+        orkide: 20,
+        aycicegi: 20
     }
 };
+
+let diskBackupTimer = null;
+function scheduleDiskBackup() {
+    if (diskBackupTimer) return;
+    diskBackupTimer = setTimeout(() => {
+        diskBackupTimer = null;
+        try {
+            const dataToSave = {
+                users: persistentData.users,
+                leaderboard: persistentData.leaderboard,
+                botanicMarketStock: persistentData.botanicMarketStock || { papatya: 20, lale: 20, gul: 20, lavanta: 20, orkide: 20, aycicegi: 20 }
+            };
+            const tempFile = DATA_FILE + '.tmp';
+            fs.writeFileSync(tempFile, JSON.stringify(dataToSave, null, 2), 'utf-8');
+            fs.renameSync(tempFile, DATA_FILE);
+        } catch (e) { console.warn('Disk backup:', e.message); }
+    }, 1500);
+}
 
 // --- 1. KRİPTOGRAFİK ŞİFRELEME (SCRYPT İLE GÜVENLİ HASH) ---
 function hashPassword(password, salt) {
@@ -63,12 +147,15 @@ async function saveUserData(username, updateFields = null) {
             const updateDoc = { ...dataToSave };
             delete updateDoc._id;
             delete updateDoc.__v;
+            updateDoc.username = uKey;
+
             const safePattern = escapeRegex(uKey);
-            await User.findOneAndUpdate(
+            await User.updateOne(
                 { username: { $regex: new RegExp(`^${safePattern}$`, 'i') } },
                 { $set: updateDoc },
-                { upsert: true, new: true }
+                { upsert: true }
             );
+            dirtyUsers.delete(uKey);
         } catch (err) {
             console.error(`❌ [MONGODB HATA]: ${username} kullanıcısı kaydedilemedi:`, err.message);
         }
@@ -76,11 +163,11 @@ async function saveUserData(username, updateFields = null) {
 
     // Yerel data.json yedeğini daima senkronize tut
     try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(persistentData, null, 2), 'utf-8');
-    } catch (_) {}
+        scheduleDiskBackup();
+    } catch (_) { }
 }
 
-async function savePersistentData(targetUsername = null) {
+async function savePersistentData(targetUsername = null, forceAll = false) {
     if (targetUsername) {
         await saveUserData(targetUsername);
         return;
@@ -88,22 +175,32 @@ async function savePersistentData(targetUsername = null) {
 
     if (mongoose.connection.readyState === 1) {
         try {
-            const bulkOps = [];
-            for (const [uname, uData] of Object.entries(persistentData.users)) {
-                const doc = { ...uData };
-                delete doc._id;
-                delete doc.__v;
-                const safePattern = escapeRegex(uname);
-                bulkOps.push({
-                    updateOne: {
-                        filter: { username: { $regex: new RegExp(`^${safePattern}$`, 'i') } },
-                        update: { $set: doc },
-                        upsert: true
-                    }
-                });
-            }
-            if (bulkOps.length > 0) {
-                await User.bulkWrite(bulkOps);
+            // Yalnızca verisi değişen ("dirty") kullanıcıları kaydet, değişmemiş yüzlerce kullanıcıyı yazma
+            const usersToSave = forceAll ? Object.keys(persistentData.users) : Array.from(dirtyUsers);
+            if (usersToSave.length > 0) {
+                const bulkOps = [];
+                for (const uname of usersToSave) {
+                    const uData = persistentData.users[uname];
+                    if (!uData) continue;
+                    const doc = { ...uData };
+                    delete doc._id;
+                    delete doc.__v;
+                    doc.username = uname;
+                    const safePattern = escapeRegex(uname);
+                    bulkOps.push({
+                        updateOne: {
+                            filter: { username: { $regex: new RegExp(`^${safePattern}$`, 'i') } },
+                            update: { $set: doc },
+                            upsert: true
+                        }
+                    });
+                }
+                if (bulkOps.length > 0) {
+                    await User.bulkWrite(bulkOps, { ordered: false });
+                }
+                for (const u of usersToSave) {
+                    dirtyUsers.delete(u);
+                }
             }
         } catch (err) {
             console.error('❌ [MONGODB HATA]: Toplu kayıt hatası:', err.message);
@@ -112,8 +209,8 @@ async function savePersistentData(targetUsername = null) {
 
     // Yerel data.json yedeğini ve liderlik tablosunu (leaderboard) daima senkronize tut
     try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(persistentData, null, 2), 'utf-8');
-    } catch (_) {}
+        scheduleDiskBackup();
+    } catch (_) { }
 }
 
 // Geriye dönük uyumluluk aliasları
@@ -130,10 +227,12 @@ async function loadPersistentData() {
     if (mongoose.connection.readyState === 1) {
         try {
             const users = await User.find({}).lean();
-            persistentData.users = {};
+            const rawMap = {};
             for (const u of users) {
-                persistentData.users[u.username] = u;
+                rawMap[u.username] = u;
             }
+            persistentData.users = createUsersProxy(rawMap);
+            dirtyUsers.clear();
             console.log(`🍃 [MONGODB]: Kalıcı veriler MongoDB'den yüklendi (${users.length} kullanıcı).`);
             return;
         } catch (err) {
@@ -146,7 +245,9 @@ async function loadPersistentData() {
         try {
             const content = fs.readFileSync(DATA_FILE, 'utf-8');
             const parsed = JSON.parse(content);
-            persistentData.users = parsed.users || {};
+            persistentData.users = createUsersProxy(parsed.users || {});
+            dirtyUsers.clear();
+            persistentData.botanicMarketStock = parsed.botanicMarketStock || { papatya: 20, lale: 20, gul: 20, lavanta: 20, orkide: 20, aycicegi: 20 };
             persistentData.leaderboard = parsed.leaderboard || { billiard: {}, batak: {}, tavla: {}, okey101: {}, xox: {}, amiral: {} };
             console.log(`📁 Yerel önbellekten veriler yüklendi (${Object.keys(persistentData.users).length} kullanıcı).`);
         } catch (e) {
@@ -159,38 +260,54 @@ async function loadPersistentData() {
 async function syncDataJsonToMongo() {
     if (mongoose.connection.readyState !== 1) return;
     try {
-        const count = await User.countDocuments();
-        if (count === 0 && fs.existsSync(DATA_FILE)) {
-            console.log('🍃 [MONGODB]: MongoDB kullanıcı koleksiyonu boş. data.json verileri aktarılıyor...');
+        console.log('🍃 [MONGODB]: data.json ve MongoDB iki yönlü senkronize ediliyor...');
+
+        // 1. data.json'daki TÜM kullanıcıları kontrol et: MongoDB'de eksik olanları ekle
+        if (fs.existsSync(DATA_FILE)) {
             const raw = fs.readFileSync(DATA_FILE, 'utf8');
             const parsed = JSON.parse(raw);
-            const userDocs = [];
-            for (const [uname, u] of Object.entries(parsed.users || {})) {
-                userDocs.push({
-                    username: uname,
-                    ...u
-                });
+            const localUsers = parsed.users || {};
+            let addedCount = 0;
+
+            for (const [uname, u] of Object.entries(localUsers)) {
+                try {
+                    const existing = await User.findByUsername(uname);
+                    if (!existing) {
+                        const doc = { ...u, username: uname };
+                        delete doc._id;
+                        delete doc.__v;
+                        await User.create(doc);
+                        addedCount++;
+                    }
+                } catch (userErr) {
+                    // Tek bir kullanıcının hatası diğerlerini engellemesin
+                }
             }
-            if (userDocs.length > 0) {
-                await User.insertMany(userDocs, { ordered: false });
-                console.log(`✅ [MONGODB]: ${userDocs.length} adet kullanıcı MongoDB'ye başarıyla aktarıldı!`);
+            if (addedCount > 0) {
+                console.log(`✅ [MONGODB]: data.json içindeki ${addedCount} adet eksik kullanıcı MongoDB'ye başarıyla aktarıldı!`);
             }
         }
 
-        // Güncel verileri MongoDB'den belleğe çek
+        // 2. Güncel kullanıcı listesini MongoDB'den çek ve belleği güncelle
         const allUsers = await User.find({}).lean();
+        const rawMap = {};
         for (const u of allUsers) {
-            persistentData.users[u.username] = u;
+            rawMap[u.username] = u;
         }
+        persistentData.users = createUsersProxy(rawMap);
+        dirtyUsers.clear();
 
         // Canlı moderatör rolü güvencesi (Elyesa)
         let elyesaKey = findUserKey('elyesa') || 'Elyesa';
         if (persistentData.users[elyesaKey]) {
             persistentData.users[elyesaKey].role = 'mod';
             persistentData.users[elyesaKey].isMod = true;
-            await User.updateOne({ username: /^elyesa$/i }, { $set: { role: 'mod', isMod: true } }).catch(() => {});
+            await User.updateOne({ username: /^elyesa$/i }, { $set: { role: 'mod', isMod: true } }).catch(() => { });
         }
-        console.log(`🍃 [MONGODB]: Canlı veriler MongoDB ile senkronize edildi (${allUsers.length} kullanıcı).`);
+
+        // 3. Yerel data.json dosyasını da MongoDB ile tam eşit tut
+        scheduleDiskBackup();
+        console.log(`🍃 [MONGODB]: Canlı veriler MongoDB ile senkronize edildi (${allUsers.length} kullanıcı aktif).`);
     } catch (err) {
         console.error('❌ [MONGODB]: Senkronizasyon hatası:', err.message);
     }
@@ -285,9 +402,9 @@ async function loginUser(rawName, password, playersOnline = {}) {
     }
 
     if (!existingKey || !uData) {
-        return { 
-            success: false, 
-            message: "❌ Böyle bir hesap bulunamadı! Henüz hesabınız yoksa lütfen 'Kayıt Ol' sekmesini kullanın." 
+        return {
+            success: false,
+            message: "❌ Böyle bir hesap bulunamadı! Henüz hesabınız yoksa lütfen 'Kayıt Ol' sekmesini kullanın."
         };
     }
 
@@ -364,15 +481,15 @@ async function registerUser(rawName, password, gender = 'male') {
     if (mongoose.connection.readyState === 1) {
         const existing = await User.findByUsername(cleanName);
         if (existing) {
-            return { 
-                success: false, 
-                message: "❌ Bu kullanıcı adı zaten alınmış! Lütfen başka bir ad seçin veya 'Giriş Yap' sekmesini kullanın." 
+            return {
+                success: false,
+                message: "❌ Bu kullanıcı adı zaten alınmış! Lütfen başka bir ad seçin veya 'Giriş Yap' sekmesini kullanın."
             };
         }
     } else if (findUserKey(cleanName)) {
-        return { 
-            success: false, 
-            message: "❌ Bu kullanıcı adı zaten alınmış! Lütfen başka bir ad seçin veya 'Giriş Yap' sekmesini kullanın." 
+        return {
+            success: false,
+            message: "❌ Bu kullanıcı adı zaten alınmış! Lütfen başka bir ad seçin veya 'Giriş Yap' sekmesini kullanın."
         };
     }
 
@@ -382,14 +499,28 @@ async function registerUser(rawName, password, gender = 'male') {
     const newUser = {
         username: cleanName,
         money: 1000,
+        diamonds: 0,
+        level: 1,
+        totalXP: 0,
+        dailyReward: {
+            currentDay: 0,
+            lastClaimDate: null,
+            freezesUsed: 0,
+            totalClaims: 0
+        },
         gender: gender || 'male',
         auth: { hash, salt },
         role: isUserAdmin(cleanName) ? 'admin' : (isUserMod(cleanName) ? 'mod' : 'user'),
         isAdmin: isUserAdmin(cleanName),
         isMod: isUserMod(cleanName),
+        badgeUnlockOrder: ['resident'],
+        minedRocksCount: 0,
+        botanicHarvestCount: 0,
+        gamerGamesCount: 0,
         avatar: {
             model: 'classic_2',
-            hat: isFem ? 'hair_long' : 'bere',
+            hat: isFem ? 'none' : 'bere',
+            hair: isFem ? 'hair_long' : 'none',
             face: 'none',
             skinColor: '#ffd1a4',
             shirtColor: isFem ? 'dress_pink' : '#3b82f6',
@@ -397,15 +528,33 @@ async function registerUser(rawName, password, gender = 'male') {
             heldItem: 'none',
             shoes: isFem ? 'flats' : 'sneakers'
         },
-        inventory: isFem 
-            ? ['hats_hair_long', 'skins_#ffd1a4', 'shirts_dress_pink', 'shoes_flats', 'face_none', 'props_none']
+        inventory: isFem
+            ? ['hair_hair_long', 'skins_#ffd1a4', 'shirts_dress_pink', 'shoes_flats', 'face_none', 'props_none']
             : ['hats_bere', 'skins_#facc15', 'shirts_#3b82f6', 'shoes_sneakers', 'face_none', 'props_none'],
         friends: [],
         friendRequests: [],
         house: null,
         houses: {},
         furnitureInventory: [],
-        propInventory: {}
+        propInventory: {},
+        likes: 0,
+        dislikes: 0,
+        ratings: {},
+        motto: "",
+        mood: 'happy',
+        fishCaughtCount: 0,
+        minedCount: 0,
+        botanicHarvestPoints: 0,
+        batakGamesCount: 0,
+        okeyGamesCount: 0,
+        tavlaGamesCount: 0,
+        billiardGamesCount: 0,
+        chessGamesCount: 0,
+        amiralBattiGamesCount: 0,
+        xoxGamesCount: 0,
+        standupCount: 0,
+        ganyanBetsCount: 0,
+        createdAt: Date.now()
     };
 
     if (mongoose.connection.readyState === 1) {
@@ -614,7 +763,402 @@ async function claimQuestReward(username, questId) {
     };
 }
 
+let serverContext = {
+    io: null,
+    players: null
+};
+
+function setServerContext(io, players) {
+    serverContext.io = io;
+    serverContext.players = players;
+}
+
+const BADGE_TIER_TABLES = {
+    gamer: [
+        { level: 1, min: 1, max: 9, title: "Acemi Oyuncu" },
+        { level: 2, min: 10, max: 24, title: "Masa yancısı" },
+        { level: 3, min: 25, max: 49, title: "Kıdemli Oyuncu" },
+        { level: 4, min: 50, max: 99, title: "Uzman Oyuncu" },
+        { level: 5, min: 100, max: 199, title: "Usta Oyuncu" },
+        { level: 6, min: 200, max: 349, title: "Büyük Usta" },
+        { level: 7, min: 350, max: 599, title: "Racon Kesici" },
+        { level: 8, min: 600, max: 999, title: "Şampiyon" },
+        { level: 9, min: 1000, max: 1499, title: "Hükümdar" },
+        { level: 10, min: 1500, max: 9999999, title: "Oyunbaz" }
+    ],
+    botanic: [
+        { level: 1, min: 1, max: 14, title: "Acemi Bahçıvan" },
+        { level: 2, min: 15, max: 49, title: "Çırak Bahçıvan" },
+        { level: 3, min: 50, max: 99, title: "Kıdemli Bahçıvan" },
+        { level: 4, min: 100, max: 199, title: "Uzman Bahçıvan" },
+        { level: 5, min: 200, max: 399, title: "Usta Bahçıvan" },
+        { level: 6, min: 400, max: 749, title: "Botanik Uzmanı" },
+        { level: 7, min: 750, max: 1249, title: "Çiçek Üstadı" },
+        { level: 8, min: 1250, max: 1999, title: "Botanik Şampiyonu" },
+        { level: 9, min: 2000, max: 3499, title: "Flora Hükümdarı" },
+        { level: 10, min: 3500, max: 9999999, title: "Efsanevi Botanikçi" }
+    ],
+    fish: [
+        { level: 1, min: 1, max: 24, title: "Acemi Balıkçı" },
+        { level: 2, min: 25, max: 99, title: "Çırak Balıkçı" },
+        { level: 3, min: 100, max: 199, title: "Kıdemli Balıkçı" },
+        { level: 4, min: 200, max: 399, title: "Uzman Balıkçı" },
+        { level: 5, min: 400, max: 799, title: "Usta Balıkçı" },
+        { level: 6, min: 800, max: 1599, title: "Kaptan Balıkçı" },
+        { level: 7, min: 1600, max: 3199, title: "Deniz Kurdu" },
+        { level: 8, min: 3200, max: 5999, title: "Okyanus Avcısı" },
+        { level: 9, min: 6000, max: 9999, title: "Denizler Hükümdarı" },
+        { level: 10, min: 10000, max: 9999999, title: "Poseidon'un Varisi" }
+    ],
+    mining: [
+        { level: 1, min: 1, max: 24, title: "Acemi Madenci" },
+        { level: 2, min: 25, max: 99, title: "Çırak Madenci" },
+        { level: 3, min: 100, max: 199, title: "Kıdemli Madenci" },
+        { level: 4, min: 200, max: 399, title: "Uzman Madenci" },
+        { level: 5, min: 400, max: 799, title: "Usta Madenci" },
+        { level: 6, min: 800, max: 1599, title: "Cevher Avcısı" },
+        { level: 7, min: 1600, max: 3199, title: "Derin Kazıcı" },
+        { level: 8, min: 3200, max: 5999, title: "Maden Şampiyonu" },
+        { level: 9, min: 6000, max: 9999, title: "Yeraltı Hükümdarı" },
+        { level: 10, min: 10000, max: 9999999, title: "Efsanevi Kazıcı" }
+    ],
+    resident: [
+        { level: 1, min: 1, max: 3, title: "Yeni Sakin" },
+        { level: 2, min: 4, max: 7, title: "1 Haftalık" },
+        { level: 3, min: 8, max: 14, title: "2 Haftalık" },
+        { level: 4, min: 15, max: 30, title: "1 Aylık" },
+        { level: 5, min: 31, max: 60, title: "2 Aylık" },
+        { level: 6, min: 61, max: 90, title: "3 Aylık" },
+        { level: 7, min: 91, max: 180, title: "Kıdemli Sakin" },
+        { level: 8, min: 181, max: 270, title: "Vatandaş" },
+        { level: 9, min: 271, max: 365, title: "Onursal Sakin" },
+        { level: 10, min: 366, max: 9999999, title: "Metaverse Kurucusu" }
+    ]
+};
+BADGE_TIER_TABLES.fishing = BADGE_TIER_TABLES.fish;
+
+function getBadgeThresholdList(badgeKey, isSeniority = false) {
+    if (isSeniority || badgeKey === 'resident') return BADGE_TIER_TABLES.resident;
+    if (badgeKey && BADGE_TIER_TABLES[badgeKey]) return BADGE_TIER_TABLES[badgeKey];
+    return BADGE_TIER_TABLES.gamer;
+}
+
+const UNIVERSAL_THRESHOLDS = BADGE_TIER_TABLES.gamer;
+const SENIORITY_THRESHOLDS = BADGE_TIER_TABLES.resident;
+
+const BADGE_CONFIG = {
+    botanic: {
+        id: 'botanic',
+        name: 'Botanik Rozeti',
+        shortName: 'Botanik',
+        icon: '🌿',
+        statKey: 'botanicHarvestCount',
+        unit: 'Hasat',
+        isSeniority: false
+    },
+    gamer: {
+        id: 'gamer',
+        name: 'Oyunbaz',
+        shortName: 'Oyunbaz',
+        icon: '🎮',
+        statKey: 'gamerGamesCount',
+        unit: 'El',
+        isSeniority: false
+    },
+    mining: {
+        id: 'mining',
+        name: 'Madencilik',
+        shortName: 'Madencilik',
+        icon: '⛏️',
+        statKey: 'minedRocksCount',
+        unit: 'Kaya',
+        isSeniority: false
+    },
+    fish: {
+        id: 'fish',
+        name: 'Balıkçılık',
+        shortName: 'Balıkçılık',
+        icon: '🎣',
+        statKey: 'fishCaughtCount',
+        unit: 'Balık',
+        isSeniority: false
+    },
+    standup: {
+        id: 'standup',
+        name: 'Stand-Up Yıldızı',
+        shortName: 'Stand-Up',
+        icon: '🎙️',
+        statKey: 'standupCount',
+        unit: 'Gösteri',
+        isSeniority: false
+    },
+    ganyan: {
+        id: 'ganyan',
+        name: 'Ganyan Şampiyonu',
+        shortName: 'Ganyan',
+        icon: '🏇',
+        statKey: 'ganyanBetsCount',
+        unit: 'Kupon',
+        isSeniority: false
+    },
+    resident: {
+        id: 'resident',
+        name: 'Metaverse Sakini',
+        shortName: 'Sakin',
+        icon: '⭐',
+        statKey: 'totalXP',
+        unit: 'XP',
+        isSeniority: false,
+        isLevel: true
+    }
+};
+BADGE_CONFIG.fishing = BADGE_CONFIG.fish;
+
+function calculateBadgeTier(count, isSeniority = false, badgeKey = null) {
+    count = Number(count) || 0;
+    if (count <= 0) return 0;
+    const list = getBadgeThresholdList(badgeKey, isSeniority);
+    for (const t of list) {
+        if (count >= t.min && count <= t.max) {
+            return t.level;
+        }
+    }
+    return 10;
+}
+
+function getBadgeThresholdInfo(level, isSeniority = false, badgeKey = null) {
+    const list = getBadgeThresholdList(badgeKey, isSeniority);
+    return list.find(t => t.level === level) || list[list.length - 1];
+}
+
+function checkAndAwardBadgeLevelUp(username, badgeKey, oldCount, newCount) {
+    if (!username) return;
+    const userKey = findUserKey(username) || username;
+    const user = persistentData.users[userKey];
+    if (!user) return;
+
+    if (badgeKey === 'fishing') badgeKey = 'fish';
+
+    const badgeCfg = BADGE_CONFIG[badgeKey] || BADGE_CONFIG.fish;
+    if (!badgeCfg) return;
+
+    // Oyuncunun mevcut sayacını belirle
+    let currentCount = (newCount !== undefined && newCount !== null) ? Number(newCount) : Number(user[badgeCfg.statKey] || 0);
+    if (badgeKey === 'mining') {
+        currentCount = Math.max(Number(user.minedRocksCount || 0), Number(user.minedCount || 0), currentCount);
+    } else if (badgeKey === 'botanic') {
+        currentCount = Math.max(Number(user.botanicHarvestCount || 0), Number(user.botanicHarvestPoints || 0), currentCount);
+    } else if (badgeKey === 'gamer') {
+        currentCount = Math.max(Number(user.gamerGamesCount || 0), currentCount);
+    } else if (badgeKey === 'fish' || badgeKey === 'fishing') {
+        currentCount = Math.max(Number(user.fishCaughtCount || 0), currentCount);
+    }
+
+    const targetLevel = calculateBadgeTier(currentCount, badgeCfg.isSeniority, badgeKey);
+    if (targetLevel < 1) return;
+
+    if (!user.claimedBadgeLevels) user.claimedBadgeLevels = {};
+    if (!Array.isArray(user.claimedBadgeLevels[badgeKey])) {
+        user.claimedBadgeLevels[badgeKey] = [];
+    }
+
+    // badgeUnlockOrder'a ekle (Rozet vitrininde yer alması için)
+    if (!Array.isArray(user.badgeUnlockOrder)) {
+        user.badgeUnlockOrder = ['resident'];
+    }
+    const bUnlockKey = (badgeKey === 'fish') ? 'fishing' : badgeKey;
+    if (!user.badgeUnlockOrder.includes(bUnlockKey)) {
+        user.badgeUnlockOrder.push(bUnlockKey);
+    }
+
+    let hasAwarded = false;
+    // 1'den hedef seviyeye kadar henüz alınmamış TÜM seviye ödüllerini eksiksiz ver (1. seviye dahil!)
+    for (let lvl = 1; lvl <= targetLevel; lvl++) {
+        if (user.claimedBadgeLevels[badgeKey].includes(lvl)) continue;
+        user.claimedBadgeLevels[badgeKey].push(lvl);
+        hasAwarded = true;
+
+        // Kullanıcı kuralı: 1. seviye 1000 TL & 5 elmas; katlanarak gider (lvl * 1000 TL ve lvl * 5 elmas)
+        const rewardMoney = lvl * 1000;
+        const rewardDiamonds = lvl * 5;
+
+        user.money = (Number(user.money) || 0) + rewardMoney;
+        user.diamonds = (Number(user.diamonds) || 0) + rewardDiamonds;
+
+        const info = getBadgeThresholdInfo(lvl, badgeCfg.isSeniority, badgeKey);
+        const rankTitle = info ? info.title : `${lvl}. Seviye`;
+
+        const payload = {
+            badgeId: bUnlockKey,
+            badgeName: badgeCfg.name,
+            shortName: badgeCfg.shortName,
+            badgeIcon: badgeCfg.icon,
+            level: lvl,
+            rankTitle: rankTitle,
+            rewardMoney: rewardMoney,
+            rewardDiamonds: rewardDiamonds,
+            newMoney: user.money,
+            newDiamonds: user.diamonds
+        };
+
+        let targetSocket = null;
+        if (serverContext.players) {
+            for (let sId in serverContext.players) {
+                const p = serverContext.players[sId];
+                if (p && (p.name === username || p.username === username)) {
+                    p.money = user.money;
+                    p.diamonds = user.diamonds;
+                    if (serverContext.io && serverContext.io.sockets && serverContext.io.sockets.sockets) {
+                        targetSocket = serverContext.io.sockets.sockets.get(sId);
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (targetSocket) {
+            targetSocket.emit('badgeLevelUp', payload);
+            targetSocket.emit('moneyUpdate', user.money);
+            targetSocket.emit('diamondUpdate', user.diamonds);
+            targetSocket.emit('systemMessage', `🎉 TEBRİKLER! ${badgeCfg.name} ${lvl}. Seviyeye ulaştınız! Ödülünüz: +${rewardMoney.toLocaleString('tr-TR')} TL & +${rewardDiamonds} Elmas!`);
+        } else {
+            if (!user.pendingBadgeLevelUps) user.pendingBadgeLevelUps = [];
+            user.pendingBadgeLevelUps.push(payload);
+        }
+    }
+
+    if (hasAwarded) {
+        savePersistentData();
+    }
+}
+
+function checkAndAwardResidentLevel(username, seniorityDays) {
+    if (!username) return;
+    const userKey = findUserKey(username) || username;
+    const user = persistentData.users[userKey];
+    if (!user) return;
+
+    const days = Math.max(1, Number(seniorityDays) || 1);
+    const lastCheckedDays = user.lastCheckedSeniorityDays !== undefined ? user.lastCheckedSeniorityDays : 0;
+    
+    checkAndAwardBadgeLevelUp(username, 'resident', lastCheckedDays, days);
+    user.lastCheckedSeniorityDays = days;
+}
+
+function recordGamePlayed(username, gameKey, countMultiplier = 1) {
+    if (!username || typeof username !== 'string') return;
+    const userKey = findUserKey(username) || username;
+    const user = persistentData.users[userKey];
+    if (!user) return;
+
+    const multiplier = Math.max(1, Number(countMultiplier) || 1);
+
+    const boardGameKeys = ['gamer', 'batak', 'okey', 'okey101', 'tavla', 'billiard', 'chess', 'amiral', 'amiralbatti', 'xox', 'dostkazigi'];
+    const isBoardGame = boardGameKeys.includes(gameKey);
+
+    let oldGamerCount = 0;
+    let newGamerCount = 0;
+
+    if (isBoardGame) {
+        if (user.gamerGamesCount === undefined || user.gamerGamesCount === null) {
+            user.gamerGamesCount = (Number(user.batakGamesCount) || 0) +
+                                  (Number(user.okeyGamesCount) || 0) +
+                                  (Number(user.tavlaGamesCount) || 0) +
+                                  (Number(user.billiardGamesCount) || 0) +
+                                  (Number(user.chessGamesCount) || 0) +
+                                  (Number(user.amiralBattiGamesCount) || 0) +
+                                  (Number(user.xoxGamesCount) || 0) +
+                                  (Number(user.dostKazigiGamesCount) || 0);
+        }
+        oldGamerCount = Number(user.gamerGamesCount) || 0;
+        user.gamerGamesCount = oldGamerCount + multiplier;
+        newGamerCount = user.gamerGamesCount;
+    }
+
+    const fieldMap = {
+        'batak': 'batakGamesCount',
+        'okey': 'okeyGamesCount',
+        'okey101': 'okeyGamesCount',
+        'tavla': 'tavlaGamesCount',
+        'billiard': 'billiardGamesCount',
+        'chess': 'chessGamesCount',
+        'amiral': 'amiralBattiGamesCount',
+        'amiralbatti': 'amiralBattiGamesCount',
+        'xox': 'xoxGamesCount',
+        'dostkazigi': 'dostKazigiGamesCount',
+        'standup': 'standupCount',
+        'ganyan': 'ganyanBetsCount',
+        'fish': 'fishCaughtCount',
+        'fishing': 'fishCaughtCount',
+        'mining': 'minedRocksCount',
+        'botanic': 'botanicHarvestCount'
+    };
+
+    let oldSpecificCount = 0;
+    let newSpecificCount = 0;
+
+    if (fieldMap[gameKey]) {
+        const field = fieldMap[gameKey];
+        oldSpecificCount = Number(user[field]) || 0;
+        user[field] = oldSpecificCount + multiplier;
+        newSpecificCount = user[field];
+        if (gameKey === 'mining') {
+            user.minedCount = Number(user.minedCount || 0) + multiplier;
+        } else if (gameKey === 'botanic') {
+            user.botanicHarvestPoints = Number(user.botanicHarvestPoints || 0) + multiplier;
+        }
+    }
+
+    // Rozet kilit açma sırasını kaydet (Level/Resident daima ilk yuva)
+    if (!Array.isArray(user.badgeUnlockOrder)) {
+        user.badgeUnlockOrder = ['resident'];
+    } else {
+        // Eski 'fish' ve tahta oyunlarını normalize et
+        const legacyKeys = ['batak', 'okey', 'okey101', 'tavla', 'billiard', 'chess', 'amiral', 'amiralbatti', 'xox', 'dostkazigi'];
+        const normalized = [];
+        let gamerFound = false;
+        user.badgeUnlockOrder.forEach(k => {
+            if (k === 'fish') {
+                if (!normalized.includes('fishing')) normalized.push('fishing');
+            } else if (legacyKeys.includes(k) || k === 'gamer') {
+                if (!gamerFound) {
+                    normalized.push('gamer');
+                    gamerFound = true;
+                }
+            } else if (!normalized.includes(k)) {
+                normalized.push(k);
+            }
+        });
+        if (!normalized.includes('resident')) {
+            normalized.unshift('resident');
+        }
+        user.badgeUnlockOrder = normalized;
+    }
+    const badgeKey = isBoardGame ? 'gamer' : (gameKey === 'fish' ? 'fishing' : gameKey);
+    if (!user.badgeUnlockOrder.includes(badgeKey)) {
+        user.badgeUnlockOrder.push(badgeKey);
+    }
+
+    savePersistentData();
+
+    // Seviye Atlama ve Katlamalı Ödül Sistemi
+    if (isBoardGame) {
+        checkAndAwardBadgeLevelUp(username, 'gamer', oldGamerCount, newGamerCount);
+    } else if (BADGE_CONFIG[gameKey]) {
+        checkAndAwardBadgeLevelUp(username, gameKey, oldSpecificCount, newSpecificCount);
+    }
+}
+
 module.exports = {
+    dirtyUsers,
+    markUserDirty,
+    recordGamePlayed,
+    setServerContext,
+    checkAndAwardBadgeLevelUp,
+    checkAndAwardResidentLevel,
+    calculateBadgeTier,
+    BADGE_CONFIG,
+    BADGE_TIER_TABLES,
     persistentData,
     loadPersistentData,
     syncDataJsonToMongo,

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>30 Günlük Hazine Haritası Önizleme</title>
+    <link rel="stylesheet" href="css/dailyReward.css?v=20261109_map_v2">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #030712;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HARİTA MODALI (AÇIK TEST DURUMU) -->
+    <div id="dailyRewardModal" style="display: flex;">
+        <div class="dr-dialog dr-map-dialog">
+            <!-- Modal Üst Başlık -->
+            <div class="dr-header">
+                <div class="dr-header-left">
+                    <div class="dr-header-icon">🗺️</div>
+                    <div>
+                        <h2 class="dr-title">30 Günlük Macera Haritası</h2>
+                        <div class="dr-subtitle">Zirveye doğru adım at, her gün katlanan nakit TL ve elmasları topla! (Döngü: 30 Gün)</div>
+                    </div>
+                </div>
+                <div class="dr-header-right">
+                    <div id="drFreezeBadge" class="dr-freeze-badge">🛟 Can Simidi: 2 / 2 Hak</div>
+                    <button class="dr-close-btn" onclick="alert('Kapatıldı')" title="Kapat">✕</button>
+                </div>
+            </div>
+
+            <!-- Harita Gövdesi -->
+            <div class="dr-map-body">
+                <div id="drMapContainer" class="dr-map-container">
+                    <!-- Dinamik Tooltip -->
+                    <div id="drNodeTooltip" class="dr-node-tooltip"></div>
+
+                    <!-- SVG Harita ve Patika -->
+                    <svg id="drMapSvg" viewBox="0 0 820 460" class="dr-map-svg">
+                        <defs>
+                            <linearGradient id="goldPathGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ca8a04" />
+                                <stop offset="50%" stop-color="#facc15" />
+                                <stop offset="100%" stop-color="#fef08a" />
+                            </linearGradient>
+
+                            <filter id="nodeShadow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.75" />
+                            </filter>
+
+                            <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#facc15" flood-opacity="0.85" />
+                            </filter>
+
+                            <filter id="activeBeacon" x="-60%" y="-60%" width="220%" height="220%">
+                                <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#fde047" flood-opacity="0.9" />
+                            </filter>
+                        </defs>
+
+                        <!-- Dekoratif Bölge Başlıkları & Tematik Arka Plan (Boşluklara Yerleştirildi) -->
+                        <g class="dr-map-decorations">
+                            <!-- 1. Kıyı Şeridi -->
+                            <text x="75" y="452" fill="#ca8a04" font-size="11" font-weight="900" letter-spacing="1">⚓ BAŞLANGIÇ İSKELESİ</text>
+                            
+                            <!-- 2. Zümrüt Patika (1. ve 2. satır arası) -->
+                            <text x="410" y="372" text-anchor="middle" fill="#10b981" font-size="11.5" font-weight="900" opacity="0.85" letter-spacing="1">🌲 ZÜMRÜT PATİKA</text>
+
+                            <!-- 3. Safir Tepesi (2. ve 3. satır arası) -->
+                            <text x="410" y="280" text-anchor="middle" fill="#38bdf8" font-size="11.5" font-weight="900" opacity="0.85" letter-spacing="1">💎 SAFİR SIRTINDA GEÇİT</text>
+
+                            <!-- 4. Kristal Zirve Yolu (3. ve 4. satır arası) -->
+                            <text x="410" y="188" text-anchor="middle" fill="#ec4899" font-size="11.5" font-weight="900" opacity="0.85" letter-spacing="1">✨ KRİSTAL YAMACI</text>
+
+                            <!-- 5. Efsanevi Zirve Tapınağı -->
+                            <text x="520" y="16" text-anchor="middle" fill="#fde047" font-size="12.5" font-weight="950" letter-spacing="1.5">👑 EFSANEVİ HAZİNE ZİRVESİ</text>
+                        </g>
+
+                        <!-- 1. Yol Taban Gölgesi -->
+                        <path id="drRoadBase" d="M 75 415 Q 350 415, 625 410 C 720 410, 750 360, 700 325 Q 410 325, 125 320 C 50 320, 20 270, 85 235 Q 370 235, 660 230 C 740 230, 760 170, 690 140 Q 450 140, 215 135 C 120 135, 110 75, 190 55 Q 355 50, 520 48"
+                              fill="none" stroke="rgba(2, 6, 23, 0.95)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" />
+
+                        <!-- 2. Taş Kaldırım Yolu -->
+                        <path id="drRoadCobble" d="M 75 415 Q 350 415, 625 410 C 720 410, 750 360, 700 325 Q 410 325, 125 320 C 50 320, 20 270, 85 235 Q 370 235, 660 230 C 740 230, 760 170, 690 140 Q 450 140, 215 135 C 120 135, 110 75, 190 55 Q 355 50, 520 48"
+                              fill="none" stroke="#1e293b" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+
+                        <!-- 3. Altın Enerji Çizgisi (Hareketli Kesikli Çizgi) -->
+                        <path id="drRoadEnergy" d="M 75 415 Q 350 415, 625 410 C 720 410, 750 360, 700 325 Q 410 325, 125 320 C 50 320, 20 270, 85 235 Q 370 235, 660 230 C 740 230, 760 170, 690 140 Q 450 140, 215 135 C 120 135, 110 75, 190 55 Q 355 50, 520 48"
+                              fill="none" stroke="url(#goldPathGrad)" stroke-width="4" stroke-linecap="round" stroke-dasharray="8 8" class="dr-road-anim" />
+
+                        <!-- 30 Adım Taşı İstasyonları -->
+                        <g id="drNodesGroup"></g>
+
+                        <!-- Aktif Oyuncu Avatar Piyonu -->
+                        <g id="drAvatarPawnGroup"></g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Alt Aksiyon Paneli (Hero Bar) -->
+            <div class="dr-map-footer">
+                <div class="dr-hero-card">
+                    <div class="dr-hero-left">
+                        <div class="dr-hero-step-badge" id="drHeroStepBadge">
+                            <span class="dr-hero-step-num">1</span>
+                            <span class="dr-hero-step-lbl">ADIM</span>
+                        </div>
+                        <div class="dr-hero-info">
+                            <div class="dr-hero-title" id="drHeroTitle">1. Gün Başlangıç Ödülü</div>
+                            <div class="dr-hero-rewards" id="drHeroRewards">
+                                <span class="dr-hero-tl">💵 +500 TL</span>
+                                <span class="dr-hero-diamond">💎 +1 Elmas</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dr-hero-right" id="drHeroActionContainer">
+                        <button class="dr-btn dr-btn-claim" onclick="alert('Ödül Alındı!')">
+                            🎁 Ödülü Topla ve İlerle!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DİNAMİK HARİTA JS MOTORU TEST -->
+    <script>
+        const MAP_NODES = [
+            { day: 1,  x: 75,  y: 415, money: 500,   diamonds: 1 },
+            { day: 2,  x: 165, y: 415, money: 1000,  diamonds: 2 },
+            { day: 3,  x: 255, y: 415, money: 1500,  diamonds: 3 },
+            { day: 4,  x: 345, y: 415, money: 2000,  diamonds: 4 },
+            { day: 5,  x: 435, y: 415, money: 2500,  diamonds: 5 },
+            { day: 6,  x: 525, y: 415, money: 3000,  diamonds: 6 },
+            { day: 7,  x: 625, y: 410, money: 3500,  diamonds: 7,  isMilestone: true, milestoneType: 'star', milestoneTitle: '1. Hafta Sandığı' },
+
+            { day: 8,  x: 700, y: 325, money: 4000,  diamonds: 8 },
+            { day: 9,  x: 605, y: 325, money: 4500,  diamonds: 9 },
+            { day: 10, x: 510, y: 325, money: 5000,  diamonds: 10 },
+            { day: 11, x: 415, y: 325, money: 5500,  diamonds: 11 },
+            { day: 12, x: 320, y: 325, money: 6000,  diamonds: 12 },
+            { day: 13, x: 225, y: 325, money: 6500,  diamonds: 13 },
+            { day: 14, x: 125, y: 320, money: 7000,  diamonds: 14, isMilestone: true, milestoneType: 'trophy', milestoneTitle: '2. Hafta Sandığı' },
+
+            { day: 15, x: 85,  y: 235, money: 7500,  diamonds: 15 },
+            { day: 16, x: 180, y: 235, money: 8000,  diamonds: 16 },
+            { day: 17, x: 275, y: 235, money: 8500,  diamonds: 17 },
+            { day: 18, x: 370, y: 235, money: 9000,  diamonds: 18 },
+            { day: 19, x: 465, y: 235, money: 9500,  diamonds: 19 },
+            { day: 20, x: 560, y: 235, money: 10000, diamonds: 20 },
+            { day: 21, x: 660, y: 230, money: 10500, diamonds: 21, isMilestone: true, milestoneType: 'gem', milestoneTitle: '3. Hafta Sandığı' },
+
+            { day: 22, x: 690, y: 140, money: 11000, diamonds: 22 },
+            { day: 23, x: 595, y: 140, money: 11500, diamonds: 23 },
+            { day: 24, x: 500, y: 140, money: 12000, diamonds: 24 },
+            { day: 25, x: 405, y: 140, money: 12500, diamonds: 25 },
+            { day: 26, x: 310, y: 140, money: 13000, diamonds: 26 },
+            { day: 27, x: 215, y: 135, money: 13500, diamonds: 27 },
+
+            { day: 28, x: 190, y: 55,  money: 14000, diamonds: 28 },
+            { day: 29, x: 330, y: 50,  money: 14500, diamonds: 29 },
+            { day: 30, x: 520, y: 48,  money: 15000, diamonds: 30, isMilestone: true, milestoneType: 'crown', milestoneTitle: 'Aylık Efsane Zirvesi' }
+        ];
+
+        const currentActiveDay = 1; 
+
+        function renderMap() {
+            const group = document.getElementById('drNodesGroup');
+            group.innerHTML = '';
+
+            const svgNS = 'http://www.w3.org/2000/svg';
+
+            MAP_NODES.forEach(n => {
+                const isClaimed = n.day < currentActiveDay;
+                const isToday = n.day === currentActiveDay;
+                const isLocked = n.day > currentActiveDay;
+
+                const g = document.createElementNS(svgNS, 'g');
+                g.setAttribute('class', `dr-map-node ${isClaimed ? 'claimed' : ''} ${isToday ? 'today' : ''} ${isLocked ? 'locked' : ''} ${n.isMilestone ? 'milestone' : ''}`);
+                g.setAttribute('transform', `translate(${n.x}, ${n.y})`);
+
+                const radius = n.day === 30 ? 26 : (n.isMilestone ? 20 : 15);
+
+                let fillColor = isClaimed ? '#064e3b' : (isToday ? '#78350f' : '#0f172a');
+                let strokeColor = isClaimed ? '#10b981' : (isToday ? '#facc15' : '#334155');
+                let strokeWidth = isToday ? 3.5 : 2;
+
+                if (n.isMilestone) {
+                    if (n.day === 7) strokeColor = '#38bdf8';
+                    else if (n.day === 14) strokeColor = '#a855f7';
+                    else if (n.day === 21) strokeColor = '#ec4899';
+                    else if (n.day === 30) {
+                        strokeColor = '#facc15';
+                        fillColor = '#854d0e';
+                    }
+                }
+
+                // Dış Kaide Çemberi
+                const circle = document.createElementNS(svgNS, 'circle');
+                circle.setAttribute('r', radius);
+                circle.setAttribute('fill', fillColor);
+                circle.setAttribute('stroke', strokeColor);
+                circle.setAttribute('stroke-width', strokeWidth);
+                circle.setAttribute('filter', isToday ? 'url(#activeBeacon)' : 'url(#nodeShadow)');
+                g.appendChild(circle);
+
+                // İç İçerik (Tik, İkon veya Sayı)
+                if (isClaimed) {
+                    const check = document.createElementNS(svgNS, 'text');
+                    check.setAttribute('y', 4.5);
+                    check.setAttribute('text-anchor', 'middle');
+                    check.setAttribute('fill', '#34d399');
+                    check.setAttribute('font-size', '13');
+                    check.setAttribute('font-weight', 'bold');
+                    check.textContent = '✔';
+                    g.appendChild(check);
+                } else if (n.isMilestone) {
+                    const icon = document.createElementNS(svgNS, 'text');
+                    icon.setAttribute('y', 5);
+                    icon.setAttribute('text-anchor', 'middle');
+                    icon.setAttribute('font-size', n.day === 30 ? '18' : '14');
+                    icon.textContent = n.day === 7 ? '⭐' : (n.day === 14 ? '🏆' : (n.day === 21 ? '💎' : '👑'));
+                    g.appendChild(icon);
+                } else {
+                    const txt = document.createElementNS(svgNS, 'text');
+                    txt.setAttribute('y', 4);
+                    txt.setAttribute('text-anchor', 'middle');
+                    txt.setAttribute('fill', isToday ? '#fef08a' : '#94a3b8');
+                    txt.setAttribute('font-size', '10.5');
+                    txt.setAttribute('font-weight', '900');
+                    txt.textContent = n.day;
+                    g.appendChild(txt);
+                }
+
+                // Küçük Gün Başlığı
+                const dayTag = document.createElementNS(svgNS, 'text');
+                dayTag.setAttribute('y', radius + 12);
+                dayTag.setAttribute('text-anchor', 'middle');
+                dayTag.setAttribute('fill', isToday ? '#fde047' : '#64748b');
+                dayTag.setAttribute('font-size', '9');
+                dayTag.setAttribute('font-weight', '800');
+                dayTag.textContent = `${n.day}.G`;
+                g.appendChild(dayTag);
+
+                group.appendChild(g);
+            });
+
+            // Avatar Piyonunu Bugünkü Durağa Yerleştir
+            const activeNode = MAP_NODES.find(n => n.day === currentActiveDay);
+            if (activeNode) {
+                const pawnGroup = document.getElementById('drAvatarPawnGroup');
+                pawnGroup.innerHTML = '';
+
+                // Dış grup: Sabit (X, Y) koordinatına yerleştirir
+                const posG = document.createElementNS(svgNS, 'g');
+                posG.setAttribute('transform', `translate(${activeNode.x}, ${activeNode.y})`);
+
+                // İç grup: Animasyonlu zıplama
+                const bobG = document.createElementNS(svgNS, 'g');
+                bobG.setAttribute('class', 'dr-pawn-bob');
+
+                // 1. Zemin sarı spot aurası
+                const spot = document.createElementNS(svgNS, 'ellipse');
+                spot.setAttribute('cx', 0);
+                spot.setAttribute('cy', 0);
+                spot.setAttribute('rx', 22);
+                spot.setAttribute('ry', 9);
+                spot.setAttribute('fill', '#facc15');
+                spot.setAttribute('opacity', '0.65');
+                spot.setAttribute('filter', 'url(#goldGlow)');
+                bobG.appendChild(spot);
+
+                // 2. Yönlendirici Altın Ok
+                const arrow = document.createElementNS(svgNS, 'path');
+                arrow.setAttribute('d', 'M 0 -14 L -6 -24 L 6 -24 Z');
+                arrow.setAttribute('fill', '#fde047');
+                bobG.appendChild(arrow);
+
+                // 3. Minyatür Piyon Çemberi
+                const pawnCircle = document.createElementNS(svgNS, 'circle');
+                pawnCircle.setAttribute('cx', 0);
+                pawnCircle.setAttribute('cy', -36);
+                pawnCircle.setAttribute('r', 13);
+                pawnCircle.setAttribute('fill', '#2563eb');
+                pawnCircle.setAttribute('stroke', '#facc15');
+                pawnCircle.setAttribute('stroke-width', 2);
+                pawnCircle.setAttribute('filter', 'url(#nodeShadow)');
+                bobG.appendChild(pawnCircle);
+
+                // 4. Karakter Emojisi
+                const charIcon = document.createElementNS(svgNS, 'text');
+                charIcon.setAttribute('x', 0);
+                charIcon.setAttribute('y', -32);
+                charIcon.setAttribute('text-anchor', 'middle');
+                charIcon.setAttribute('font-size', '13');
+                charIcon.textContent = '🤠';
+                bobG.appendChild(charIcon);
+
+                // 5. 'BURADASIN' Etiketi
+                const tagRect = document.createElementNS(svgNS, 'rect');
+                tagRect.setAttribute('x', -24);
+                tagRect.setAttribute('y', -58);
+                tagRect.setAttribute('width', 48);
+                tagRect.setAttribute('height', 14);
+                tagRect.setAttribute('rx', 4);
+                tagRect.setAttribute('fill', '#facc15');
+                tagRect.setAttribute('stroke', '#ca8a04');
+                tagRect.setAttribute('stroke-width', 1);
+                bobG.appendChild(tagRect);
+
+                const tagText = document.createElementNS(svgNS, 'text');
+                tagText.setAttribute('x', 0);
+                tagText.setAttribute('y', -48);
+                tagText.setAttribute('text-anchor', 'middle');
+                tagText.setAttribute('fill', '#0f172a');
+                tagText.setAttribute('font-size', '8');
+                tagText.setAttribute('font-weight', '950');
+                tagText.textContent = 'BURADASIN';
+                bobG.appendChild(tagText);
+
+                posG.appendChild(bobG);
+                pawnGroup.appendChild(posG);
+            }
+        }
+
+        renderMap();
+    </script>
+</body>
+</html>

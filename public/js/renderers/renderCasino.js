@@ -897,7 +897,7 @@ function drawDedeninYeriEnvironment() {
         ctx.fillStyle = "#facc15";
         ctx.font = "bold 9.5px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("🎰 777 Slot (Tıkla / E)", 105, 107);
+        ctx.fillText("🎰 777 Slot", 105, 107);
         ctx.restore();
     } else if (isRouletteHover) {
         hoveredTableId = 'roulette';
@@ -923,7 +923,7 @@ function drawDedeninYeriEnvironment() {
         ctx.fillStyle = "#34d399";
         ctx.font = "bold 9.5px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("🎡 VIP Rulet (Tıkla / E)", 700, 117);
+        ctx.fillText("🎡 VIP Rulet", 700, 117);
         ctx.restore();
     } else if (isExitHover) {
         hoveredTableId = 'casino_exit';

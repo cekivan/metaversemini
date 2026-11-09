@@ -37,7 +37,9 @@
     let serverAmiralData = null;
     let hasPlayedWinSound = false;
     let isReadySent = false;
-    const socket = window.socket || (typeof io !== 'undefined' ? io() : null);
+    let lastProcessedShotSeq = null;
+    let isFiringInProgress = false;
+    const socket = window.socket || (typeof socket !== 'undefined' ? socket : null);
 
     // Socket Entegrasyonu
     if (socket) {
@@ -58,32 +60,83 @@
             phase = data.phase;
             turn = data.isMyTurn ? 'player' : 'enemy';
 
-            if (data.myGrid && data.myGrid.length === GRID_SIZE) {
-                playerGrid = data.myGrid;
+            const specBanner = document.getElementById('amiralSpectatorBanner');
+            if (specBanner) {
+                if (data.isSpectator) {
+                    specBanner.style.display = 'block';
+                    let discKeys = Object.keys(data.disconnectedPlayers || {});
+                    if (discKeys.length > 0) {
+                        let dPid = discKeys[0];
+                        let dName = data.disconnectedPlayers[dPid].name;
+                        specBanner.innerHTML = `👁️ Yancısın | ⚠️ <b>${dName}</b> masadan ayrıldı! <button onclick="takeoverSeat('${data.tableId}', '${dPid}')" style="margin-left:8px; padding:3px 9px; background:#22c55e; color:white; border:none; border-radius:5px; font-weight:800; cursor:pointer;">💺 Boş Koltuğu Devral</button>`;
+                    } else {
+                        specBanner.innerHTML = `👁️ Amiral Battı Masasını İzliyorsun (Yancısın)`;
+                    }
+                } else {
+                    specBanner.style.display = 'none';
+                }
             }
-            if (data.myShips) {
-                playerShips = data.myShips;
-            }
-            if (data.oppShots && data.oppShots.length === GRID_SIZE) {
-                enemyGrid = data.oppShots;
-            }
-            if (data.oppShipsStatus) {
-                enemyShips = data.oppShipsStatus;
+
+            if (data.isSpectator) {
+                // İzleyici her iki oyuncunun atış radarlarını izler
+                playerGrid = (data.p2Shots && data.p2Shots.length === GRID_SIZE) ? data.p2Shots : createEmptyGrid();
+                enemyGrid = (data.p1Shots && data.p1Shots.length === GRID_SIZE) ? data.p1Shots : createEmptyGrid();
+                playerShips = data.p2ShipsStatus || [];
+                enemyShips = data.p1ShipsStatus || [];
+            } else {
+                if (data.phase === 'SETUP' && !isReadySent && !data.ready?.[socket.id]) {
+                    // Oyuncu donanmasını hazırlarken gelen ara sunucu paketleri yerel dizilimi silmesin
+                    if (!playerShips || playerShips.length === 0) {
+                        playerShips = deployRandomFleet(playerGrid);
+                    }
+                } else {
+                    if (data.myGrid && data.myGrid.length === GRID_SIZE) {
+                        playerGrid = data.myGrid;
+                    }
+                    if (data.myShips && (data.myShips.length > 0 || isReadySent)) {
+                        playerShips = data.myShips;
+                    }
+                }
+                if (data.oppShots && data.oppShots.length === GRID_SIZE) {
+                    enemyGrid = data.oppShots;
+                }
+                if (data.oppShipsStatus) {
+                    enemyShips = data.oppShipsStatus;
+                }
             }
 
             if (data.stats && data.stats[socket.id]) {
                 playerStats = data.stats[socket.id];
             }
 
-            if (data.lastShotResult) {
+            isFiringInProgress = false;
+
+            if (data.lastShotResult && data.lastShotResult.seq !== lastProcessedShotSeq) {
+                lastProcessedShotSeq = data.lastShotResult.seq;
                 let r = data.lastShotResult;
+                let isMe = (r.playerId === socket.id);
                 if (r.hit) {
                     playBattleshipSound(r.sunkShip ? 'sunk' : 'hit');
-                    if (r.sunkShip) {
-                        showNavalToast(`💥 ${r.playerId === socket.id ? 'Düşmanın' : 'Senin'} ${r.sunkShip.name} gemisi BATTI!`);
+                    if (isMe) {
+                        if (r.sunkShip) {
+                            showNavalToast(`💥 Düşmanın ${r.sunkShip.name} gemisi BATTI! +1 Atış Hakkı Kazandınız! 🎯`);
+                        } else {
+                            showNavalToast(`🔥 İSABET! +1 Atış Hakkı Kazandınız! 🎯`);
+                        }
+                    } else {
+                        if (r.sunkShip) {
+                            showNavalToast(`⚠️ Senin ${r.sunkShip.name} gemin BATIRILDI! Düşman tekrar ateş ediyor...`);
+                        } else {
+                            showNavalToast(`🚨 Donanmanız vuruldu! Düşman tekrar ateş ediyor...`);
+                        }
                     }
                 } else {
                     playBattleshipSound('miss');
+                    if (isMe) {
+                        showNavalToast(`🌊 Karavana! Sıra rakibe geçti...`);
+                    } else {
+                        showNavalToast(`🛡️ Düşman ıskaladı! Sıra sende, hedef al!`);
+                    }
                 }
             }
 
@@ -109,6 +162,10 @@
             }
 
             renderAllGrids();
+        });
+
+        socket.on('gameError', () => {
+            isFiringInProgress = false;
         });
 
         socket.on('amiralRematchStatus', (data) => {
@@ -280,6 +337,8 @@
         playerStats = { shots: 0, hits: 0 };
         aiMemory = { mode: 'HUNT', targetStack: [], firstHit: null, currentHits: [] };
         isReadySent = false;
+        lastProcessedShotSeq = null;
+        isFiringInProgress = false;
 
         playerGrid = createEmptyGrid();
         enemyGrid = createEmptyGrid();
@@ -505,11 +564,13 @@
                 showNavalToast("⚠️ Sıra sizde değil, rakip bekleniyor!");
                 return;
             }
+            if (isFiringInProgress) return;
             const cell = enemyGrid[r] && enemyGrid[r][c];
             if (cell && (cell.hit || cell.miss || cell.fired)) {
                 showNavalToast("⚠️ Bu koordinata daha önce atış yaptınız!");
                 return;
             }
+            isFiringInProgress = true;
             playBattleshipSound('launch');
             if (socket) socket.emit('amiralFire', { r, c });
             return;
@@ -532,11 +593,18 @@
             // Gemi tamamen battı mı?
             if (cell.ship.hits >= cell.ship.size) {
                 cell.ship.sunk = true;
+                if (Array.isArray(cell.ship.coords)) {
+                    cell.ship.coords.forEach(coord => {
+                        if (enemyGrid[coord.r] && enemyGrid[coord.r][coord.c]) {
+                            enemyGrid[coord.r][coord.c].sunk = true;
+                        }
+                    });
+                }
                 playBattleshipSound('sunk');
-                showNavalToast(`💥 Düşmanın ${cell.ship.name} gemisi BATTI!`);
+                showNavalToast(`💥 Düşmanın ${cell.ship.name} gemisi BATTI! +1 Atış Hakkı Kazandınız! 🎯`);
             } else {
                 playBattleshipSound('hit');
-                showNavalToast(`🔥 İSABET! Tekrar ateş hakkı kazandınız!`);
+                showNavalToast(`🔥 İSABET! +1 Atış Hakkı Kazandınız! 🎯`);
             }
 
             // Zafer Kontrolü
@@ -860,16 +928,31 @@
         const banner = document.getElementById('amiralStatusBanner');
         if (banner) {
             if (serverAmiralData) {
+                let curPid = serverAmiralData.players[serverAmiralData.turnIndex];
+                let curName = serverAmiralData.playerProfiles?.[curPid]?.name || 'Oyuncu';
+                let lastRes = serverAmiralData.lastShotResult;
+                let wasLastHit = lastRes && lastRes.hit && !serverAmiralData.gameOver;
+
                 if (serverAmiralData.isSpectator) {
-                    let curPid = serverAmiralData.players[serverAmiralData.turnIndex];
-                    let curName = serverAmiralData.playerProfiles[curPid]?.name || 'Oyuncu';
-                    banner.innerHTML = `<span style="color:#facc15;">👁️ İzleyici Modu (Ateş Sırası: ${curName})</span>`;
+                    if (wasLastHit) {
+                        banner.innerHTML = `<span style="color:#facc15;">👁️ İzleyici Modu (🔥 <b>${curName}</b> isabet sağladı, tekrar ateş ediyor!)</span>`;
+                    } else {
+                        banner.innerHTML = `<span style="color:#facc15;">👁️ İzleyici Modu (Ateş Sırası: <b>${curName}</b>)</span>`;
+                    }
                 } else if (turn === 'player') {
-                    banner.innerHTML = `<span style="color:#4ade80;">🎯 ATEŞ SIRASI SENDE! Düşman radarına tıkla.</span>`;
+                    if (wasLastHit && lastRes.playerId === socket.id) {
+                        banner.innerHTML = `<span style="color:#22c55e; font-weight:800;">🔥 İSABETLİ ATIŞ! Tekrar ateş hakkı sende — Hedef al!</span>`;
+                    } else {
+                        banner.innerHTML = `<span style="color:#4ade80;">🎯 ATEŞ SIRASI SENDE! Düşman radarına tıkla.</span>`;
+                    }
                 } else {
                     let oppPid = serverAmiralData.players.find(p => p !== socket.id);
-                    let oppName = (oppPid && serverAmiralData.playerProfiles[oppPid]?.name) || 'Düşman';
-                    banner.innerHTML = `<span style="color:#f87171;">⚓ ${oppName} hedef alıyor...</span>`;
+                    let oppName = (oppPid && serverAmiralData.playerProfiles?.[oppPid]?.name) || 'Düşman';
+                    if (wasLastHit && lastRes.playerId === oppPid) {
+                        banner.innerHTML = `<span style="color:#f87171; font-weight:800;">💥 <b>${oppName}</b> isabet sağladı, tekrar ateş ediyor...</span>`;
+                    } else {
+                        banner.innerHTML = `<span style="color:#f87171;">⚓ <b>${oppName}</b> hedef alıyor...</span>`;
+                    }
                 }
             } else {
                 if (turn === 'player') {
@@ -903,18 +986,48 @@
             enemyAlive = enemyShips.filter(s => !s.sunk).length;
         }
 
+        let myName = "Senin Donanman";
         let oppName = "Düşman Donanması";
+
         if (serverAmiralData && socket) {
-            let oppPid = serverAmiralData.players.find(p => p !== socket.id);
-            if (oppPid && serverAmiralData.playerProfiles[oppPid]) {
-                oppName = (serverAmiralData.playerProfiles[oppPid].isBot ? "🤖 " : "👤 ") + serverAmiralData.playerProfiles[oppPid].name;
+            if (serverAmiralData.isSpectator) {
+                let p1Pid = serverAmiralData.players[0];
+                let p2Pid = serverAmiralData.players[1];
+                let p1P = serverAmiralData.playerProfiles[p1Pid];
+                let p2P = serverAmiralData.playerProfiles[p2Pid];
+                oppName = (p1P?.isBot ? "🤖 " : "👤 ") + (p1P?.name || "1. Oyuncu");
+                myName = (p2P?.isBot ? "🤖 " : "👤 ") + (p2P?.name || "2. Oyuncu");
+            } else {
+                let oppPid = serverAmiralData.players.find(p => p !== socket.id);
+                if (oppPid && serverAmiralData.playerProfiles[oppPid]) {
+                    oppName = (serverAmiralData.playerProfiles[oppPid].isBot ? "🤖 " : "👤 ") + serverAmiralData.playerProfiles[oppPid].name;
+                }
+            }
+        }
+
+        // Tahta Başlıklarını Güncelle
+        const enemyTitle = document.getElementById('amiralEnemyBoardTitle');
+        const playerTitle = document.getElementById('amiralPlayerBoardTitle');
+        const enemySub = document.getElementById('amiralEnemyBoardSub');
+        const playerSub = document.getElementById('amiralPlayerBoardSub');
+        if (enemyTitle && playerTitle) {
+            if (serverAmiralData?.isSpectator) {
+                enemyTitle.innerText = `🎯 ${oppName} Radarı`;
+                playerTitle.innerText = `🎯 ${myName} Radarı`;
+                if (enemySub) enemySub.innerText = "Atışlar";
+                if (playerSub) playerSub.innerText = "Atışlar";
+            } else {
+                enemyTitle.innerText = "🎯 DÜŞMAN SULARI (RADAR)";
+                playerTitle.innerText = "🛡️ KENDİ DONANMAN";
+                if (enemySub) enemySub.innerText = "Atış Yap";
+                if (playerSub) playerSub.innerText = "Savunma";
             }
         }
 
         hud.innerHTML = `
             <div style="display:flex; justify-content:space-around; align-items:center; background:rgba(15,23,42,0.85); border:1.5px solid rgba(56,189,248,0.3); border-radius:12px; padding:8px 16px; margin-bottom:12px; font-size:13px; font-weight:800; box-shadow:0 4px 15px rgba(0,0,0,0.4);">
                 <div style="color:#38bdf8; display:flex; align-items:center; gap:6px;">
-                    <span>🚢 Senin Donanman:</span>
+                    <span>🚢 ${myName}:</span>
                     <span style="background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#4ade80; padding:2px 8px; border-radius:8px; font-size:14px;">${playerAlive} / 4 Sağlam</span>
                 </div>
                 <div style="color:#cbd5e1; font-size:12px;">🎯 İsabet: <b style="color:#facc15;">${playerStats.shots > 0 ? Math.round((playerStats.hits / playerStats.shots) * 100) : 0}%</b></div>
@@ -1000,89 +1113,9 @@
         const header = document.getElementById('amiralModalHeader');
         const modal = document.getElementById('amiralBattiModalContent');
         if (header && modal) {
-            let isDragging = false, startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
-            let hasMoved = false;
-
-            function startDrag(clientX, clientY, target) {
-                if (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.in-game-zoom-ctrl') || target.closest('.game-window-controls')) {
-                    return false;
-                }
-                
-                isDragging = true;
-                hasMoved = false;
-                startX = clientX;
-                startY = clientY;
-
-                modal.style.animation = 'none';
-                modal.style.transform = 'none';
-
-                const rect = modal.getBoundingClientRect();
-                const currentZoom = parseFloat(modal.style.zoom) || 1;
-                
-                initialLeft = rect.left / currentZoom;
-                initialTop = rect.top / currentZoom;
-                return true;
+            if (typeof makeModalDraggable === 'function') {
+                makeModalDraggable(modal, header);
             }
-
-            function moveDrag(clientX, clientY) {
-                if (!isDragging) return;
-                const dist = Math.hypot(clientX - startX, clientY - startY);
-                if (dist > 3 && !hasMoved) {
-                    hasMoved = true;
-                    modal.style.position = 'fixed';
-                    modal.style.margin = '0';
-                    modal.style.left = initialLeft + 'px';
-                    modal.style.top = initialTop + 'px';
-                }
-                if (!hasMoved) return;
-
-                const currentZoom = parseFloat(modal.style.zoom) || 1;
-                const deltaX = (clientX - startX) / currentZoom;
-                const deltaY = (clientY - startY) / currentZoom;
-                
-                let newLeft = initialLeft + deltaX;
-                let newTop = initialTop + deltaY;
-
-                // Ekran dışına kaçmaması için kenar sınırlama (Clamping)
-                const modalW = (modal.offsetWidth || 680);
-                const maxL = Math.max(10, (window.innerWidth / currentZoom) - 60);
-                const minL = Math.min(10, 10 - modalW + 100);
-                const maxT = Math.max(10, (window.innerHeight / currentZoom) - 50);
-
-                newLeft = Math.max(minL, Math.min(newLeft, maxL));
-                newTop = Math.max(5, Math.min(newTop, maxT));
-
-                modal.style.left = newLeft + 'px';
-                modal.style.top = newTop + 'px';
-            }
-
-            function endDrag() {
-                isDragging = false;
-                hasMoved = false;
-            }
-
-            header.addEventListener('mousedown', (e) => {
-                if (startDrag(e.clientX, e.clientY, e.target)) {
-                    e.preventDefault();
-                }
-            });
-            window.addEventListener('mousemove', (e) => {
-                moveDrag(e.clientX, e.clientY);
-            });
-            window.addEventListener('mouseup', endDrag);
-
-            // Mobil / Dokunmatik Sürükleme Desteği
-            header.addEventListener('touchstart', (e) => {
-                if (e.touches && e.touches.length === 1) {
-                    startDrag(e.touches[0].clientX, e.touches[0].clientY, e.target);
-                }
-            }, { passive: true });
-            window.addEventListener('touchmove', (e) => {
-                if (isDragging && e.touches && e.touches.length === 1) {
-                    moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-                }
-            }, { passive: true });
-            window.addEventListener('touchend', endDrag);
         }
     });
 })();

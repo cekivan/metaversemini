@@ -372,25 +372,25 @@ function drawEmlakciEnvironment() {
         ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 3;
         ctx.strokeRect(320, 75, 160, 55);
         ctx.fillStyle = "#38bdf8"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("🤵 Satış Danışmanı Mert Bey ile Konuş (Tıkla / E)", 400, 148);
+        ctx.fillText("🤵 Satış Danışmanı Mert Bey", 400, 148);
     } else if (isMaket1Hover) {
         hoveredTableId = 'maket_standart';
         ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 3.5;
         ctx.strokeRect(90, 215, 160, 140);
         ctx.fillStyle = "#38bdf8"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("👁️ Maketi İncele & Evi Gez (Tıkla / E)", 170, 205);
+        ctx.fillText("👁️ Maketi İncele & Evi Gez", 170, 205);
     } else if (isMaket2Hover) {
         hoveredTableId = 'maket_garden';
         ctx.strokeStyle = "#22c55e"; ctx.lineWidth = 3.5;
         ctx.strokeRect(320, 215, 160, 140);
         ctx.fillStyle = "#86efac"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("👁️ Maketi İncele & Evi Gez (Tıkla / E)", 400, 205);
+        ctx.fillText("👁️ Maketi İncele & Evi Gez", 400, 205);
     } else if (isMaket3Hover) {
         hoveredTableId = 'maket_pool';
         ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 3.5;
         ctx.strokeRect(550, 215, 160, 140);
         ctx.fillStyle = "#fde047"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText("👁️ Maketi İncele & Evi Gez (Tıkla / E)", 630, 205);
+        ctx.fillText("👁️ Maketi İncele & Evi Gez", 630, 205);
     } else if (isExitHover) {
         hoveredTableId = 'emlakci_exit';
         ctx.strokeStyle = "#facc15"; ctx.lineWidth = 3;

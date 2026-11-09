@@ -996,14 +996,11 @@ function drawSanalikaCaddeEnvironment() {
 
     hoveredKiralikKey = newlyHovered;
 
-    // Hover edilen binaya tatlı bir neon parlama efekti ver
+    // Hover edilen binanın bilgi etiketini göster
     if (hoveredKiralikKey && KIRALIK_VENUES[hoveredKiralikKey]) {
         let v = KIRALIK_VENUES[hoveredKiralikKey];
         let b = v.bounds;
         ctx.save();
-        ctx.strokeStyle = `rgba(250, 204, 21, ${0.5 + pulse * 0.5})`;
-        ctx.lineWidth = 3.5;
-        ctx.strokeRect(b.x - 2, b.y - 2, b.w + 4, b.h + 4);
 
         // Bilgi etiketi (Tooltip)
         ctx.fillStyle = "rgba(15, 23, 42, 0.92)";

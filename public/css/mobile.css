@@ -1,0 +1,746 @@
+/* ==========================================================================
+   MINI METAVERSE - MOBILE & RESPONSIVE CONTROLS
+   Sanal analog joystick, D-Pad, dokunmatik ekran optimizasyonları ve responsive kurallar
+   ========================================================================== */
+
+/* 7. MOBİL KONTROLLER */
+.control-btn { 
+    width: 60px; 
+    height: 60px; 
+    font-size: 24px; 
+    background: rgba(30, 41, 59, 0.9); 
+    color: white; 
+    border: 1px solid rgba(255,255,255,0.15); 
+    border-radius: 12px; 
+    cursor: pointer; 
+    user-select: none; 
+    backdrop-filter: blur(8px);
+}
+.control-btn:active { 
+    background: #2563eb; 
+}
+
+
+/* ==========================================================
+   📱 MOBİL EKRAN ANALOG SANAL JOYSTICK (360° VIRTUAL JOYSTICK)
+   ========================================================== */
+.mobile-joystick-container, .mobile-dpad-container {
+    position: fixed;
+    /* Oyun ekranına yakın, telefonun taa en altında kaybolmayan ergonomik konum */
+    bottom: clamp(65px, 14vh, 160px);
+    right: clamp(16px, 4vw, 40px);
+    left: auto;
+    z-index: 12000;
+    width: 130px;
+    height: 130px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    contain: layout paint;
+    will-change: transform;
+}
+
+.mobile-joystick-base {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(30, 41, 59, 0.72) 0%, rgba(15, 23, 42, 0.92) 100%);
+    border: 2px solid rgba(56, 189, 248, 0.45);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55), inset 0 0 15px rgba(56, 189, 248, 0.2);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    user-select: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.mobile-joystick-base.active {
+    border-color: #38bdf8;
+    box-shadow: 0 0 22px rgba(56, 189, 248, 0.55), inset 0 0 20px rgba(56, 189, 248, 0.35);
+}
+
+.joystick-ring {
+    position: absolute;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(255, 255, 255, 0.22);
+    pointer-events: none;
+}
+
+.mobile-joystick-knob {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #38bdf8, #0284c7);
+    border: 2px solid #bae6fd;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.mobile-joystick-knob.returning {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.knob-inner-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 6px white;
+}
+
+.joy-dir {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+    user-select: none;
+}
+.joy-up { top: 6px; }
+.joy-down { bottom: 6px; }
+.joy-left { left: 8px; }
+.joy-right { right: 8px; }
+
+#mobileActionBtn {
+    position: fixed;
+    z-index: 12001;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: 2px solid #fef08a;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 900;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55), 0 0 12px rgba(245, 158, 11, 0.45);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+#mobileActionBtn:active {
+    transform: scale(0.92);
+    box-shadow: 0 0 20px #f59e0b;
+}
+
+
+/* ========================================================
+   📱 KAPSAMLI MOBİL & DOKUNMATİK UYUMLULUK DÜZELTMELERİ
+   (Masaüstü > 768px görünümüne hiçbir şekilde dokunmaz)
+   ======================================================== */
+
+/* 1. iOS Safari 16px Altı Inputlarda Otomatik Ekran Yakınlaştırma (Auto-Zoom) Engeli */
+@media (max-width: 768px), (pointer: coarse) {
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    input[type="search"],
+    input[type="email"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+
+    #bottomChatInput,
+    #sideChatInput,
+    #sanalikaBagSearch {
+        padding-top: 5px !important;
+        padding-bottom: 5px !important;
+    }
+}
+
+/* 2. Bahçıvan Hızlı Çantası (#gardenQuickFarmingTray) Mobil Joystick Çakışma Engeli */
+@media (max-width: 860px) {
+    #gardenQuickFarmingTray {
+        left: 10px !important;
+        right: auto !important;
+        bottom: 72px !important;
+        max-width: calc(100vw - 165px) !important;
+        padding: 8px 10px !important;
+    }
+
+    body[data-joystick-side="left"] #gardenQuickFarmingTray {
+        right: 10px !important;
+        left: auto !important;
+    }
+}
+
+/* 3. Genel Mobil HUD, Üst Menü, Açılır Menüler, Alt Bar ve Ev Düzenleme Docku */
+@media (max-width: 768px) {
+    /* Üst Menü: Kompakt Sarmalama (Ekranın %35'ini kaplamaması için) */
+    .top-nav {
+        padding: 4px 6px !important;
+        gap: 4px !important;
+    }
+
+    .top-nav .nav-btn,
+    .top-nav .money-badge {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+    }
+
+    /* Mekanlar ve Zoom Açılır Menüleri: Ekran Dışına Taşmayı Önleyen Sabit Merkezleme */
+    #placesDropdownMenu,
+    #zoomDropdownMenu {
+        position: fixed !important;
+        top: 84px !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: min(305px, 94vw) !important;
+        max-height: 72vh !important;
+        z-index: 45000 !important;
+    }
+
+    /* Yan Sohbet Paneli ve Yüzen Sohbet Butonu (Sürüklenebilirliği korur, Joystick ile çakışmaz) */
+    #sideChatContainer {
+        max-width: calc(100vw - 16px) !important;
+        max-height: 58vh !important;
+    }
+
+    /* Alt Oyun Kontrol ve Hızlı Chat Çubuğu: Dar Ekranda Esnek Sarma */
+    #gameBottomControlBar {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        padding: 0 8px !important;
+        justify-content: space-between !important;
+    }
+
+    #bottomChatArea {
+        flex: 1 1 calc(100% - 140px) !important;
+        max-width: none !important;
+        min-width: 140px !important;
+        margin: 0 !important;
+        order: 1 !important;
+    }
+
+    #bottomEmoteArea {
+        flex: 0 0 auto !important;
+        order: 2 !important;
+    }
+
+    #bottomMountArea {
+        flex: 1 1 100% !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        order: 3 !important;
+    }
+
+    /* Ev Düzenleme Alt Docku (#furnitureBottomDock): Kaydet Butonu Asla Kesilmez */
+    #furnitureBottomDock {
+        height: auto !important;
+        max-height: 46vh !important;
+        flex-wrap: wrap !important;
+        padding: 8px 10px !important;
+        gap: 6px !important;
+        overflow-y: auto !important;
+    }
+
+    #selectedFurnitureControlBox {
+        min-width: 145px !important;
+        flex: 1 1 50% !important;
+        height: auto !important;
+        min-height: 70px !important;
+        padding: 6px 8px !important;
+    }
+
+    #bottomDockFurnitureList {
+        flex: 1 1 100% !important;
+        order: 3 !important;
+        max-height: 98px !important;
+        padding: 4px !important;
+    }
+}
+
+/* 4. Kıyafetlerim (#dressingRoomModal) & Gardırop (#wardrobeModal) Dikey Mobil Uyum */
+@media (max-width: 680px) {
+    #dressingRoomModal > div {
+        width: 96vw !important;
+        max-height: 92vh !important;
+        overflow-y: auto !important;
+    }
+
+    #dressingModalBody {
+        flex-direction: column !important;
+        min-height: 0 !important;
+        max-height: none !important;
+    }
+
+    #dressingMirrorPanel {
+        width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1.5px solid #f1f5f9 !important;
+        padding: 10px 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    #dressingGridPanel {
+        width: 100% !important;
+        padding: 10px 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    #wardrobeModalCard {
+        width: 96vw !important;
+        max-height: 93vh !important;
+        overflow-y: auto !important;
+        padding: 10px 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    #wardrobeMainColumns {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    #wardrobeLeftPreviewCol {
+        width: 100% !important;
+    }
+}
+
+/* 5. Amiral Battı Çift Radar Tahtası Dikey Mobil Yığınlama */
+@media (max-width: 600px) {
+    .amiral-boards-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+}
+
+/* 6. Oyuncu Profil Kartı Yan Sekmeleri & Eşya Çantası Dar Telefon Sınırlandırması */
+@media (max-width: 640px) {
+    .profile-side-tab .tab-tooltip {
+        left: auto !important;
+        right: calc(100% + 7px) !important;
+    }
+}
+
+@media (max-width: 420px) {
+    #playerInteractionModalBox {
+        width: min(272px, calc(100vw - 52px)) !important;
+    }
+}
+
+@media (max-width: 390px) {
+    #itemInventoryModalCard {
+        width: calc(100vw - 16px) !important;
+        max-width: 350px !important;
+    }
+}
+
+/* 7. Mobil Yatay (Landscape / Kısa Ekran) Görünüm Uyum İyileştirmeleri */
+@media (max-height: 500px) {
+    .top-nav {
+        padding: 3px 6px !important;
+        gap: 3px !important;
+    }
+
+    .top-nav .nav-btn,
+    .top-nav .money-badge {
+        padding: 3px 7px !important;
+        font-size: 10.5px !important;
+    }
+
+    #placesDropdownMenu,
+    #zoomDropdownMenu {
+        top: 44px !important;
+        max-height: calc(100vh - 54px) !important;
+    }
+
+    #itemInventoryModalCard {
+        max-height: calc(100vh - 14px) !important;
+        overflow-y: auto !important;
+    }
+
+    #profileBadgesGrid {
+        max-height: 92px !important;
+        overflow-y: auto !important;
+    }
+}
+
+/* ============================================================================
+   ⚡ MOBİL SIFIR-GECİKME (ZERO-DELAY) DOKUNMATİK TEPKİ & HİSLİYAT MOTORU
+   ============================================================================ */
+*, *::before, *::after {
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+button, 
+a, 
+input, 
+select, 
+textarea, 
+.nav-btn, 
+.place-menu-item, 
+.bottom-action-icon-btn, 
+.modal-close, 
+.modal-compact-close-btn, 
+.control-btn, 
+.card, 
+.okey-tile, 
+.tavla-point, 
+.tavla-checker, 
+.roulette-cell, 
+.chip-btn, 
+.slot-lever-knob, 
+.profile-side-tab,
+.barber-preset-card,
+.optik-catalog-card {
+    touch-action: manipulation;
+}
+
+/* ============================================================================
+   📱 MOBİL EKRAN VE TAM BOYUTLU RESPONSIVE CANVAS SİSTEMİ
+   ============================================================================ */
+@media (max-width: 860px), (max-height: 650px) {
+    #gameCanvas {
+        border-width: 2px !important;
+        border-radius: 10px !important;
+        margin: 4px auto 0 auto !important;
+        max-width: 99vw !important;
+        max-height: calc(100dvh - 96px) !important;
+        width: min(1000px, 99vw, calc((100dvh - 96px) * (1000 / 625))) !important;
+        height: auto !important;
+    }
+
+    #gameCanvas.wide-screen {
+        width: min(1000px, 99vw, calc((100dvh - 96px) * (1000 / 625))) !important;
+        aspect-ratio: 1000 / 625 !important;
+    }
+
+    #gameBottomControlBar {
+        margin: 4px auto 8px auto !important;
+        padding: 0 6px !important;
+    }
+
+    /* iPhone Çentik & Home Bar Güvenli Alan Koruması */
+    .mobile-joystick-container, .mobile-dpad-container {
+        bottom: calc(clamp(45px, 11vh, 120px) + env(safe-area-inset-bottom, 0px)) !important;
+        right: calc(clamp(12px, 3.5vw, 32px) + env(safe-area-inset-right, 0px)) !important;
+    }
+
+    #mobileActionBtn {
+        bottom: calc(clamp(160px, 24vh, 210px) + env(safe-area-inset-bottom, 0px)) !important;
+        right: calc(clamp(42px, 7vw, 68px) + env(safe-area-inset-right, 0px)) !important;
+    }
+}
+
+/* ============================================================================
+   🎲 TAVLA (BACKGAMMON) MOBİL RESPONSIVE & DOKUNMATİK UYUMU
+   ============================================================================ */
+@media (max-width: 768px) {
+    .tavla-container {
+        padding: 4px !important;
+        border-width: 4px !important;
+        gap: 4px !important;
+        max-width: 100vw !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    .tavla-bar {
+        width: clamp(34px, 8.5vw, 55px) !important;
+        padding: 4px 2px !important;
+    }
+    .tavla-fields {
+        padding: 3px !important;
+    }
+    .tavla-point {
+        width: clamp(20px, 5.2vw, 38px) !important;
+        height: clamp(85px, 20vh, 130px) !important;
+    }
+    .tavla-checker {
+        width: clamp(18px, 4.8vw, 32px) !important;
+        height: clamp(18px, 4.8vw, 32px) !important;
+        font-size: 10px !important;
+    }
+    .tavla-point .point-number {
+        font-size: 8.5px !important;
+    }
+    .tavla-vertical-divider {
+        width: 8px !important;
+        margin: 0 2px !important;
+    }
+    .tavla-middle-divider {
+        height: 18px !important;
+    }
+    .tavla-die {
+        width: clamp(26px, 6vw, 36px) !important;
+        height: clamp(26px, 6vw, 36px) !important;
+    }
+}
+
+/* ============================================================================
+   🃏 BATAK (İSKAMBİL) MOBİL YELPAZE EL DÜZENİ
+   ============================================================================ */
+@media (max-width: 768px) {
+    #batakArea {
+        padding: 10px 8px !important;
+        border-width: 4px !important;
+        margin-bottom: 8px !important;
+    }
+    #batakScoreboard {
+        font-size: 11px !important;
+        padding: 6px 8px !important;
+        gap: 4px !important;
+    }
+    #tableCards {
+        gap: 6px !important;
+        min-height: 70px !important;
+        padding: 6px !important;
+    }
+    #playerHand {
+        gap: 3px !important;
+        padding: 4px 2px !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        justify-content: flex-start !important;
+        max-width: 100% !important;
+    }
+    #playerHand .card {
+        flex-shrink: 0 !important;
+        width: clamp(38px, 9vw, 48px) !important;
+        height: clamp(56px, 13.5vw, 72px) !important;
+        margin-right: -10px !important;
+    }
+    #playerHand .card:hover,
+    #playerHand .card:active {
+        margin-right: 2px !important;
+        z-index: 20 !important;
+        transform: translateY(-8px) scale(1.05) !important;
+    }
+    .card .top-index {
+        font-size: 9px !important;
+    }
+    .card .center-pip {
+        font-size: 18px !important;
+    }
+}
+
+/* ============================================================================
+   🀄 101 OKEY MOBİL ISTAKA VE TAŞ ÖLÇEKLENDİRMESİ
+   ============================================================================ */
+@media (max-width: 768px) {
+    .okey-tile {
+        font-size: clamp(10px, 3.2vw, 15px) !important;
+        height: clamp(34px, 9.5vw, 46px) !important;
+        border-bottom-width: 2.5px !important;
+        border-radius: 3px !important;
+    }
+    .okey-tile.mini {
+        width: clamp(18px, 4.5vw, 24px) !important;
+        height: clamp(26px, 6.5vw, 34px) !important;
+        font-size: 10px !important;
+    }
+    .okey-rack-grid {
+        padding: 3px 4px !important;
+    }
+    .okey-rack-shelf {
+        min-height: clamp(36px, 10vw, 48px) !important;
+        padding: 1px 2px !important;
+    }
+    .okey-table-felt {
+        padding: 4px !important;
+        min-height: 220px !important;
+    }
+    #okey101Scoreboard {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 4px !important;
+        font-size: 11px !important;
+    }
+    .okey-action-dock {
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        padding: 4px !important;
+    }
+    .okey-action-dock button {
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+    }
+}
+
+/* ============================================================================
+   🎰 CASINO BLACKJACK (21) MOBİL ÇUHA DÜZENİ
+   ============================================================================ */
+@media (max-width: 768px) {
+    .blackjack-table-container {
+        min-height: auto !important;
+        padding: 8px 10px !important;
+        border-width: 2px !important;
+    }
+    .bj-felt-table {
+        min-height: 240px !important;
+        border-width: 6px !important;
+        border-radius: 14px 14px 140px 140px !important;
+        padding: 8px 8px 16px 8px !important;
+    }
+    .bj-felt-table::before {
+        border-radius: 8px 8px 140px 140px !important;
+    }
+    .bj-seat-box {
+        min-width: 58px !important;
+        padding: 4px !important;
+    }
+    .bj-seat-name {
+        font-size: 10px !important;
+    }
+    .bj-card {
+        width: 36px !important;
+        height: 52px !important;
+    }
+    .blackjack-bottom-dock {
+        padding: 6px 8px !important;
+        gap: 4px !important;
+        flex-wrap: wrap !important;
+    }
+    .bj-action-btn {
+        padding: 6px 12px !important;
+        font-size: 11px !important;
+    }
+}
+
+/* ============================================================================
+   🎡 CASINO RULET MOBİL DİKEY ALAN DÜZENİ
+   ============================================================================ */
+@media (max-width: 768px) {
+    .roulette-main-area {
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: 6px !important;
+        gap: 8px !important;
+    }
+    .roulette-wheel-wrapper {
+        margin: 0 auto !important;
+    }
+    .roulette-wheel-wrapper canvas {
+        width: 180px !important;
+        height: 180px !important;
+    }
+    .roulette-felt-grid-wrapper {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: 6px !important;
+    }
+    .roulette-grid {
+        min-width: 480px !important;
+    }
+    .roulette-bottom-bar {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        padding: 6px 8px !important;
+        justify-content: center !important;
+    }
+}
+
+/* ============================================================================
+   ⚡ DEDENİN ŞİMŞEK SLOTU 777 MOBİL KOMPAKT DÜZENİ
+   ============================================================================ */
+@media (max-width: 768px) {
+    .slot-cabinet {
+        width: 98vw !important;
+        border-width: 2.5px !important;
+        border-radius: 14px !important;
+    }
+    .slot-body {
+        padding: 12px 8px !important;
+        gap: 8px !important;
+    }
+    .slot-window {
+        width: clamp(230px, 72vw, 360px) !important;
+        height: 140px !important;
+        border-width: 3px !important;
+        padding: 4px !important;
+    }
+    .slot-reel-viewport {
+        width: clamp(62px, 21vw, 100px) !important;
+    }
+    .slot-reel-item {
+        font-size: 32px !important;
+        height: 70px !important;
+    }
+    .slot-lever-container {
+        width: 44px !important;
+    }
+    .slot-lever-arm {
+        width: 8px !important;
+        height: 70px !important;
+    }
+    .slot-lever-knob {
+        width: 32px !important;
+        height: 32px !important;
+        left: -12px !important;
+    }
+    .slot-bottom-bar {
+        padding: 8px 10px !important;
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+    }
+    .slot-spin-btn {
+        padding: 8px 16px !important;
+        font-size: 14px !important;
+    }
+}
+
+/* ============================================================================
+   🏇 GANYAN, BALIKÇILIK, MADEN & BOTANİK MOBİL MODALLARI
+   ============================================================================ */
+@media (max-width: 768px) {
+    #ganyanKuponModal > div,
+    #fishingResultModal > div,
+    #miningShopModal > div,
+    #botanicMarketModal > div {
+        width: 96vw !important;
+        max-width: 96vw !important;
+        max-height: 92vh !important;
+        padding: 10px 12px !important;
+    }
+    #ganyanHorseListContainer {
+        max-height: 180px !important;
+    }
+    #fishingProgressContainer {
+        bottom: 72px !important;
+        width: min(280px, 86vw) !important;
+    }
+    #miningSkillCheckHUD {
+        width: min(320px, 92vw) !important;
+    }
+}
+
+/* ============================================================================
+   💈 BERBER, KÜLTÜR MERKEZİ, OPTİK & EV DÜZENLEME MOBİL UYUMU
+   ============================================================================ */
+@media (max-width: 768px) {
+    #barberShopModal > div,
+    #kulturGiseModal > div,
+    #kulturBufeModal > div,
+    #kulturBillboardModal > div,
+    #housingPortalModal > div,
+    #realEstateModal > div,
+    #furnitureMarketModal > div,
+    #optikaCatalogModal > div {
+        width: 96vw !important;
+        max-width: 96vw !important;
+        max-height: 92vh !important;
+        padding: 10px 12px !important;
+        overflow-y: auto !important;
+    }
+    .barber-preview-container {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+}

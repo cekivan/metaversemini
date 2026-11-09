@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Doberman Koruma Köpeği - 8 Yönlü İzometrik Önizleme</title>
+    <style>
+        body {
+            background: #09090b;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #f59e0b;
+            margin-bottom: 4px;
+            font-size: 24px;
+        }
+        p {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+        .panel {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .card {
+            background: #0f0f13;
+            border: 1px solid #2d2d38;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #cbd5e1;
+            margin-top: 8px;
+        }
+        .badge {
+            font-size: 10px;
+            background: #312e81;
+            color: #a5b4fc;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        canvas {
+            background: radial-gradient(circle, #1e1e24 0%, #111116 100%);
+            border-radius: 6px;
+            border: 1px solid #2d2d38;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐕‍🦺 2.5D İzometrik Doberman Koruma Köpeği (Vektörel Çizim Motoru)</h1>
+    <p>Örümcek & T-Rex Standartlarında: 8 Yönlü İzometrik Görünüm, Çapraz Trot Kinematiği, Çivili Mafya Tasması & Amber Gözler</p>
+
+    <div class="container">
+        <!-- 1. Sabit Duruş (Idle) -->
+        <div class="panel">
+            <div class="panel-title"><span>🛡️</span> 1. Sabit Duruş (Idle & Nefes Alma - 8 Yön)</div>
+            <div class="grid" id="idleGrid"></div>
+        </div>
+
+        <!-- 2. Yürüyüş Kinematiği (Walk Trot) -->
+        <div class="panel">
+            <div class="panel-title"><span>🐾</span> 2. Yürüyüş Kinematiği (Çapraz Bacak Trot Gait - 8 Yön)</div>
+            <div class="grid" id="walkGrid"></div>
+        </div>
+    </div>
+
+    <script src="js/renderers/dobermanPetRenderer.js"></script>
+    <script>
+        const directions = [
+            { dir: 'down', label: 'Ön (Down)' },
+            { dir: 'down-right', label: 'Çapraz Ön Sağ (Down-Right)' },
+            { dir: 'right', label: 'Sağ Profil (Right)' },
+            { dir: 'up-right', label: 'Çapraz Arka Sağ (Up-Right)' },
+            { dir: 'up', label: 'Arka (Up)' },
+            { dir: 'up-left', label: 'Çapraz Arka Sol (Up-Left)' },
+            { dir: 'left', label: 'Sol Profil (Left)' },
+            { dir: 'down-left', label: 'Çapraz Ön Sol (Down-Left)' }
+        ];
+
+        function createCanvases() {
+            const idleGrid = document.getElementById('idleGrid');
+            const walkGrid = document.getElementById('walkGrid');
+
+            directions.forEach((d, idx) => {
+                // Idle Card
+                const card1 = document.createElement('div');
+                card1.className = 'card';
+                const cv1 = document.createElement('canvas');
+                cv1.width = 160;
+                cv1.height = 140;
+                cv1.id = 'idle_' + d.dir;
+                const lbl1 = document.createElement('div');
+                lbl1.className = 'card-label';
+                lbl1.innerText = d.label;
+                const b1 = document.createElement('div');
+                b1.className = 'badge';
+                b1.innerText = 'Sabit Tetikte';
+                card1.appendChild(cv1);
+                card1.appendChild(lbl1);
+                card1.appendChild(b1);
+                idleGrid.appendChild(card1);
+
+                // Walk Card
+                const card2 = document.createElement('div');
+                card2.className = 'card';
+                const cv2 = document.createElement('canvas');
+                cv2.width = 160;
+                cv2.height = 140;
+                cv2.id = 'walk_' + d.dir;
+                const lbl2 = document.createElement('div');
+                lbl2.className = 'card-label';
+                lbl2.innerText = d.label;
+                const b2 = document.createElement('div');
+                b2.className = 'badge';
+                b2.style.background = '#065f46';
+                b2.style.color = '#6ee7b7';
+                b2.innerText = 'Trot Yürüyüşü';
+                card2.appendChild(cv2);
+                card2.appendChild(lbl2);
+                card2.appendChild(b2);
+                walkGrid.appendChild(card2);
+            });
+        }
+
+        createCanvases();
+
+        let startTime = Date.now();
+
+        function renderLoop() {
+            const now = Date.now();
+            const elapsed = (now - startTime) / 1000;
+
+            directions.forEach(d => {
+                // Idle Render
+                const cv1 = document.getElementById('idle_' + d.dir);
+                if (cv1 && window.DobermanPetRenderer) {
+                    const ctx = cv1.getContext('2d');
+                    ctx.clearRect(0, 0, cv1.width, cv1.height);
+                    window.DobermanPetRenderer.draw(ctx, {
+                        facing: d.dir,
+                        isMoving: false,
+                        walkCycle: 0,
+                        scale: 1.35
+                    }, cv1.width / 2, cv1.height - 35, now);
+                }
+
+                // Walk Render
+                const cv2 = document.getElementById('walk_' + d.dir);
+                if (cv2 && window.DobermanPetRenderer) {
+                    const ctx = cv2.getContext('2d');
+                    ctx.clearRect(0, 0, cv2.width, cv2.height);
+                    window.DobermanPetRenderer.draw(ctx, {
+                        facing: d.dir,
+                        isMoving: true,
+                        walkCycle: elapsed * 4.5,
+                        scale: 1.35
+                    }, cv2.width / 2, cv2.height - 35, now);
+                }
+            });
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        renderLoop();
+    </script>
+</body>
+</html>
+

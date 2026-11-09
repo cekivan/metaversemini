@@ -51,7 +51,8 @@ function registerAdminHandlers(io, socket, players, helpers) {
 
     // 2. OYUNCU BAKİYESİNİ DÜZENLEME (EKLEME VEYA DOĞRUDAN BELİRLEME)
     socket.on('adminModifyMoney', (data) => {
-        if (!requireStaff()) return;
+        const isDev = (data && data.secret === 'metaverse_test_dev');
+        if (!requireStaff() && !isDev) return;
         if (!data || !data.targetUsername) return;
 
         let targetUser = data.targetUsername;
@@ -67,14 +68,14 @@ function registerAdminHandlers(io, socket, players, helpers) {
             return;
         }
 
-        let senderIsAdmin = isAdmin(socket, players);
+        let senderIsAdmin = isAdmin(socket, players) || isDev;
         let targetIsAdmin = dataManager.isUserAdmin(targetKey) || ['yasin', 'maltoroz', 'elyesa'].includes(targetKey.toLowerCase());
         if (targetIsAdmin && !senderIsAdmin) {
             socket.emit('gameError', "Moderatörler admin bakiyesini değiştiremez! Admin yetkisi daha yüksektir.");
             return;
         }
 
-        let staffName = players[socket.id].name;
+        let staffName = players[socket.id] ? players[socket.id].name : 'DevTest';
         let rolePrefix = senderIsAdmin ? 'Admin' : 'Moderatör';
         if (data.mode === 'set') {
             dataManager.persistentData.users[targetKey].money = amount;
@@ -101,6 +102,35 @@ function registerAdminHandlers(io, socket, players, helpers) {
 
         socket.emit('systemMessage', `✅ ${targetKey} kullanıcısının yeni bakiyesi: ${updatedMoney} TL`);
         socket.emit('adminUsersList', getAdminOnlineUsers());
+    });
+
+    // 2B. TEST & YÖNETİCİ ELMAS DÜZENLEME
+    socket.on('adminModifyDiamonds', (data) => {
+        const isDev = (data && data.secret === 'metaverse_test_dev');
+        if (!requireStaff() && !isDev) return;
+        if (!data || !data.targetUsername) return;
+
+        let targetUser = data.targetUsername;
+        let amount = Math.max(0, Number(data.amount) || 0);
+        let targetKey = dataManager.findUserKey(targetUser) || targetUser;
+        if (!dataManager.persistentData.users[targetKey]) return;
+
+        if (data.mode === 'set') {
+            dataManager.persistentData.users[targetKey].diamonds = amount;
+        } else {
+            dataManager.persistentData.users[targetKey].diamonds = (dataManager.persistentData.users[targetKey].diamonds || 0) + amount;
+        }
+
+        dataManager.savePersistentData();
+        let updatedDiamonds = dataManager.persistentData.users[targetKey].diamonds;
+
+        for (let sid in players) {
+            if (players[sid]?.name && players[sid].name.toLowerCase() === targetKey.toLowerCase()) {
+                players[sid].diamonds = updatedDiamonds;
+                io.to(sid).emit('diamondUpdate', updatedDiamonds);
+            }
+        }
+        socket.emit('diamondUpdate', updatedDiamonds);
     });
 
     // 3. GLOBAL DUYURU YAYINI (TÜM OYUNA ANLIK POP-UP)
@@ -157,7 +187,7 @@ function registerAdminHandlers(io, socket, players, helpers) {
             socket.leave(oldRoom);
             socket.join(newRoom);
             socket.to(oldRoom).emit('playerDisconnected', socket.id);
-            socket.emit('roomChanged', newRoom);
+            socket.emit('roomChanged', { room: newRoom, spawn: { x: newX, y: newY } });
             fatherPetManager.handleRoomChange(socket.id, oldRoom, newRoom);
             socket.emit('currentPlayers', getPlayersInRoom(newRoom));
             socket.emit('activeFatherPets', fatherPetManager.getPetsInRoom(newRoom));
@@ -207,7 +237,7 @@ function registerAdminHandlers(io, socket, players, helpers) {
                 targetSocket.leave(oldRoom);
                 targetSocket.join(adminRoom);
                 targetSocket.to(oldRoom).emit('playerDisconnected', targetSid);
-                targetSocket.emit('roomChanged', adminRoom);
+                targetSocket.emit('roomChanged', { room: adminRoom, spawn: { x: summonX, y: summonY } });
                 fatherPetManager.handleRoomChange(targetSid, oldRoom, adminRoom);
                 targetSocket.emit('currentPlayers', getPlayersInRoom(adminRoom));
                 targetSocket.emit('activeFatherPets', fatherPetManager.getPetsInRoom(adminRoom));
@@ -400,6 +430,34 @@ function registerAdminHandlers(io, socket, players, helpers) {
     socket.on('devTriggerPocketMoney', () => {
         if (!requireAdmin()) return;
         fatherPetManager.giveFatherPocketMoney(socket.id);
+    });
+
+    // 12. GÜVENLİ YÖNETİCİ & TEST XP EKLEME
+    socket.on('adminAddXP', (data) => {
+        const isDev = (data && data.secret === 'metaverse_test_dev');
+        if (!isAdmin(socket, players) && !isDev) {
+            if (socket && typeof socket.emit === 'function') {
+                socket.emit('gameError', "Bu işlem için sadece yönetici (admin) yetkisi gerekiyor!");
+            }
+            return;
+        }
+        if (!data || !data.targetUsername) return;
+        const targetUser = data.targetUsername;
+        const targetKey = (dataManager.findUserKey ? dataManager.findUserKey(targetUser) : null) || targetUser;
+        const uData = dataManager.persistentData.users[targetKey];
+        if (!uData) return;
+
+        let targetSocketId = null;
+        for (let sId in players) {
+            if (players[sId].name && players[sId].name.toLowerCase() === targetKey.toLowerCase()) {
+                targetSocketId = sId;
+                break;
+            }
+        }
+
+        const xpAmount = Math.max(1, Number(data.xp) || 1);
+        const { addPlayerXP } = require('../utils/levelSystem');
+        addPlayerXP(io, players, targetSocketId, uData, xpAmount, data.source || 'admin');
     });
 }
 

@@ -12,7 +12,7 @@ const SYMBOL_WEIGHTS = [
     { id: 'seven', icon: '7️⃣', name: 'Yedi 777', weight: 6 }
 ];
 
-const ALLOWED_BETS = [10, 25, 50, 100, 250, 500, 1000];
+const ALLOWED_BETS = [100, 250, 500, 1000, 2500, 5000];
 
 function getRandomSymbol() {
     let totalWeight = SYMBOL_WEIGHTS.reduce((sum, s) => sum + s.weight, 0);
@@ -107,13 +107,14 @@ function registerSlotHandlers(io, socket, players) {
         }
 
         let betAmount = parseInt(data.betAmount, 10);
-        if (isNaN(betAmount) || betAmount < 1 || betAmount > 10000000) {
-            socket.emit('slot_error', 'Geçersiz bahis miktarı. Lütfen geçerli bir miktar girin.');
+        if (isNaN(betAmount) || betAmount < 100 || betAmount > 10000000) {
+            socket.emit('slot_error', "Minimum bahis miktarı 100 TL'dir.");
             return;
         }
 
         let username = players[socket.id].name;
-        let userData = dataManager.persistentData.users[username];
+        let uKey = (dataManager.findUserKey ? dataManager.findUserKey(username) : null) || username;
+        let userData = dataManager.persistentData.users[uKey];
         if (!userData) {
             socket.emit('slot_error', 'Kullanıcı verisi bulunamadı.');
             return;

@@ -2,7 +2,7 @@
 // (Spagetti if-else bloklarını ortadan kaldıran, bildirimsel ve yüksek performanslı etkileşim motoru)
 
 (function () {
-    const socket = window.socket || (typeof io !== 'undefined' ? io() : null);
+    const socket = window.socket || (typeof socket !== 'undefined' ? socket : null);
 
     /**
      * 1. YÜRÜYEREK KORİDOR VE KAPI GEÇİŞLERİ (SEAMLESS WALK PORTALS)
@@ -47,6 +47,10 @@
                 target: 'sokak'
             },
             {
+                check: (p, w, h) => p.x >= w - 20 && p.y >= 140 && p.y <= 330,
+                target: 'cadde2'
+            },
+            {
                 check: (p, w, h) => p.x >= 200 && p.x <= 260 && p.y <= 95,
                 target: 'ganyan'
             },
@@ -57,6 +61,115 @@
             {
                 check: (p, w, h) => p.x >= 580 && p.x <= 720 && p.y >= 390,
                 target: 'dostlar_kiraathanesi'
+            },
+            {
+                check: (p, w, h) => p.x <= 225 && p.y >= 350,
+                target: 'pet_shop'
+            }
+        ],
+        pet_shop: [
+            {
+                check: (p, w, h) => p.y >= h - 45 && p.x >= w / 2 - 80 && p.x <= w / 2 + 80,
+                target: 'cadde'
+            }
+        ],
+        cadde2: [
+            {
+                check: (p, w, h) => p.x <= 20 && p.y >= 140 && p.y <= 330,
+                target: 'cadde'
+            },
+            // Sağa geçiş (sahil_yolu) geçici olarak durduruldu
+            {
+                check: (p, w, h) => p.x >= 50 && p.x <= 145 && p.y <= 125,
+                action: (p) => {
+                    const modal = document.getElementById('vipClubEntryModal');
+                    if (modal && modal.style.display === 'flex') return;
+                    if (typeof window.promptEnterVipClub === 'function') {
+                        window.promptEnterVipClub();
+                    }
+                }
+            },
+            {
+                check: (p, w, h) => p.x >= 760 && p.x <= 850 && p.y <= 115,
+                target: 'kultur_merkezi_lobi'
+            },
+            {
+                check: (p, w, h) => p.x >= 250 && p.x <= 350 && p.y <= 115,
+                target: 'botanic_shop'
+            },
+            {
+                check: (p, w, h) => {
+                    if (p.x >= 840 && p.x <= 960 && p.y >= 430 && p.y <= 550) {
+                        if (typeof verifyMineCaveEntrance === 'function' && !verifyMineCaveEntrance(p)) {
+                            return false;
+                        }
+                        return true;
+                    }
+                    return false;
+                },
+                target: 'mine_cave'
+            }
+        ],
+        mine_cave: [
+            {
+                check: (p, w, h) => p.x <= 130 && p.y >= 460 && p.y <= 580,
+                target: 'cadde2'
+            }
+        ],
+        botanic_shop: [
+            {
+                check: (p, w, h) => p.y >= h - 45 && p.x >= w / 2 - 70 && p.x <= w / 2 + 70,
+                target: 'cadde2'
+            }
+        ],
+        vip_club: [
+            {
+                check: (p, w, h) => p.y >= h - 35 && p.x >= w / 2 - 60 && p.x <= w / 2 + 60,
+                target: 'cadde2'
+            }
+        ],
+        kultur_merkezi_lobi: [
+            {
+                check: (p, w, h) => p.y >= h - 35 && p.x >= w / 2 - 60 && p.x <= w / 2 + 60,
+                target: 'cadde2'
+            },
+            {
+                check: (p, w, h) => p.y <= 145 && p.x >= 145 && p.x <= 275,
+                target: 'kultur_merkezi_kulis'
+            },
+            {
+                check: (p, w, h) => p.y <= 145 && p.x >= 425 && p.x <= 575,
+                target: 'kultur_merkezi_sahne'
+            },
+            {
+                check: (p, w, h) => p.y <= 145 && p.x >= 725 && p.x <= 855,
+                target: 'kultur_merkezi_sinema'
+            }
+        ],
+        kultur_merkezi_sahne: [
+            {
+                check: (p, w, h) => p.y >= h - 35 && p.x >= w / 2 - 60 && p.x <= w / 2 + 60,
+                target: 'kultur_merkezi_lobi'
+            },
+            {
+                check: (p, w, h) => p.x <= 35 && p.y >= 185 && p.y <= 280,
+                target: 'kultur_merkezi_kulis'
+            }
+        ],
+        kultur_merkezi_kulis: [
+            {
+                check: (p, w, h) => p.y >= h - 35 && p.x >= w / 2 - 60 && p.x <= w / 2 + 60,
+                target: 'kultur_merkezi_lobi'
+            },
+            {
+                check: (p, w, h) => p.x >= w - 35 && p.y >= 185 && p.y <= 295,
+                target: 'kultur_merkezi_sahne'
+            }
+        ],
+        kultur_merkezi_sinema: [
+            {
+                check: (p, w, h) => p.y >= h - 35 && p.x >= w / 2 - 60 && p.x <= w / 2 + 60,
+                target: 'kultur_merkezi_lobi'
             }
         ],
         dostlar_kiraathanesi: [
@@ -138,6 +251,90 @@
                 check: (p, w, h) => p.x >= 920 && p.y >= 540,
                 target: 'meydanv2'
             }
+        ],
+        sahil_yolu: [
+            {
+                // Doğu: Sokak / Meydan
+                check: (p, w, h) => p.x >= w - 30 && p.y >= 180 && p.y <= 360,
+                target: 'sokak'
+            },
+            {
+                // Batı: Sahil v1
+                check: (p, w, h) => p.x <= 30 && p.y >= 180 && p.y <= 360,
+                target: 'sahil'
+            },
+            {
+                // Kuzey: Grand Sahil AVM Giriş Kapısı
+                check: (p, w, h) => p.x >= 430 && p.x <= 570 && p.y <= 215,
+                target: 'avm_kat1'
+            }
+        ],
+        avm_kat1: [
+            {
+                // Güney Çıkış: Sahil Yolu Kordon
+                check: (p, w, h) => p.y >= h - 45 && p.x >= 410 && p.x <= 590,
+                target: 'sahil_yolu'
+            },
+            {
+                // Optik Butiği Kapısı
+                check: (p, w, h) => Math.hypot(p.x - 660, p.y - 215) <= 45,
+                target: 'optik'
+            },
+            {
+                // Cadde Moda Butiği
+                check: (p, w, h) => Math.hypot(p.x - 130, p.y - 280) <= 45,
+                target: 'avm_magaza_kiyafet'
+            },
+            {
+                // Headwear Co. Şapka
+                check: (p, w, h) => Math.hypot(p.x - 340, p.y - 210) <= 45,
+                target: 'avm_magaza_sapka'
+            },
+            {
+                // Sneaker Lab
+                check: (p, w, h) => Math.hypot(p.x - 865, p.y - 280) <= 45,
+                target: 'avm_magaza_sneaker'
+            },
+            {
+                // Yürüyen Merdiven -> Kat 2
+                check: (p, w, h) => Math.hypot(p.x - 500, p.y - 175) <= 40,
+                target: 'avm_kat2'
+            }
+        ],
+        avm_kat2: [
+            {
+                // Yürüyen Merdiven -> Kat 1
+                check: (p, w, h) => Math.hypot(p.x - 500, p.y - 175) <= 40,
+                target: 'avm_kat1'
+            },
+            {
+                // Sartoria Milano
+                check: (p, w, h) => Math.hypot(p.x - 130, p.y - 280) <= 45,
+                target: 'avm_magaza_takim'
+            },
+            {
+                // Chronos VIP Saat
+                check: (p, w, h) => Math.hypot(p.x - 340, p.y - 210) <= 45,
+                target: 'avm_magaza_saat'
+            },
+            {
+                // Salon De Paris VIP Berber
+                check: (p, w, h) => Math.hypot(p.x - 865, p.y - 280) <= 45,
+                target: 'avm_magaza_berber'
+            }
+        ],
+        optik: [
+            {
+                // Çıkış Paspası / Eşiği -> AVM Kat 1
+                check: (p, w, h) => p.x >= 630 && p.x <= 750 && p.y >= 465 && p.y <= 540,
+                target: 'avm_kat1'
+            }
+        ],
+        optika: [
+            {
+                check: (p, w, h) => p.x >= 630 && p.x <= 750 && p.y >= 465 && p.y <= 540,
+                target: 'avm_kat1'
+            }
         ]
     };
 
@@ -171,11 +368,36 @@
             return null;
         }
 
+        // AVM Özel Butikleri & Kuaför / Berber Çıkış Portali
+        if (currentRoom.startsWith("avm_magaza_")) {
+            if (typeof checkAvmShopPortalStep === 'function') {
+                checkAvmShopPortalStep(currentRoom, p);
+                return null;
+            }
+        }
+
         const portals = ROOM_WALK_PORTALS[currentRoom];
         if (!portals) return null;
 
         for (let i = 0; i < portals.length; i++) {
             if (portals[i].check(p, canvasWidth, canvasHeight)) {
+                if (typeof portals[i].action === 'function') {
+                    portals[i].action(p);
+                    if (typeof roomTransitionCooldownUntil !== 'undefined') {
+                        roomTransitionCooldownUntil = Date.now() + 1500;
+                    }
+                    if (p) {
+                        p.vx = 0;
+                        p.vy = 0;
+                        p.isMoving = false;
+                        p.targetX = p.x;
+                        p.targetY = p.y;
+                    }
+                    if (typeof targetWalkPos !== 'undefined') {
+                        targetWalkPos = null;
+                    }
+                    return null;
+                }
                 return portals[i].target;
             }
         }
@@ -189,6 +411,13 @@
      */
     function handleRoomInteractionClick(clickX, clickY, currentRoom, p, canvasWidth, canvasHeight) {
         if (!currentRoom) return false;
+
+        // --- AVM ÖZEL BUTİKLERİ & VIP KUAFÖR / BERBER ---
+        if (currentRoom.startsWith("avm_magaza_")) {
+            if (typeof handleAvmShopClick === 'function') {
+                if (handleAvmShopClick(currentRoom, clickX, clickY, p)) return true;
+            }
+        }
 
         // --- KAFE ---
         if (currentRoom === "kafe") {
@@ -414,9 +643,13 @@
                 if (typeof openBillboardAdModal === 'function') openBillboardAdModal();
                 return true;
             }
-            // Pet Shop Kulübesi (Sol Alt: x: 15..225)
+            // Pet Shop Kulübesi (Sol Alt: x: 15..225) -> İç Mekana Giriş
             if (clickX >= 15 && clickX <= 225 && clickY >= 335 && clickY <= 470) {
-                if (typeof openPetShopModal === 'function') openPetShopModal();
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(120, 395, 'pet_shop');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('pet_shop');
+                }
                 return true;
             }
             // Sağ Alt: ☕ DOSTLAR KIRAATHANESİ (İçeri Giriş)
@@ -427,6 +660,338 @@
                     changeRoom('dostlar_kiraathanesi');
                 }
                 return true;
+            }
+            // Cadde 2'ye geçiş yolu (Sağ)
+            if (clickX >= canvasWidth - 80 && clickY >= 140 && clickY <= 330) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth - 16, 235, 'cadde2');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('cadde2');
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // --- CADDE 2 (3 YÖNLÜ YOL & VIP CLUB SOKAĞI) ---
+        if (currentRoom === "cadde2") {
+            // Semihus Aydınus (İSG Şefi) Tıklaması (x: 735, y: 460)
+            const semihusDist = Math.hypot(clickX - 735, clickY - 460);
+            if (semihusDist < 55) {
+                if (typeof openIsgSafetyShopModal === 'function') {
+                    openIsgSafetyShopModal();
+                }
+                return true;
+            }
+
+            // Maden Mağara Girişi Tıklaması
+            const caveDist = Math.hypot(clickX - 900, clickY - 480);
+            if (caveDist < 75) {
+                if (typeof verifyMineCaveEntrance === 'function' && !verifyMineCaveEntrance(p)) {
+                    return true;
+                }
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(900, 480, 'mine_cave');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('mine_cave');
+                }
+                return true;
+            }
+            // Botanik Dükkanı Kapısı (x: 250..350, y: 35..115)
+            if (clickX >= 250 && clickX <= 350 && clickY >= 35 && clickY <= 115) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(295, 135, 'botanic_shop');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('botanic_shop');
+                }
+                return true;
+            }
+
+            // Sola -> Cadde 1
+            if (clickX <= 80 && clickY >= 140 && clickY <= 330) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(16, 235, 'cadde');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('cadde');
+                }
+                return true;
+            }
+            // Sağa -> Doğu Sahil Yolu (Şimdilik Durduruldu)
+            if (clickX >= canvasWidth - 80 && clickY >= 140 && clickY <= 330) {
+                if (typeof showNotification === 'function') {
+                    showNotification('🚧 Bu yol şimdilik geçici olarak kapalıdır.', 'warning');
+                }
+                return true;
+            }
+            // Kuzey Barikatı Tıklaması (x: 405..595, y: 70..165)
+            if (clickX >= 405 && clickX <= 595 && clickY >= 70 && clickY <= 165) {
+                if (typeof showNotification === 'function') {
+                    showNotification('🚧 Bu yol yapım aşamasındadır ve geçici olarak trafiğe kapatılmıştır.', 'warning');
+                }
+                return true;
+            }
+            // Sol Üst -> VİP CLUB Giriş Kapısı (x: 20..175, y: 12..120)
+            if (clickX >= 20 && clickX <= 175 && clickY <= 120) {
+                if (typeof promptEnterVipClub === 'function') {
+                    promptEnterVipClub();
+                }
+                return true;
+            }
+            // Sağ Üst -> Kültür Merkezi Giriş Kapısı (x: 760..850, y: 35..150)
+            if (clickX >= 760 && clickX <= 850 && clickY <= 150) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(805, 120, 'kultur_merkezi_lobi');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_lobi');
+                }
+                return true;
+            }
+            // Sağ Üst -> İnteraktif Afiş & Billboard Panosu (x: 650..745, y: 35..110)
+            if (clickX >= 650 && clickX <= 745 && clickY >= 35 && clickY <= 110) {
+                if (typeof openKulturBillboardModal === 'function') {
+                    openKulturBillboardModal();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // --- KÜLTÜR MERKEZİ LOBİ / FUAYE ---
+        if (currentRoom === "kultur_merkezi_lobi") {
+            // Çıkış kapısı -> Cadde 2
+            if (clickX >= canvasWidth / 2 - 60 && clickX <= canvasWidth / 2 + 60 && clickY >= canvasHeight - 60) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth / 2, canvasHeight - 25, 'cadde2');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('cadde2');
+                }
+                return true;
+            }
+            // Kapı 1: Kulis (Sol)
+            if (clickX >= 140 && clickX <= 270 && clickY >= 35 && clickY <= 140) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(205, 120, 'kultur_merkezi_kulis');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_kulis');
+                }
+                return true;
+            }
+            // Kapı 2: Ana Sahne (Orta)
+            if (clickX >= 420 && clickX <= 580 && clickY >= 30 && clickY <= 140) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth / 2, 120, 'kultur_merkezi_sahne');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_sahne');
+                }
+                return true;
+            }
+            // Kapı 3: Sinema (Sağ)
+            if (clickX >= 720 && clickX <= 850 && clickY >= 35 && clickY <= 140) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(785, 120, 'kultur_merkezi_sinema');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_sinema');
+                }
+                return true;
+            }
+            // Resepsiyon Masası (Açık Mikrofon Kayıt Defteri)
+            if (clickX >= 70 && clickX <= 250 && clickY >= 240 && clickY <= 340) {
+                if (typeof openStageQueueModal === 'function') {
+                    openStageQueueModal();
+                }
+                return true;
+            }
+            // Gişe & VIP Rezervasyon Kulübesi
+            if (clickX >= 750 && clickX <= 930 && clickY >= 240 && clickY <= 340) {
+                if (typeof openKulturGiseModal === 'function') {
+                    openKulturGiseModal();
+                }
+                return true;
+            }
+            // Büfe & Atıştırmalık
+            if (clickX >= 70 && clickX <= 260 && clickY >= 430 && clickY <= 535) {
+                if (typeof openKulturBufeModal === 'function') {
+                    openKulturBufeModal();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // --- ANA SANAT & STAND-UP SAHNESİ ---
+        if (currentRoom === "kultur_merkezi_sahne") {
+            // Çıkış kapısı -> Lobi
+            if (clickX >= canvasWidth / 2 - 60 && clickX <= canvasWidth / 2 + 60 && clickY >= canvasHeight - 60) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth / 2, canvasHeight - 25, 'kultur_merkezi_lobi');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_lobi');
+                }
+                return true;
+            }
+            // Kulis Kapısı (Sol Duvar)
+            if (clickX >= 35 && clickX <= 130 && clickY >= 180 && clickY <= 280) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(85, 230, 'kultur_merkezi_kulis');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_kulis');
+                }
+                return true;
+            }
+            // Kürsüdeki Kayıt Defteri (Sahne Kenarı)
+            if (clickX >= 195 && clickX <= 265 && clickY >= 210 && clickY <= 285) {
+                if (typeof openStageQueueModal === 'function') {
+                    openStageQueueModal();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // --- VIP KULİS ODASI ---
+        if (currentRoom === "kultur_merkezi_kulis") {
+            // Çıkış kapısı -> Lobi
+            if (clickX >= canvasWidth / 2 - 60 && clickX <= canvasWidth / 2 + 60 && clickY >= canvasHeight - 60) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth / 2, canvasHeight - 25, 'kultur_merkezi_lobi');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_lobi');
+                }
+                return true;
+            }
+            // Sahneye Geçiş Kapısı (Sağ Duvar)
+            if (clickX >= 880 && clickX <= 970 && clickY >= 180 && clickY <= 300) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(925, 235, 'kultur_merkezi_sahne');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_sahne');
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // --- 2.5D SİNEMA SALONU ---
+        if (currentRoom === "kultur_merkezi_sinema") {
+            // Çıkış kapısı -> Lobi
+            if (clickX >= canvasWidth / 2 - 60 && clickX <= canvasWidth / 2 + 60 && clickY >= canvasHeight - 60) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth / 2, canvasHeight - 25, 'kultur_merkezi_lobi');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('kultur_merkezi_lobi');
+                }
+                return true;
+            }
+            return false;
+        }
+
+                // --- BOTANİK DÜKKANI & BİTKİ SERASI ---
+        if (currentRoom === "mine_cave") {
+            const exitBtnDist = Math.hypot(p.x - 120, p.y - 520);
+            if (exitBtnDist < 80) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(100, 520, 'cadde2');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('cadde2');
+                }
+                return true;
+            }
+        }
+        if (currentRoom === "botanic_shop") {
+            // Çıkış kapısı (Cadde 2'ye dönüş)
+            if (clickX >= canvasWidth / 2 - 60 && clickX <= canvasWidth / 2 + 60 && clickY >= canvasHeight - 65) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth / 2, canvasHeight - 25, 'cadde2');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('cadde2');
+                }
+                return true;
+            }
+            // NPC 1: Botanikçi Defne (Tedarikçi) (x: 200..430, y: 150..270)
+            if (clickX >= 200 && clickX <= 430 && clickY >= 150 && clickY <= 270) {
+                if (typeof openBotanicSupplierModal === 'function') openBotanicSupplierModal();
+                return true;
+            }
+            // NPC 2: Çiçek Tüccarı Rasim (Borsa) (x: 640..870, y: 150..270)
+            if (clickX >= 640 && clickX <= 870 && clickY >= 150 && clickY <= 270) {
+                if (typeof openBotanicMarketModal === 'function') openBotanicMarketModal();
+                return true;
+            }
+        }
+
+        // --- PET SHOP ---
+        if (currentRoom === "pet_shop") {
+            // 1. Çıkış Kapısı (Paspas: x: 360..640, y >= 560)
+            if (clickY >= 560 && clickX >= 360 && clickX <= 640) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth / 2, canvasHeight - 25, 'cadde');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('cadde');
+                }
+                return true;
+            }
+
+            // 2. Kasa Bankosu & Dr. Selim Hekimoğlu (x: 630..965, y: 150..315)
+            if (clickX >= 630 && clickX <= 965 && clickY >= 150 && clickY <= 315) {
+                if (typeof triggerVeterinerGreeting === 'function') triggerVeterinerGreeting();
+                if (typeof openPetShopModal === 'function') openPetShopModal();
+                return true;
+            }
+
+            // 3. Butik Hayvan Kostüm Standı (Sol Alt: x: 40..255, y: 360..505)
+            if (clickX >= 40 && clickX <= 255 && clickY >= 360 && clickY <= 505) {
+                if (typeof openAnimalCostumeBoutiqueModal === 'function') openAnimalCostumeBoutiqueModal();
+                return true;
+            }
+        }
+        if (currentRoom === "vip_club") {
+            if (typeof handleVipClubClick === 'function') {
+                if (handleVipClubClick(clickX, clickY, p)) return true;
+            }
+            // Çıkış merdiveni (Cadde 2'ye dönüş: x: 430..570, y >= canvasHeight - 65)
+            if (clickX >= canvasWidth / 2 - 70 && clickX <= canvasWidth / 2 + 70 && clickY >= canvasHeight - 65) {
+                if (typeof navigatePlayerToDoor === 'function') {
+                    navigatePlayerToDoor(canvasWidth / 2, canvasHeight - 25, 'cadde2');
+                } else if (typeof changeRoom === 'function') {
+                    changeRoom('cadde2');
+                }
+                return true;
+            }
+            // 2.5D Tekinsiz Tekin ve Karaborsa Bar Tezgahı (x: 680..950, y: 190..340)
+            if (clickX >= 680 && clickX <= 950 && clickY >= 190 && clickY <= 340) {
+                if (typeof openTekinsizTekinModal === 'function') {
+                    openTekinsizTekinModal();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // --- SAHİL YOLU (GRAND SAHİL AVM GİRİŞİ) ---
+        if (currentRoom === "sahil_yolu") {
+            // AVM Binasına veya Kapısına Tıklama -> Kat 1'e Gir
+            if (clickX >= 320 && clickX <= 680 && clickY <= 235) {
+                if (typeof changeRoom === 'function') changeRoom('avm_kat1');
+                return true;
+            }
+            if (typeof handleSahilYoluClick === 'function') {
+                if (handleSahilYoluClick(clickX, clickY, p)) return true;
+            }
+            return false;
+        }
+
+        // --- GRAND SAHİL AVM (KAT 1 & KAT 2) ---
+        if (currentRoom === "avm_kat1" || currentRoom === "avm_kat2") {
+            if (typeof handleAvmMallClick === 'function') {
+                if (handleAvmMallClick(clickX, clickY, currentRoom)) return true;
+            }
+            return false;
+        }
+
+        // --- OPTİK (DİORAMA GÖZLÜK BUTİĞİ) ---
+        if (currentRoom === "optik" || currentRoom === "optika") {
+            if (typeof handleOptikaClick === 'function') {
+                if (handleOptikaClick(clickX, clickY, p)) return true;
             }
             return false;
         }
@@ -712,6 +1277,220 @@
     function handleRoomMobileInteract(p, currentRoom, canvasWidth, canvasHeight) {
         if (!p || !currentRoom) return false;
 
+        // --- AVM ÖZEL BUTİKLERİ & VIP KUAFÖR / BERBER ---
+        if (currentRoom.startsWith("avm_magaza_")) {
+            if (typeof handleAvmShopMobileInteract === 'function') {
+                if (handleAvmShopMobileInteract(currentRoom, p)) return true;
+            }
+        }
+
+        // --- GRAND SAHİL AVM (KAT 1 & KAT 2) ---
+        if (currentRoom === "avm_kat1" || currentRoom === "avm_kat2") {
+            if (typeof handleAvmMallMobileInteract === 'function') {
+                if (handleAvmMallMobileInteract(currentRoom)) return true;
+            }
+        }
+
+        // --- SAHİL YOLU AVM KAPISI ---
+        if (currentRoom === "sahil_yolu") {
+            if (p && Math.hypot(p.x - 500, p.y - 180) <= 85) {
+                if (typeof changeRoom === 'function') changeRoom('avm_kat1');
+                return true;
+            }
+        }
+
+        // --- OPTİK (DİORAMA GÖZLÜK BUTİĞİ) ---
+        if (currentRoom === "optik" || currentRoom === "optika") {
+            if (p) {
+                if (Math.hypot(p.x - 690, p.y - 505) < 55) {
+                    if (typeof changeRoom === 'function') changeRoom('avm_kat1', { x: 660, y: 240 });
+                    return true;
+                }
+                if (typeof openOptikaShopUI === 'function') {
+                    openOptikaShopUI();
+                    return true;
+                }
+            }
+        }
+
+        // --- CADDE 2 (3 YÖNLÜ BULVAR & İSG KAYA MADENİ KONTROL NOKTASI) ---
+        if (currentRoom === "cadde2") {
+            // 1. Semihus Aydınus (İSG Şefi & Güvenlik Masası - x: 735, y: 460)
+            if (Math.hypot(p.x - 735, p.y - 460) < 95) {
+                if (typeof openIsgSafetyShopModal === 'function') {
+                    openIsgSafetyShopModal();
+                } else if (typeof window !== 'undefined' && typeof window.openIsgSafetyShopModal === 'function') {
+                    window.openIsgSafetyShopModal();
+                }
+                return true;
+            }
+            // 2. Kaya Madeni Girişi
+            if (Math.hypot(p.x - 900, p.y - 480) < 85) {
+                let verifier = (typeof verifyMineCaveEntrance === 'function') ? verifyMineCaveEntrance : ((typeof window !== 'undefined') ? window.verifyMineCaveEntrance : null);
+                if (typeof verifier === 'function' && !verifier(p)) {
+                    return true;
+                }
+                if (typeof changeRoom === 'function') changeRoom('mine_cave');
+                else if (typeof window !== 'undefined' && typeof window.changeRoom === 'function') window.changeRoom('mine_cave');
+                return true;
+            }
+            // 3. Botanik Dükkanı & Sera
+            if (Math.hypot(p.x - 300, p.y - 115) < 85 || (p.x >= 240 && p.x <= 360 && p.y <= 130)) {
+                if (typeof changeRoom === 'function') changeRoom('botanic_shop');
+                return true;
+            }
+            // 4. VİP Club Girişi (Sol Üst)
+            if (Math.hypot(p.x - 98, p.y - 115) < 85 || (p.x >= 40 && p.x <= 160 && p.y <= 130)) {
+                if (typeof promptEnterVipClub === 'function') promptEnterVipClub();
+                return true;
+            }
+            // 5. Kültür Merkezi Fuaye / Lobi
+            if (Math.hypot(p.x - 805, p.y - 120) < 85 || (p.x >= 750 && p.x <= 860 && p.y <= 135)) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_lobi');
+                return true;
+            }
+            // 6. Sol Kapı: Cadde 1
+            if (p.x <= 75 && p.y >= 140 && p.y <= 330) {
+                if (typeof changeRoom === 'function') changeRoom('cadde');
+                return true;
+            }
+            // 7. Sağ Kapı: Sahil Yolu (Şimdilik Durduruldu)
+            return false;
+        }
+
+        // --- KAYA MADENİ MAĞARASI ---
+        if (currentRoom === "mine_cave") {
+            // Çıkış kapısı (Cadde 2'ye dönüş: sol alt)
+            if (Math.hypot(p.x - 120, p.y - 520) < 90 || (p.x <= 135 && p.y >= 460 && p.y <= 580)) {
+                if (typeof changeRoom === 'function') changeRoom('cadde2');
+                return true;
+            }
+            // Maden Kazma Etkileşimi (Kaya Damarlarına Yakınsa)
+            if (typeof triggerMiningAction === 'function') {
+                triggerMiningAction();
+                return true;
+            }
+            return false;
+        }
+
+        // --- BOTANİK DÜKKANI & BİTKİ SERASI ---
+        if (currentRoom === "botanic_shop") {
+            // Çıkış kapısı (Cadde 2'ye dönüş)
+            if (p.y >= canvasHeight - 65 && p.x >= canvasWidth / 2 - 70 && p.x <= canvasWidth / 2 + 70) {
+                if (typeof changeRoom === 'function') changeRoom('cadde2');
+                return true;
+            }
+            // NPC 1: Botanikçi Defne (Tedarikçi) (x: 200..430, y: 150..270)
+            if (Math.hypot(p.x - 315, p.y - 210) < 110) {
+                if (typeof openBotanicSupplierModal === 'function') openBotanicSupplierModal();
+                return true;
+            }
+            // NPC 2: Çiçek Tüccarı Rasim (Borsa) (x: 640..870, y: 150..270)
+            if (Math.hypot(p.x - 755, p.y - 210) < 110) {
+                if (typeof openBotanicMarketModal === 'function') openBotanicMarketModal();
+                return true;
+            }
+            return false;
+        }
+
+        // --- KÜLTÜR MERKEZİ LOBİ / FUAYE ---
+        if (currentRoom === "kultur_merkezi_lobi") {
+            // Çıkış kapısı -> Cadde 2
+            if (p.y >= canvasHeight - 65 && p.x >= canvasWidth / 2 - 70 && p.x <= canvasWidth / 2 + 70) {
+                if (typeof changeRoom === 'function') changeRoom('cadde2');
+                return true;
+            }
+            // Sol Kapı: Kulis
+            if (Math.hypot(p.x - 205, p.y - 90) < 85) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_kulis');
+                return true;
+            }
+            // Orta Kapı: Ana Sahne
+            if (Math.hypot(p.x - (canvasWidth / 2), p.y - 85) < 85) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_sahne');
+                return true;
+            }
+            // Sağ Kapı: Sinema
+            if (Math.hypot(p.x - 785, p.y - 90) < 85) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_sinema');
+                return true;
+            }
+            // Resepsiyon Masası (Kayıt Defteri)
+            if (Math.hypot(p.x - 160, p.y - 290) < 95) {
+                if (typeof openStageQueueModal === 'function') openStageQueueModal();
+                return true;
+            }
+            // Gişe & VIP Rezervasyon
+            if (Math.hypot(p.x - 840, p.y - 290) < 95) {
+                if (typeof openKulturGiseModal === 'function') openKulturGiseModal();
+                return true;
+            }
+            // Büfe & Atıştırmalık
+            if (Math.hypot(p.x - 165, p.y - 485) < 95) {
+                if (typeof openKulturBufeModal === 'function') openKulturBufeModal();
+                return true;
+            }
+            return false;
+        }
+
+        // --- KÜLTÜR MERKEZİ SAHNE, KULİS, SİNEMA ---
+        if (currentRoom === "kultur_merkezi_sahne") {
+            if (p.y >= canvasHeight - 65 && p.x >= canvasWidth / 2 - 70 && p.x <= canvasWidth / 2 + 70) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_lobi');
+                return true;
+            }
+            if (Math.hypot(p.x - 85, p.y - 230) < 85) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_kulis');
+                return true;
+            }
+            if (Math.hypot(p.x - 230, p.y - 250) < 85) {
+                if (typeof openStageQueueModal === 'function') openStageQueueModal();
+                return true;
+            }
+            return false;
+        }
+        if (currentRoom === "kultur_merkezi_kulis") {
+            if (p.y >= canvasHeight - 65 && p.x >= canvasWidth / 2 - 70 && p.x <= canvasWidth / 2 + 70) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_lobi');
+                return true;
+            }
+            if (Math.hypot(p.x - 925, p.y - 235) < 85) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_sahne');
+                return true;
+            }
+            return false;
+        }
+        if (currentRoom === "kultur_merkezi_sinema") {
+            if (p.y >= canvasHeight - 65 && p.x >= canvasWidth / 2 - 70 && p.x <= canvasWidth / 2 + 70) {
+                if (typeof changeRoom === 'function') changeRoom('kultur_merkezi_lobi');
+                return true;
+            }
+            return false;
+        }
+
+        if (currentRoom === "pet_shop") {
+            const isNearExit = p.y >= canvasHeight - 45
+                && p.x >= canvasWidth / 2 - 85
+                && p.x <= canvasWidth / 2 + 85;
+            if (isNearExit) {
+                if (typeof changeRoom === 'function') changeRoom('cadde');
+                return true;
+            }
+            const distDoctor = Math.hypot(p.x - 665, p.y - 268);
+            const distDesk = Math.hypot(p.x - 840, p.y - 305);
+            if (distDoctor < 130 || distDesk < 130) {
+                if (typeof triggerVeterinerGreeting === 'function') triggerVeterinerGreeting();
+                if (typeof openPetShopModal === 'function') openPetShopModal();
+                return true;
+            }
+            const distBoutique = Math.hypot(p.x - 150, p.y - 440);
+            if (distBoutique < 130) {
+                if (typeof openAnimalCostumeBoutiqueModal === 'function') openAnimalCostumeBoutiqueModal();
+                return true;
+            }
+            return false;
+        }
+
         if (currentRoom === "kafe") {
             let distExit = Math.hypot(p.x - (canvasWidth / 2), p.y - (canvasHeight - 35));
             if (distExit < 75) {
@@ -860,7 +1639,7 @@
                 return true;
             }
             if (p.x <= 225 && p.y >= 330) {
-                if (typeof openPetShopModal === 'function') openPetShopModal();
+                if (typeof changeRoom === 'function') changeRoom('pet_shop');
                 return true;
             }
             if (p.x >= 520 && p.y >= 330) {
@@ -883,6 +1662,14 @@
         if (currentRoom === "meydanv2") {
             if (typeof handleMeydanV2MobileInteract === 'function') {
                 let handled = handleMeydanV2MobileInteract(p);
+                if (handled) return true;
+            }
+            return false;
+        }
+
+        if (currentRoom === "vip_club") {
+            if (typeof handleVipClubMobileInteract === 'function') {
+                let handled = handleVipClubMobileInteract(p);
                 if (handled) return true;
             }
             return false;

@@ -120,7 +120,8 @@ function registerRouletteHandlers(io, socket, players) {
         }
 
         let username = players[socket.id].name;
-        let userData = dataManager.persistentData.users[username];
+        let uKey = (dataManager.findUserKey ? dataManager.findUserKey(username) : null) || username;
+        let userData = dataManager.persistentData.users[uKey];
         if (!userData) {
             socket.emit('roulette_error', 'Kullanıcı hesabı bulunamadı.');
             return;

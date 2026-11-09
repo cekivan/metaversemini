@@ -3,7 +3,7 @@
 
 (function () {
     let currentSelectedBaseType = null;
-    const socket = window.socket || (typeof io !== 'undefined' ? io() : null);
+    const socket = window.socket || (typeof socket !== 'undefined' ? socket : null);
 
     if (socket) {
         socket.on('tableCreateError', (data) => {

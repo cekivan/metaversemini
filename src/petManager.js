@@ -55,6 +55,33 @@ const PET_CONFIGS = {
             "Cik cik! Cebinde peynir var mı?",
             "Kulağımdaki peyniri sakın yeme! 🧀"
         ]
+    },
+    izbandut: {
+        type: 'izbandut',
+        name: 'İzbandut Koruma',
+        price: 5000,
+        emoji: '🕶️',
+        scale: 1.10,
+        sayings: [
+            "Güvendesiniz patron.",
+            "Gözüm üzerinizde.",
+            "Kimse size yaklaşamaz.",
+            "Her şey kontrol altında."
+        ]
+    },
+    doberman: {
+        type: 'doberman',
+        name: 'Doberman Koruma',
+        price: 4000,
+        emoji: '🐕‍🦺',
+        scale: 1.05,
+        durationMs: 4 * 60 * 60 * 1000, // 4 Saat
+        sayings: [
+            "Grrr... Yanındayım patron.",
+            "Hav! Tehlike yok.",
+            "Gözüm etrafta, kimse yaklaşamaz.",
+            "Sadakatim sonsuz!"
+        ]
     }
 };
 
@@ -78,6 +105,8 @@ function toPetDTO(pet) {
         ownerId: pet.ownerId,
         ownerName: pet.ownerName,
         petType: pet.petType,
+        slotIndex: (typeof pet.slotIndex === 'number') ? pet.slotIndex : 0,
+        scale: pet.scale || (cfg ? cfg.scale : 1.0) || 1.10,
         emoji: pet.emoji || (cfg ? cfg.emoji : '🐾'),
         name: pet.name,
         room: pet.room,
@@ -99,26 +128,190 @@ function getActivePets() {
 function getPetsInRoom(roomName) {
     const list = [];
     const now = Date.now();
-    for (const u in activeCompanionPets) {
-        const pet = activeCompanionPets[u];
-        if (pet && pet.room === roomName && pet.expiresAt > now) {
-            list.push(toPetDTO(pet));
+    for (const id in activeCompanionPets) {
+        const pet = activeCompanionPets[id];
+        const isNotExpired = pet.isPermanent || (pet.expiresAt ? pet.expiresAt > now : true);
+        if (pet && pet.room === roomName && pet.ownerId && isNotExpired) {
+            if (!playersRef || playersRef[pet.ownerId]) {
+                list.push(toPetDTO(pet));
+            }
         }
     }
     return list;
 }
 
 function getPetByOwnerId(ownerId) {
-    for (const u in activeCompanionPets) {
-        if (activeCompanionPets[u].ownerId === ownerId) {
-            return activeCompanionPets[u];
+    for (const id in activeCompanionPets) {
+        const pet = activeCompanionPets[id];
+        if (pet && pet.ownerId === ownerId) {
+            return pet;
         }
     }
     return null;
 }
 
+function getAllPetsByOwnerId(ownerId) {
+    const list = [];
+    for (const id in activeCompanionPets) {
+        const pet = activeCompanionPets[id];
+        if (pet && pet.ownerId === ownerId) {
+            list.push(pet);
+        }
+    }
+    return list;
+}
+
+function getBodyguardsByUsername(username) {
+    if (!username) return [];
+    const list = [];
+    const now = Date.now();
+    const targetUser = username.toLowerCase();
+    for (const id in activeCompanionPets) {
+        const pet = activeCompanionPets[id];
+        const isNotExpired = pet.isPermanent || (pet.expiresAt ? pet.expiresAt > now : true);
+        if (pet && pet.ownerName && pet.ownerName.toLowerCase() === targetUser && pet.petType === 'izbandut' && isNotExpired) {
+            list.push(pet);
+        }
+    }
+    return list;
+}
+
 function getPetByUsername(username) {
-    return activeCompanionPets[username] || null;
+    if (!username) return null;
+    const targetUser = username.toLowerCase();
+    for (const id in activeCompanionPets) {
+        const pet = activeCompanionPets[id];
+        if (pet && pet.ownerName && pet.ownerName.toLowerCase() === targetUser && pet.petType !== 'izbandut') {
+            return pet;
+        }
+    }
+    for (const id in activeCompanionPets) {
+        const pet = activeCompanionPets[id];
+        if (pet && pet.ownerName && pet.ownerName.toLowerCase() === targetUser) {
+            return pet;
+        }
+    }
+    return null;
+}
+
+/**
+ * VIP İzbandut Koruma Çağırır (Süresiz, biri saldırıp can siperi oluncaya kadar kalır)
+ */
+function spawnPermanentBodyguard(ownerId, username) {
+    if (!playersRef || !playersRef[ownerId]) return null;
+    const player = playersRef[ownerId];
+    const room = player.room || 'cadde';
+    const userGuards = getBodyguardsByUsername(username);
+    if (userGuards.length >= 3) {
+        return null;
+    }
+
+    const usedSlots = userGuards.map(g => g.slotIndex);
+    const slotIndex = [0, 1, 2].find(s => !usedSlots.includes(s)) ?? userGuards.length;
+    const petId = `pet_izbandut_${ownerId}_s${slotIndex}_${Date.now()}`;
+    const petDisplayName = `${username} Koruması #${slotIndex + 1}`;
+
+    // V-Refakat formasyonu başlangıç koordinatları
+    let offX = (slotIndex === 0) ? -38 : ((slotIndex === 1) ? 38 : 0);
+    let offY = (slotIndex === 2) ? -60 : -10;
+
+    const pet = {
+        id: petId,
+        ownerId: ownerId,
+        ownerName: username,
+        petType: 'izbandut',
+        slotIndex: slotIndex,
+        scale: 1.10,
+        emoji: '🕶️',
+        name: petDisplayName,
+        room: room,
+        x: (player.x || 400) + offX,
+        y: (player.y || 300) + offY,
+        facing: player.facing || 'down',
+        createdAt: Date.now(),
+        isPermanent: true,
+        expiresAt: null,
+        durationMs: null,
+        speech: null,
+        speechUntil: 0
+    };
+
+    activeCompanionPets[petId] = pet;
+    const petDTO = toPetDTO(pet);
+
+    if (ioRef) {
+        if (room) {
+            ioRef.to(room).emit('systemMessage', `🕴️ ${username} yanına İzbandut Özel Koruma (#${slotIndex + 1}/3) aldı!`);
+            ioRef.to(room).emit('companionPetSpawned', { pet: petDTO });
+        }
+        ioRef.to(ownerId).emit('companionPetSpawned', { pet: petDTO });
+    }
+
+    return pet;
+}
+
+function spawnBodyguard(ownerId, username) {
+    return spawnPermanentBodyguard(ownerId, username);
+}
+
+/**
+ * Sadık Doberman Koruma Çağırır (Süresiz, gasp savuşturuncaya kadar kalır)
+ */
+function spawnPermanentDoberman(ownerId, username) {
+    if (!playersRef || !playersRef[ownerId]) return null;
+    const player = playersRef[ownerId];
+    const room = player.room || 'cadde';
+
+    for (const id in activeCompanionPets) {
+        const p = activeCompanionPets[id];
+        if (p && p.ownerName === username && p.petType === 'doberman') {
+            despawnPet(id, "Doberman yenilendi");
+        }
+    }
+
+    const cfg = PET_CONFIGS.doberman || { emoji: '🐕‍🦺', scale: 1.05 };
+    const petId = `pet_doberman_${ownerId}_${Date.now()}`;
+    const petDisplayName = `${username}'in Sadık Dobermanı`;
+    const spawnX = (player.x || 400) + 26;
+    const spawnY = (player.y || 300) + 6;
+
+    const pet = {
+        id: petId,
+        ownerId: ownerId,
+        ownerName: username,
+        petType: 'doberman',
+        slotIndex: 0,
+        scale: cfg.scale || 1.05,
+        emoji: cfg.emoji || '🐕‍🦺',
+        name: petDisplayName,
+        room: room,
+        x: spawnX,
+        y: spawnY,
+        facing: 'down',
+        createdAt: Date.now(),
+        isPermanent: true,
+        expiresAt: null,
+        durationMs: null,
+        speech: null,
+        speechUntil: 0
+    };
+
+    activeCompanionPets[petId] = pet;
+    player.activePet = 'doberman';
+
+    const petDTO = toPetDTO(pet);
+
+    if (ioRef) {
+        if (room) {
+            ioRef.to(room).emit('systemMessage', `🐕‍🦺 ${username} yanına Sadık Doberman'ını aldı!`);
+            ioRef.to(room).emit('companionPetSpawned', { pet: petDTO });
+        }
+        if (ownerId) {
+            ioRef.to(ownerId).emit('companionPetSpawned', { pet: petDTO });
+        }
+    }
+
+    return pet;
 }
 
 /**
@@ -139,24 +332,34 @@ function spawnPet(ownerId, arg2, arg3) {
     }
     if (typeof petType === 'string') petType = petType.toLowerCase().trim();
 
+    if (petType === 'izbandut') {
+        return spawnBodyguard(ownerId, username);
+    }
+
     const cfg = PET_CONFIGS[petType];
     if (!cfg) return null;
 
-    // Eğer zaten bir evcil hayvanı varsa yenisi için eskisi temizlensin
-    if (activeCompanionPets[username]) {
-        despawnPet(username, "Yeni pet alındı");
+    // Normal evcil hayvanlar için: Eski normal evcil hayvanı kaldır
+    for (const id in activeCompanionPets) {
+        const p = activeCompanionPets[id];
+        if (p && p.ownerName === username && p.petType !== 'izbandut') {
+            despawnPet(id, "Yeni pet alındı");
+        }
     }
 
     const petId = `pet_${petType}_${ownerId}_${Date.now()}`;
     const petDisplayName = `${username}'in ${cfg.name}si`;
     const spawnX = (player.x || 400) + 26;
     const spawnY = (player.y || 300) + 6;
+    const petDuration = cfg.durationMs || PET_DURATION_MS;
 
     const pet = {
         id: petId,
         ownerId: ownerId,
         ownerName: username,
         petType: petType,
+        slotIndex: 0,
+        scale: cfg.scale || 1.0,
         emoji: cfg.emoji,
         name: petDisplayName,
         room: room,
@@ -164,36 +367,30 @@ function spawnPet(ownerId, arg2, arg3) {
         y: spawnY,
         facing: 'down',
         createdAt: Date.now(),
-        durationMs: PET_DURATION_MS,
-        expiresAt: Date.now() + PET_DURATION_MS,
+        durationMs: petDuration,
+        expiresAt: Date.now() + petDuration,
         speech: null,
         speechUntil: 0
     };
 
-    activeCompanionPets[username] = pet;
+    activeCompanionPets[petId] = pet;
     player.activePet = petType;
 
     const petDTO = toPetDTO(pet);
 
-    // Odaya ve sahibine duyur
     if (ioRef) {
         if (room) {
             ioRef.to(room).emit('systemMessage', `🐾 ${username}, sevimli bir ${cfg.name} edindi!`);
-            ioRef.to(room).emit('companionPetSpawned', {
-                pet: petDTO
-            });
+            ioRef.to(room).emit('companionPetSpawned', { pet: petDTO });
         }
         if (ownerId) {
-            ioRef.to(ownerId).emit('companionPetSpawned', {
-                pet: petDTO
-            });
+            ioRef.to(ownerId).emit('companionPetSpawned', { pet: petDTO });
         }
     }
 
-    // 1. 15 DAKİKA SONRA VEDA VE DESPAWN
-    petExpireTimers[username] = setTimeout(() => {
-        despawnPet(username, "15 dakikalık süre doldu");
-    }, PET_DURATION_MS);
+    petExpireTimers[petId] = setTimeout(() => {
+        despawnPet(petId, `${cfg.name} süresi doldu`);
+    }, petDuration);
 
     return pet;
 }
@@ -210,20 +407,24 @@ function triggerRandomPetTalk(username) {
  */
 function despawnPet(key, reason = "") {
     let pet = activeCompanionPets[key];
-    let username = key;
     if (!pet) {
-        pet = getPetByOwnerId(key);
-        if (pet) username = pet.ownerName;
+        for (const id in activeCompanionPets) {
+            if (activeCompanionPets[id].id === key || activeCompanionPets[id].ownerName === key || activeCompanionPets[id].ownerId === key) {
+                pet = activeCompanionPets[id];
+                break;
+            }
+        }
     }
     if (!pet) return;
 
-    if (petTalkIntervals[username]) {
-        clearInterval(petTalkIntervals[username]);
-        delete petTalkIntervals[username];
+    const petId = pet.id;
+    if (petTalkIntervals[petId]) {
+        clearInterval(petTalkIntervals[petId]);
+        delete petTalkIntervals[petId];
     }
-    if (petExpireTimers[username]) {
-        clearTimeout(petExpireTimers[username]);
-        delete petExpireTimers[username];
+    if (petExpireTimers[petId]) {
+        clearTimeout(petExpireTimers[petId]);
+        delete petExpireTimers[petId];
     }
 
     if (ioRef && pet.room) {
@@ -234,69 +435,130 @@ function despawnPet(key, reason = "") {
         });
     }
 
-    if (playersRef && pet.ownerId && playersRef[pet.ownerId]) {
+    if (playersRef && pet.ownerId && playersRef[pet.ownerId] && pet.petType !== 'izbandut') {
         delete playersRef[pet.ownerId].activePet;
     }
 
-    delete activeCompanionPets[username];
+    delete activeCompanionPets[petId];
 }
 
 /**
- * Oyuncu oda değiştirdiğinde peti de onunla beraber her mekana gider
+ * Oyuncu oda değiştirdiğinde tüm yoldaşları ve korumaları da onunla beraber gider
  */
 function handleRoomChange(ownerId, oldRoom, newRoom) {
-    const pet = getPetByOwnerId(ownerId);
-    if (!pet) return;
+    const pets = getAllPetsByOwnerId(ownerId);
+    if (!pets || pets.length === 0) return;
 
-    if (ioRef && oldRoom && oldRoom !== newRoom) {
-        ioRef.to(oldRoom).emit('companionPetDespawned', {
-            petId: pet.id,
-            ownerId: ownerId,
-            reason: 'room_change'
-        });
-    }
+    pets.forEach(pet => {
+        if (ioRef && oldRoom && oldRoom !== newRoom) {
+            ioRef.to(oldRoom).emit('companionPetDespawned', {
+                petId: pet.id,
+                ownerId: ownerId,
+                reason: 'room_change'
+            });
+        }
 
-    pet.room = newRoom;
-    const player = playersRef ? playersRef[ownerId] : null;
-    if (player) {
-        pet.x = player.x + 24;
-        pet.y = player.y + 6;
-    }
+        pet.room = newRoom;
+        const player = playersRef ? playersRef[ownerId] : null;
+        if (player) {
+            let offX = 0, offY = 0;
+            if (pet.petType === 'izbandut') {
+                let slot = pet.slotIndex || 0;
+                offX = (slot === 0) ? -34 : ((slot === 1) ? 34 : 0);
+                offY = (slot === 2) ? -28 : -10;
+            } else {
+                offX = 24;
+                offY = 6;
+            }
+            pet.x = player.x + offX;
+            pet.y = player.y + offY;
+        }
 
-    if (ioRef && newRoom) {
-        ioRef.to(newRoom).emit('companionPetSpawned', {
-            pet: toPetDTO(pet)
-        });
-    }
+        if (ioRef && newRoom) {
+            ioRef.to(newRoom).emit('companionPetSpawned', {
+                pet: toPetDTO(pet)
+            });
+        }
+    });
 }
 
 /**
- * Sahip yürüdükçe pet koordinatını günceller
+ * Sahip yürüdükçe pet ve koruma koordinatlarını günceller
  */
 function updateOwnerPosition(ownerId, x, y) {
-    const pet = getPetByOwnerId(ownerId);
-    if (!pet) return;
-    pet.x = x + 24;
-    pet.y = y + 6;
+    const pets = getAllPetsByOwnerId(ownerId);
+    if (!pets || pets.length === 0) return;
+
+    pets.forEach(pet => {
+        let offX = 0, offY = 0;
+        if (pet.petType === 'izbandut') {
+            let slot = pet.slotIndex || 0;
+            offX = (slot === 0) ? -34 : ((slot === 1) ? 34 : 0);
+            offY = (slot === 2) ? -28 : -10;
+        } else {
+            offX = 24;
+            offY = 6;
+        }
+        pet.x = x + offX;
+        pet.y = y + offY;
+    });
 }
 
 /**
- * Oyuncu yeniden bağlandığında süresi bitmemiş petini geri bağlar
+ * Oyuncu yeniden bağlandığında süresi bitmemiş petlerini ve korumalarını geri bağlar
  */
-function handleLogin(socket, username) {
+function handleLogin(socket, username, uData = null) {
     if (!username) return;
-    const pet = activeCompanionPets[username];
-    if (pet && pet.expiresAt > Date.now()) {
-        pet.ownerId = socket.id;
-        const player = playersRef ? playersRef[socket.id] : null;
-        if (player) {
-            pet.room = player.room || 'cadde';
-            pet.x = player.x + 24;
-            pet.y = player.y + 6;
+    const now = Date.now();
+    const targetUser = username.toLowerCase();
+    for (const petId in activeCompanionPets) {
+        const pet = activeCompanionPets[petId];
+        if (pet && pet.ownerName && pet.ownerName.toLowerCase() === targetUser && (pet.isPermanent || (pet.expiresAt ? pet.expiresAt > now : true))) {
+            pet.ownerId = socket.id;
+            const player = playersRef ? playersRef[socket.id] : null;
+            if (player) {
+                pet.room = player.room || 'cadde';
+                let offX = 0, offY = 0;
+                if (pet.petType === 'izbandut') {
+                    let slot = pet.slotIndex || 0;
+                    offX = (slot === 0) ? -38 : ((slot === 1) ? 38 : 0);
+                    offY = (slot === 2) ? -60 : -10;
+                } else {
+                    offX = 24;
+                    offY = 14;
+                }
+                pet.x = player.x + offX;
+                pet.y = player.y + offY;
+            }
+            socket.emit('companionPetSpawned', { pet: toPetDTO(pet) });
+            if (ioRef && pet.room) {
+                ioRef.to(pet.room).emit('companionPetSpawned', { pet: toPetDTO(pet) });
+            }
         }
-        socket.emit('companionPetSpawned', { pet: toPetDTO(pet) });
-        if (ioRef && pet.room) {
-            ioRef.to(pet.room).emit('companionPetSpawned', { pet: toPetDTO(pet) });
+    }
+
+    // Persistent eşyalar (sunucu yeniden başlasa veya f5 atılsa bile uData'dan kuşanılmışları geri getirir)
+    if (uData) {
+        const equippedVal = (uData.bodyguardsEquipped !== undefined) ? uData.bodyguardsEquipped : (uData.bodyguardCount || 0);
+        const targetGuards = Math.min(equippedVal, uData.bodyguardCount || 0);
+        const curGuards = getBodyguardsByUsername(username);
+        const neededGuards = targetGuards - curGuards.length;
+        for (let i = 0; i < neededGuards; i++) {
+            spawnPermanentBodyguard(socket.id, username);
+        }
+
+        if (uData.hasDoberman && uData.dobermanEquipped !== false) {
+            let hasDob = false;
+            for (const pid in activeCompanionPets) {
+                const p = activeCompanionPets[pid];
+                if (p && p.ownerName && p.ownerName.toLowerCase() === targetUser && p.petType === 'doberman') {
+                    hasDob = true;
+                    break;
+                }
+            }
+            if (!hasDob) {
+                spawnPermanentDoberman(socket.id, username);
+            }
         }
     }
 }
@@ -305,16 +567,30 @@ function handleLogin(socket, username) {
  * Oyuncu ayrıldığında
  */
 function handleDisconnect(ownerId) {
-    const pet = getPetByOwnerId(ownerId);
-    if (!pet) return;
+    const pets = getAllPetsByOwnerId(ownerId);
+    if (!pets || pets.length === 0) return;
 
-    if (ioRef && pet.room) {
-        ioRef.to(pet.room).emit('companionPetDespawned', {
-            petId: pet.id,
-            ownerId: ownerId,
-            reason: 'Oyuncu ayrıldı'
-        });
-    }
+    const now = Date.now();
+    pets.forEach(pet => {
+        if (ioRef && pet.room) {
+            ioRef.to(pet.room).emit('companionPetDespawned', {
+                petId: pet.id,
+                ownerId: ownerId,
+                reason: 'Oyuncu ayrıldı'
+            });
+        }
+        // Eğer petin/korumanın süresi henüz bitmediyse veya kalıcıysa aktif hafızada tut,
+        // sadece socket bağlantısını sıfırla; oyuncu tekrar bağlandığında petini geri alır!
+        if (pet.isPermanent || (pet.expiresAt && pet.expiresAt > now)) {
+            pet.ownerId = null;
+        } else {
+            delete activeCompanionPets[pet.id];
+            if (petExpireTimers[pet.id]) {
+                clearTimeout(petExpireTimers[pet.id]);
+                delete petExpireTimers[pet.id];
+            }
+        }
+    });
 }
 
 module.exports = {
@@ -325,7 +601,12 @@ module.exports = {
     getActivePets,
     getPetsInRoom,
     getPetByOwnerId,
+    getAllPetsByOwnerId,
+    getBodyguardsByUsername,
     getPetByUsername,
+    spawnBodyguard,
+    spawnPermanentBodyguard,
+    spawnPermanentDoberman,
     spawnPet,
     despawnPet,
     handleRoomChange,

@@ -1,5 +1,6 @@
 // src/handlers/blackjackHandler.js - Multiplayer Blackjack Table Engine & Socket Controller
 const dataManager = require('../dataManager');
+const { addPlayerXP } = require('../utils/levelSystem');
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -441,6 +442,16 @@ function startPayoutPhase(io) {
                 }
             }
         }
+
+        // Blackjack el sonlandığında: gamerGamesCount artır & 1 XP ekle
+        if (seat.socketId && seat.username) {
+            let uKey = dataManager.findUserKey(seat.username) || seat.username;
+            let uData = dataManager.persistentData.users[uKey];
+            if (uData) {
+                dataManager.recordGamePlayed(seat.username, 'gamer', 1);
+                addPlayerXP(io, serverPlayers, seat.socketId, uData, 1, 'blackjack');
+            }
+        }
     });
 
     broadcastTableUpdate(io);
@@ -590,9 +601,14 @@ function registerBlackjackHandlers(io, socket, players) {
             return;
         }
 
+        if (seat.hasPlacedBet) {
+            socket.emit('blackjack_error', "Bu tur için zaten bahis yaptınız!");
+            return;
+        }
+
         let amount = parseInt(data && data.amount, 10);
-        if (isNaN(amount) || amount < 10) {
-            socket.emit('blackjack_error', "Minimum bahis miktarı 10 TL'dir!");
+        if (isNaN(amount) || amount < 100) {
+            socket.emit('blackjack_error', "Minimum bahis miktarı 100 TL'dir!");
             return;
         }
 

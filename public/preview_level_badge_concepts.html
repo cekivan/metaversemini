@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level Rozeti & Seviye İlerlemesi Tasarım Konseptleri</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/chat-social.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 30px;
+            background: #0b0f19;
+            color: #f8fafc;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 1040px;
+            width: 100%;
+        }
+        .header-title {
+            font-size: 26px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-sub {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+        .concepts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 22px;
+            margin-bottom: 35px;
+        }
+        .concept-card {
+            background: rgba(17, 24, 39, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+        .concept-card:hover {
+            border-color: #6366f1;
+            transform: translateY(-3px);
+            box-shadow: 0 16px 35px rgba(99, 102, 241, 0.2);
+        }
+        .concept-card.featured {
+            border-color: #f59e0b;
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(17, 24, 39, 0.98) 100%);
+            box-shadow: 0 12px 30px rgba(245, 158, 11, 0.25);
+        }
+        .tag-pill {
+            position: absolute;
+            top: -12px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 3px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4);
+        }
+        .badge-preview-box {
+            width: 110px;
+            height: 110px;
+            background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.08) 0%, rgba(15, 23, 42, 0.8) 75%);
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0 18px 0;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .concept-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        .concept-desc {
+            font-size: 12.5px;
+            color: #94a3b8;
+            text-align: center;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .in-game-preview-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        /* 1:1 Gerçek Oyun İçi Boyut Simülasyonu */
+        .actual-size-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 12px;
+            background: #fffbeb;
+            border: 2px solid #fcd34d;
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25), inset 0 1px 0 #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .actual-size-box:hover {
+            transform: scale(1.08);
+            border-color: #f59e0b;
+        }
+
+        /* Canlı Profil Kartı Simülasyonu */
+        .mock-profile-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px;
+            color: #1e293b;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 0 2px #6366f1;
+            margin-top: 10px;
+        }
+        .mock-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .mock-badges-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 58px);
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .mock-slot {
+            width: 58px;
+            height: 58px;
+            border-radius: 12px;
+            background: #fffbeb;
+            border: 2px solid #fcd34d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+        }
+        .mock-slot.empty {
+            background: #f8fafc;
+            border: 1.5px dashed #cbd5e1;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+        .mock-slot .tag-lv {
+            font-size: 8.5px;
+            font-weight: 900;
+            background: rgba(245, 158, 11, 0.25);
+            color: #b45309;
+            padding: 1px 5px;
+            border-radius: 6px;
+            margin-top: 1px;
+        }
+
+        /* Konsept B Evrim Tablosu */
+        .tier-evolution-section {
+            background: rgba(17, 24, 39, 0.95);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 22px;
+            margin-top: 30px;
+        }
+        .tier-cards-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .tier-mini-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .tier-mini-card.active-bronze { border-color: #ea580c; background: rgba(234, 88, 12, 0.1); }
+        .tier-mini-card.active-silver { border-color: #94a3b8; background: rgba(148, 163, 184, 0.1); }
+        .tier-mini-card.active-gold { border-color: #eab308; background: rgba(234, 179, 8, 0.1); }
+        .tier-mini-card.active-platinum { border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+        .tier-mini-card.active-diamond { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
+        .tier-mini-card.active-obsidian { border-color: #c084fc; background: rgba(192, 132, 252, 0.1); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-title">
+        <span>🏆</span>
+        <span>Karakter Seviye Rozeti (1. Yuva) — 3 Özel Tasarım Konsepti</span>
+    </div>
+    <div class="header-sub">
+        Çıplak ve düz sayı hissini ortadan kaldıran; derinlik, gölge, altın yaldız ve RPG prestij hissiyatına sahip 3 alternatif konsept. Ayrıca onayladığınız <b>Oyunlaştırılmış Canlı XP Çubuğu (#2)</b> sayfanın altındaki profil simülasyonunda canlı olarak çalışmaktadır.
+    </div>
+
+    <!-- 3 KONSEPT KARTLARI -->
+    <div class="concepts-grid">
+
+        <!-- KONSEPT A: ALTIN PRESTİJ MADALYONU -->
+        <div class="concept-card featured">
+            <div class="tag-pill">En Çok Önerilen</div>
+            <div class="concept-title">🥇 Konsept A: Altın Prestij Madalyonu</div>
+            <div class="concept-desc">
+                Yivli kenarları olan altın sikke gövdesi, etrafında zarif defne çelengi ve merkezinde kabartmalı 3D altın sayı. Tıpkı bir onur nişanı gibi ağırbaşlı ve görkemli durur.
+            </div>
+
+            <!-- BÜYÜK BOYUT (DETAYLI İNCELEME) -->
+            <div class="badge-preview-box">
+                <!-- SVG Konsept A (Büyük 72x72) -->
+                <svg viewBox="0 0 54 54" width="76" height="76" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="goldRimA" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fef08a"/>
+                            <stop offset="30%" stop-color="#f59e0b"/>
+                            <stop offset="70%" stop-color="#b45309"/>
+                            <stop offset="100%" stop-color="#fef3c7"/>
+                        </linearGradient>
+                        <radialGradient id="goldCoreA" cx="40%" cy="35%" r="65%">
+                            <stop offset="0%" stop-color="#fffbeb"/>
+                            <stop offset="45%" stop-color="#fef08a"/>
+                            <stop offset="85%" stop-color="#d97706"/>
+                            <stop offset="100%" stop-color="#78350f"/>
+                        </radialGradient>
+                        <filter id="shadowA" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="2.5" stdDeviation="1.8" flood-color="#78350f" flood-opacity="0.45"/>
+                        </filter>
+                    </defs>
+                    <!-- Defne Çelengi -->
+                    <g fill="#d97706" opacity="0.88">
+                        <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+                        <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+                        <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+                        <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+                        <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+                        <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+                        <path d="M 22 47 C 25 49, 29 49, 32 47 C 30 44.5, 24 44.5, 22 47 Z"/>
+                    </g>
+                    <!-- Madalyon Dış Gövde -->
+                    <circle cx="27" cy="25" r="19" fill="url(#goldRimA)" filter="url(#shadowA)" stroke="#78350f" stroke-width="0.8"/>
+                    <!-- Tırtıklı İç Çerçeve (Coin Ridges) -->
+                    <circle cx="27" cy="25" r="16.5" fill="none" stroke="#fef3c7" stroke-width="0.8" stroke-dasharray="1.5, 1.2"/>
+                    <!-- İç Sikke Çekirdeği -->
+                    <circle cx="27" cy="25" r="14.5" fill="url(#goldCoreA)" stroke="#b45309" stroke-width="0.6"/>
+                    <!-- Cam / Işık Yansıması -->
+                    <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+                    <!-- Kabartmalı Sayı -->
+                    <text x="27" y="32" font-family="'Inter', system-ui, sans-serif" font-size="20" font-weight="950" fill="#78350f" text-anchor="middle">1</text>
+                    <text x="27" y="31.2" font-family="'Inter', system-ui, sans-serif" font-size="20" font-weight="950" fill="#ffffff" text-anchor="middle" opacity="0.95">1</text>
+                    <text x="27" y="31" font-family="'Inter', system-ui, sans-serif" font-size="20" font-weight="950" fill="#92400e" text-anchor="middle">1</text>
+                </svg>
+            </div>
+
+            <!-- GERÇEK 1:1 BOYUT (58x58 YUVA) -->
+            <div class="in-game-preview-label">Oyun İçi Gerçek Boyut (58x58)</div>
+            <div class="actual-size-box">
+                <!-- SVG Konsept A (Gerçek 44x44) -->
+                <svg viewBox="0 0 54 54" width="46" height="46" xmlns="http://www.w3.org/2000/svg">
+                    <use href="#goldRimA"/>
+                    <!-- Re-render A for 1:1 -->
+                    <g fill="#d97706" opacity="0.9">
+                        <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+                        <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+                        <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+                        <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+                        <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+                        <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+                    </g>
+                    <circle cx="27" cy="25" r="18.5" fill="url(#goldRimA)" stroke="#78350f" stroke-width="0.8"/>
+                    <circle cx="27" cy="25" r="16" fill="none" stroke="#fef3c7" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+                    <circle cx="27" cy="25" r="14" fill="url(#goldCoreA)" stroke="#b45309" stroke-width="0.6"/>
+                    <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+                    <text x="27" y="32" font-family="'Inter', system-ui, sans-serif" font-size="20" font-weight="950" fill="#78350f" text-anchor="middle">1</text>
+                    <text x="27" y="31" font-family="'Inter', system-ui, sans-serif" font-size="20" font-weight="950" fill="#92400e" text-anchor="middle">1</text>
+                </svg>
+            </div>
+        </div>
+
+        <!-- KONSEPT B: KADEMELİ PRESTİJ KALKANI -->
+        <div class="concept-card">
+            <div class="concept-title">🛡️ Konsept B: Prestij Kalkanı</div>
+            <div class="concept-desc">
+                Ortaçağ & RPG tarzı armorial kalkan amblemi. Seviye 1'de dövme bronz & meşe kalkan; seviye ilerledikçe çelik, altın ve elmas kalkan formuna evrimleşir.
+            </div>
+
+            <!-- BÜYÜK BOYUT -->
+            <div class="badge-preview-box">
+                <!-- SVG Konsept B (Büyük 72x72) -->
+                <svg viewBox="0 0 54 54" width="76" height="76" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bronzeShieldB" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fdba74"/>
+                            <stop offset="45%" stop-color="#ea580c"/>
+                            <stop offset="100%" stop-color="#7c2d12"/>
+                        </linearGradient>
+                        <linearGradient id="woodCoreB" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#451a03"/>
+                            <stop offset="100%" stop-color="#1c0a02"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Kalkan Gövdesi -->
+                    <path d="M 27 5 C 39 5, 46 9, 46 20 C 46 34, 35 45, 27 49 C 19 45, 8 34, 8 20 C 8 9, 15 5, 27 5 Z" fill="url(#bronzeShieldB)" stroke="#431407" stroke-width="1.2" filter="drop-shadow(0 3px 4px rgba(0,0,0,0.5))"/>
+                    <!-- İç Kalkan Paneli -->
+                    <path d="M 27 8 C 36 8, 41 12, 41 20 C 41 31, 33 41, 27 45 C 21 41, 13 31, 13 20 C 13 12, 18 8, 27 8 Z" fill="url(#woodCoreB)" stroke="#fdba74" stroke-width="0.8"/>
+                    <!-- Perçinler -->
+                    <circle cx="27" cy="8.5" r="1.2" fill="#fdba74"/>
+                    <circle cx="14" cy="18" r="1.2" fill="#fdba74"/>
+                    <circle cx="40" cy="18" r="1.2" fill="#fdba74"/>
+                    <circle cx="27" cy="43" r="1.2" fill="#fdba74"/>
+                    <!-- Işık Yansıması -->
+                    <path d="M 15 12 C 21 9, 33 9, 39 12 C 36 20, 27 17, 15 12 Z" fill="#ffffff" opacity="0.32"/>
+                    <!-- Rakam -->
+                    <text x="27" y="32" font-family="'Inter', system-ui, sans-serif" font-size="22" font-weight="950" fill="#fed7aa" text-anchor="middle" filter="drop-shadow(0 2px 2px rgba(0,0,0,0.8))">1</text>
+                </svg>
+            </div>
+
+            <!-- GERÇEK 1:1 BOYUT -->
+            <div class="in-game-preview-label">Oyun İçi Gerçek Boyut (58x58)</div>
+            <div class="actual-size-box">
+                <!-- SVG Konsept B (Gerçek 46x46) -->
+                <svg viewBox="0 0 54 54" width="46" height="46" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 27 5 C 39 5, 46 9, 46 20 C 46 34, 35 45, 27 49 C 19 45, 8 34, 8 20 C 8 9, 15 5, 27 5 Z" fill="url(#bronzeShieldB)" stroke="#431407" stroke-width="1.2"/>
+                    <path d="M 27 8 C 36 8, 41 12, 41 20 C 41 31, 33 41, 27 45 C 21 41, 13 31, 13 20 C 13 12, 18 8, 27 8 Z" fill="url(#woodCoreB)" stroke="#fdba74" stroke-width="0.8"/>
+                    <circle cx="27" cy="8.5" r="1" fill="#fdba74"/>
+                    <circle cx="14" cy="18" r="1" fill="#fdba74"/>
+                    <circle cx="40" cy="18" r="1" fill="#fdba74"/>
+                    <circle cx="27" cy="43" r="1" fill="#fdba74"/>
+                    <text x="27" y="32" font-family="'Inter', system-ui, sans-serif" font-size="21" font-weight="950" fill="#fed7aa" text-anchor="middle">1</text>
+                </svg>
+            </div>
+        </div>
+
+        <!-- KONSEPT C: SANALIKA 3D YILDIZ MÜHÜR -->
+        <div class="concept-card">
+            <div class="concept-title">⭐ Konsept C: 3D Yıldız Mühür</div>
+            <div class="concept-desc">
+                Sanalika & klasik sanal dünya stili. 3 boyutlu kalın sarı yıldızın göbeğine gömülü yuvarlak altın plaka ve içerisinde belirgin metalik rakam.
+            </div>
+
+            <!-- BÜYÜK BOYUT -->
+            <div class="badge-preview-box">
+                <!-- SVG Konsept C (Büyük 72x72) -->
+                <svg viewBox="0 0 54 54" width="76" height="76" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="starShineC" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="35%" stop-color="#fef08a"/>
+                            <stop offset="75%" stop-color="#eab308"/>
+                            <stop offset="100%" stop-color="#a16207"/>
+                        </radialGradient>
+                        <linearGradient id="starPlaqueC" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="100%" stop-color="#fef08a"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- 3D Alt Gövde -->
+                    <path d="M 27 3 L 34 17 L 49 19 L 38 30 L 41 45 L 27 38 L 13 45 L 16 30 L 5 19 L 20 17 Z" fill="#713f12" transform="translate(0, 3.5)"/>
+                    <!-- Yıldız Ön Gövde -->
+                    <path d="M 27 3 L 34 17 L 49 19 L 38 30 L 41 45 L 27 38 L 13 45 L 16 30 L 5 19 L 20 17 Z" fill="url(#starShineC)" stroke="#854d0e" stroke-width="1.2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.35))"/>
+                    <!-- Yuvarlak Göbek Plakası -->
+                    <circle cx="27" cy="27" r="12" fill="#713f12" opacity="0.35"/>
+                    <circle cx="27" cy="26" r="11" fill="url(#starPlaqueC)" stroke="#ca8a04" stroke-width="1.2"/>
+                    <!-- Rakam -->
+                    <text x="27" y="32.5" font-family="'Inter', system-ui, sans-serif" font-size="19" font-weight="950" fill="#713f12" text-anchor="middle">1</text>
+                    <text x="27" y="31.8" font-family="'Inter', system-ui, sans-serif" font-size="19" font-weight="950" fill="#a16207" text-anchor="middle">1</text>
+                </svg>
+            </div>
+
+            <!-- GERÇEK 1:1 BOYUT -->
+            <div class="in-game-preview-label">Oyun İçi Gerçek Boyut (58x58)</div>
+            <div class="actual-size-box">
+                <!-- SVG Konsept C (Gerçek 46x46) -->
+                <svg viewBox="0 0 54 54" width="46" height="46" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 27 3 L 34 17 L 49 19 L 38 30 L 41 45 L 27 38 L 13 45 L 16 30 L 5 19 L 20 17 Z" fill="#713f12" transform="translate(0, 3)"/>
+                    <path d="M 27 3 L 34 17 L 49 19 L 38 30 L 41 45 L 27 38 L 13 45 L 16 30 L 5 19 L 20 17 Z" fill="url(#starShineC)" stroke="#854d0e" stroke-width="1"/>
+                    <circle cx="27" cy="26.5" r="10.5" fill="url(#starPlaqueC)" stroke="#ca8a04" stroke-width="1.2"/>
+                    <text x="27" y="32.5" font-family="'Inter', system-ui, sans-serif" font-size="18" font-weight="950" fill="#854d0e" text-anchor="middle">1</text>
+                </svg>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- KONSET B: SEVİYEYLE EVRİMLEŞEN KALKAN MODELLERİ (TIER EVOLUTION) -->
+    <div class="tier-evolution-section">
+        <div style="font-size: 18px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+            <span>🛡️</span>
+            <span>Konsept B Seçilirse: Seviye Atladıkça Evrimleşen Prestij Kalkanları</span>
+        </div>
+        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">
+            Oyuncu seviye atladıkça rozet kalkanının alaşımı, rengi ve aurası güçlenir:
+        </div>
+
+        <div class="tier-cards-row">
+            <!-- 1. Bronz & Ahşap (1-15) -->
+            <div class="tier-mini-card active-bronze">
+                <div style="font-size: 11px; font-weight: 800; color: #fdba74; margin-bottom: 6px;">Lv. 1 – 15</div>
+                <div style="width: 44px; height: 44px;">
+                    <svg viewBox="0 0 54 54" width="44" height="44">
+                        <path d="M 27 5 C 39 5, 46 9, 46 20 C 46 34, 35 45, 27 49 C 19 45, 8 34, 8 20 C 8 9, 15 5, 27 5 Z" fill="url(#bronzeShieldB)" stroke="#431407" stroke-width="1.2"/>
+                        <path d="M 27 8 C 36 8, 41 12, 41 20 C 41 31, 33 41, 27 45 C 21 41, 13 31, 13 20 C 13 12, 18 8, 27 8 Z" fill="url(#woodCoreB)" stroke="#fdba74" stroke-width="0.8"/>
+                        <text x="27" y="32" font-family="'Inter'" font-size="20" font-weight="900" fill="#fed7aa" text-anchor="middle">1</text>
+                    </svg>
+                </div>
+                <div style="font-size: 10px; font-weight: 800; color: #fb923c; margin-top: 6px;">Çaylak (Bronz)</div>
+            </div>
+
+            <!-- 2. Çelik & Safir (16-35) -->
+            <div class="tier-mini-card active-silver">
+                <div style="font-size: 11px; font-weight: 800; color: #93c5fd; margin-bottom: 6px;">Lv. 16 – 35</div>
+                <div style="width: 44px; height: 44px;">
+                    <svg viewBox="0 0 54 54" width="44" height="44">
+                        <defs>
+                            <linearGradient id="silverShield" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff"/><stop offset="50%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#475569"/>
+                            </linearGradient>
+                            <linearGradient id="sapphireCore" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M 27 5 C 39 5, 46 9, 46 20 C 46 34, 35 45, 27 49 C 19 45, 8 34, 8 20 C 8 9, 15 5, 27 5 Z" fill="url(#silverShield)" stroke="#334155" stroke-width="1.2"/>
+                        <path d="M 27 8 C 36 8, 41 12, 41 20 C 41 31, 33 41, 27 45 C 21 41, 13 31, 13 20 C 13 12, 18 8, 27 8 Z" fill="url(#sapphireCore)" stroke="#60a5fa" stroke-width="0.8"/>
+                        <text x="27" y="32" font-family="'Inter'" font-size="20" font-weight="900" fill="#bfdbfe" text-anchor="middle">20</text>
+                    </svg>
+                </div>
+                <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-top: 6px;">Esnaf (Gümüş)</div>
+            </div>
+
+            <!-- 3. Kraliyet Altını & Yakut (36-60) -->
+            <div class="tier-mini-card active-gold">
+                <div style="font-size: 11px; font-weight: 800; color: #fde047; margin-bottom: 6px;">Lv. 36 – 60</div>
+                <div style="width: 44px; height: 44px;">
+                    <svg viewBox="0 0 54 54" width="44" height="44">
+                        <defs>
+                            <linearGradient id="rubyCore" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#881337"/><stop offset="100%" stop-color="#4c0519"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M 27 5 C 39 5, 46 9, 46 20 C 46 34, 35 45, 27 49 C 19 45, 8 34, 8 20 C 8 9, 15 5, 27 5 Z" fill="url(#goldRimA)" stroke="#78350f" stroke-width="1.2"/>
+                        <path d="M 27 8 C 36 8, 41 12, 41 20 C 41 31, 33 41, 27 45 C 21 41, 13 31, 13 20 C 13 12, 18 8, 27 8 Z" fill="url(#rubyCore)" stroke="#fcd34d" stroke-width="0.8"/>
+                        <text x="27" y="32" font-family="'Inter'" font-size="20" font-weight="900" fill="#fef08a" text-anchor="middle">50</text>
+                    </svg>
+                </div>
+                <div style="font-size: 10px; font-weight: 800; color: #eab308; margin-top: 6px;">Müdavim (Altın)</div>
+            </div>
+
+            <!-- 4. Zümrüt & Platin (61-85) -->
+            <div class="tier-mini-card active-platinum">
+                <div style="font-size: 11px; font-weight: 800; color: #6ee7b7; margin-bottom: 6px;">Lv. 61 – 85</div>
+                <div style="width: 44px; height: 44px;">
+                    <svg viewBox="0 0 54 54" width="44" height="44">
+                        <defs>
+                            <linearGradient id="emeraldCore" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#022c22"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M 27 5 C 39 5, 46 9, 46 20 C 46 34, 35 45, 27 49 C 19 45, 8 34, 8 20 C 8 9, 15 5, 27 5 Z" fill="linear-gradient(135deg, #a7f3d0, #059669)" stroke="#064e3b" stroke-width="1.2"/>
+                        <path d="M 27 8 C 36 8, 41 12, 41 20 C 41 31, 33 41, 27 45 C 21 41, 13 31, 13 20 C 13 12, 18 8, 27 8 Z" fill="url(#emeraldCore)" stroke="#6ee7b7" stroke-width="0.8"/>
+                        <text x="27" y="32" font-family="'Inter'" font-size="20" font-weight="900" fill="#a7f3d0" text-anchor="middle">75</text>
+                    </svg>
+                </div>
+                <div style="font-size: 10px; font-weight: 800; color: #10b981; margin-top: 6px;">Hakim (Platin)</div>
+            </div>
+
+            <!-- 5. Elmas Kristal (86-99) -->
+            <div class="tier-mini-card active-diamond">
+                <div style="font-size: 11px; font-weight: 800; color: #7dd3fc; margin-bottom: 6px;">Lv. 86 – 99</div>
+                <div style="width: 44px; height: 44px;">
+                    <svg viewBox="0 0 54 54" width="44" height="44">
+                        <defs>
+                            <linearGradient id="diamondShield" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ffffff"/><stop offset="50%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0284c7"/>
+                            </linearGradient>
+                            <linearGradient id="diamondCore" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#0c4a6e"/><stop offset="100%" stop-color="#082f49"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M 27 5 C 39 5, 46 9, 46 20 C 46 34, 35 45, 27 49 C 19 45, 8 34, 8 20 C 8 9, 15 5, 27 5 Z" fill="url(#diamondShield)" stroke="#0369a1" stroke-width="1.2"/>
+                        <path d="M 27 8 C 36 8, 41 12, 41 20 C 41 31, 33 41, 27 45 C 21 41, 13 31, 13 20 C 13 12, 18 8, 27 8 Z" fill="url(#diamondCore)" stroke="#bae6fd" stroke-width="0.8"/>
+                        <text x="27" y="32" font-family="'Inter'" font-size="20" font-weight="900" fill="#e0f2fe" text-anchor="middle">90</text>
+                    </svg>
+                </div>
+                <div style="font-size: 10px; font-weight: 800; color: #38bdf8; margin-top: 6px;">Duayen (Elmas)</div>
+            </div>
+
+            <!-- 6. Obsidyen & Alev (100) -->
+            <div class="tier-mini-card active-obsidian">
+                <div style="font-size: 11px; font-weight: 800; color: #d8b4fe; margin-bottom: 6px;">Lv. 100</div>
+                <div style="width: 44px; height: 44px;">
+                    <svg viewBox="0 0 54 54" width="44" height="44">
+                        <defs>
+                            <linearGradient id="obsidianShield" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#c084fc"/><stop offset="50%" stop-color="#581c87"/><stop offset="100%" stop-color="#090514"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M 27 5 C 39 5, 46 9, 46 20 C 46 34, 35 45, 27 49 C 19 45, 8 34, 8 20 C 8 9, 15 5, 27 5 Z" fill="url(#obsidianShield)" stroke="#a855f7" stroke-width="1.4" filter="drop-shadow(0 0 6px #c084fc)"/>
+                        <path d="M 27 8 C 36 8, 41 12, 41 20 C 41 31, 33 41, 27 45 C 21 41, 13 31, 13 20 C 13 12, 18 8, 27 8 Z" fill="#090514" stroke="#e9d5ff" stroke-width="0.8"/>
+                        <text x="27" y="32" font-family="'Inter'" font-size="18" font-weight="950" fill="#f3e8ff" text-anchor="middle" filter="drop-shadow(0 0 4px #c084fc)">100</text>
+                    </svg>
+                </div>
+                <div style="font-size: 10px; font-weight: 800; color: #c084fc; margin-top: 6px;">Efsane (Obsidyen)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OYUN İÇİ PROFİL KARTINDA NASIL DURACAK? (CANLI XP BARIYLA BİRLİKTE) -->
+    <div style="margin-top: 36px;">
+        <div style="font-size: 18px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+            <span>📱</span>
+            <span>Oyun İçi Profil Vitrininde Nasıl Duruyor? (Konsept A Uygulanmış Örnek)</span>
+        </div>
+        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">
+            Aşağıda tek satırlık başlık, <b>#2 Canlı XP Kapsülü</b> (animasyonlu ışıltı ve cam efektiyle) ve 1. yuvaya Konsept A yerleştirilmiş gerçek oyun içi profil penceresi yer almaktadır:
+        </div>
+
+        <div style="display: flex; justify-content: center; margin-top: 16px;">
+            <div class="mock-profile-card" style="width: 380px;">
+                <!-- Tek Satır Başlık -->
+                <div class="mock-name-row">
+                    <span style="font-size: 15px; font-weight: 900; color: #0f172a;">yasin</span>
+                    <span style="font-size: 10.5px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-weight: 900; padding: 2px 7px; border-radius: 12px; box-shadow: 0 1px 4px rgba(245,158,11,0.4); border: 1px solid #fef3c7; display: inline-flex; align-items: center; gap: 3px;">
+                        <span>♂️</span>
+                        <span>LV 1</span>
+                    </span>
+                    <span style="font-size: 11px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; font-weight: 800; padding: 2px 7px; border-radius: 6px; box-shadow: 0 1px 4px rgba(239,68,68,0.3); display: inline-flex; align-items: center; gap: 2px;">
+                        👑 Admin
+                    </span>
+                </div>
+
+                <!-- #2 GAMIFIED CANLI XP ÇUBUĞU (CANLI ANİMASYONLU) -->
+                <div class="profile-live-xp-card" style="display: block;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; margin-bottom: 4px;">
+                        <span id="demoTitle" style="color: #4f46e5; display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0.2px;">
+                            <span style="font-size: 11px; filter: drop-shadow(0 0 4px #818cf8);">⚡</span> Seviye 1 İlerlemesi
+                        </span>
+                        <span style="color: #0d9488; font-weight: 900; background: #ccfbf1; padding: 1.5px 6px; border-radius: 6px; border: 1px solid #99f6e4; font-size: 9.5px;">7 / 20 XP (%35)</span>
+                    </div>
+                    <div class="profile-live-xp-track">
+                        <div class="profile-live-xp-fill" style="width: 35%;"></div>
+                    </div>
+                </div>
+
+                <!-- Rozetler Başlığı -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+                    <div style="font-size: 13.5px; font-weight: 900; color: #1e293b; display: flex; align-items: center; gap: 5px;">
+                        <span>🏅</span> Rozetler
+                    </div>
+                    <button style="border: 1px solid #c7d2fe; background: #e0e7ff; color: #4338ca; font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 6px;">ℹ️ Seviye Sistemi</button>
+                </div>
+
+                <!-- 12 Rozet Yuvası (Slot 1 Konsept A Madalyon, Yanında Diğer Rozetler) -->
+                <div class="mock-badges-grid">
+                    <!-- SLOT 1: KONSEPT A ALTIN MADALYON -->
+                    <div class="mock-slot" style="background: #fffbeb; border: 2px solid #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);">
+                        <svg viewBox="0 0 54 54" width="46" height="46" xmlns="http://www.w3.org/2000/svg">
+                            <g fill="#d97706" opacity="0.9">
+                                <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+                                <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+                                <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+                                <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+                                <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+                                <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+                            </g>
+                            <circle cx="27" cy="25" r="18.5" fill="url(#goldRimA)" stroke="#78350f" stroke-width="0.8"/>
+                            <circle cx="27" cy="25" r="16" fill="none" stroke="#fef3c7" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+                            <circle cx="27" cy="25" r="14" fill="url(#goldCoreA)" stroke="#b45309" stroke-width="0.6"/>
+                            <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+                            <text x="27" y="32" font-family="'Inter', system-ui, sans-serif" font-size="20" font-weight="950" fill="#78350f" text-anchor="middle">1</text>
+                            <text x="27" y="31" font-family="'Inter', system-ui, sans-serif" font-size="20" font-weight="950" fill="#92400e" text-anchor="middle">1</text>
+                        </svg>
+                    </div>
+
+                    <!-- SLOT 2: OYUNBAZ -->
+                    <div class="mock-slot">
+                        <span style="font-size: 22px;">🎮</span>
+                        <span class="tag-lv">Lv. 1</span>
+                    </div>
+
+                    <!-- SLOT 3: MADENCİLİK (LV 6 BRONZE GLOW) -->
+                    <div class="mock-slot" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-color: #ea580c; box-shadow: 0 0 10px rgba(234, 88, 12, 0.4);">
+                        <span style="font-size: 22px;">⛏️</span>
+                        <span class="tag-lv" style="background: #ea580c; color: white;">Lv. 6</span>
+                    </div>
+
+                    <!-- SLOT 4: BALIKÇILIK -->
+                    <div class="mock-slot">
+                        <span style="font-size: 22px;">🎣</span>
+                        <span class="tag-lv">Lv. 2</span>
+                    </div>
+
+                    <!-- SLOT 5: BOTANİK -->
+                    <div class="mock-slot">
+                        <span style="font-size: 22px;">🌿</span>
+                        <span class="tag-lv">Lv. 1</span>
+                    </div>
+
+                    <!-- SLOT 6-12: BOŞ YUVALAR -->
+                    <div class="mock-slot empty"></div>
+                    <div class="mock-slot empty"></div>
+                    <div class="mock-slot empty"></div>
+                    <div class="mock-slot empty"></div>
+                    <div class="mock-slot empty"></div>
+                    <div class="mock-slot empty"></div>
+                    <div class="mock-slot empty"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

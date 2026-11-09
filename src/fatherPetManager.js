@@ -70,7 +70,7 @@ function getPetsInRoom(roomName) {
     const now = Date.now();
     for (const u in activeFatherPets) {
         const pet = activeFatherPets[u];
-        if (pet && pet.room === roomName && pet.expiresAt > now) {
+        if (pet && pet.room === roomName && pet.expiresAt > now && pet.ownerId && (!playersRef || playersRef[pet.ownerId])) {
             list.push(toPetDTO(pet));
         }
     }
@@ -354,14 +354,23 @@ function updateOwnerPosition(ownerId, x, y) {
  */
 function handleLogin(socket, username) {
     if (!username) return;
-    const pet = activeFatherPets[username];
+    const targetUser = username.toLowerCase();
+    let pet = activeFatherPets[username];
+    if (!pet) {
+        for (const u in activeFatherPets) {
+            if (u.toLowerCase() === targetUser) {
+                pet = activeFatherPets[u];
+                break;
+            }
+        }
+    }
     if (pet && pet.expiresAt > Date.now()) {
         pet.ownerId = socket.id;
         const player = playersRef ? playersRef[socket.id] : null;
         if (player) {
-            pet.room = player.room || 'sokak';
-            pet.x = player.x + 35;
-            pet.y = player.y;
+            pet.room = player.room || 'cadde';
+            pet.x = (player.x || 400) + 35;
+            pet.y = player.y || 300;
         }
         socket.emit('fatherPetSpawned', { pet: toPetDTO(pet) });
         if (ioRef && pet.room) {
@@ -384,6 +393,7 @@ function handleDisconnect(ownerId) {
             reason: 'Oyuncu ayrıldı'
         });
     }
+    pet.ownerId = null;
 }
 
 module.exports = {

@@ -22,7 +22,7 @@
     const EXIT_SIGN = {
         x: 948,
         y: 566,
-        targetRoom: 'meydanv2'
+        targetRoom: 'sahil_yolu'
     };
 
     /**
@@ -207,7 +207,7 @@
 
             ctx.fillStyle = "#38bdf8";
             ctx.font = "bold 8.5px sans-serif";
-            ctx.fillText(isNearBar ? "[E] Tuşuna Bas veya Tıkla" : "Kokteyl Menüsü", barBadgeX, barBadgeY + 6);
+            ctx.fillText("Kokteyl Menüsü", barBadgeX, barBadgeY + 6);
             ctx.restore();
         }
     }
@@ -338,7 +338,7 @@
             ctx.fillText("⚓ Kaptan Kuğu (20 TL)", badgeX, badgeY - 5);
             ctx.fillStyle = "#38bdf8";
             ctx.font = "bold 8.5px sans-serif";
-            ctx.fillText(isNear ? "[E] Tuşuna Bas veya Tıkla" : "Tıkla & Kirala", badgeX, badgeY + 6);
+            ctx.fillText("Tıkla & Kirala", badgeX, badgeY + 6);
         }
 
         ctx.restore();
@@ -444,7 +444,7 @@
         ctx.font = "bold 9.5px 'Segoe UI', Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("MEYDAN", topCenterX, topMidY + 0.5);
+        ctx.fillText("SAHİL YOLU", topCenterX, topMidY + 0.5);
 
         // 4. ALT LEVHA: SAHİL (SOL OK LEVHA ŞEKLİ)
         let botX1 = 914;
@@ -513,7 +513,7 @@
             ctx.font = "bold 9.5px sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText("🏙️ Meydan v2'ye Geç [E]", poleX, topY - 20 + hintPulse);
+            ctx.fillText("🌴 Sahil Yolu'na Geç", poleX, topY - 20 + hintPulse);
         }
 
         ctx.restore();
@@ -627,7 +627,7 @@
         let distExit = Math.hypot(clickX - EXIT_SIGN.x, clickY - EXIT_SIGN.y);
         if (distExit <= 65 || (clickX >= 910 && clickY >= 530)) {
             if (typeof changeRoom === 'function') {
-                changeRoom('meydanv2');
+                changeRoom('sahil_yolu');
             }
             return true;
         }
@@ -660,7 +660,7 @@
         let distExit = Math.hypot(p.x - EXIT_SIGN.x, p.y - EXIT_SIGN.y);
         if (distExit <= 90 || (p.x >= 910 && p.y >= 530)) {
             if (typeof changeRoom === 'function') {
-                changeRoom('meydanv2');
+                changeRoom('sahil_yolu');
                 return true;
             }
         }

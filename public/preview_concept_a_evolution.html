@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Konsept A: Altın Prestij Madalyonu - Seviye Evrim Cetveli (Level 1 - 100)</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/chat-social.css">
+<style>
+  body {
+    margin: 0;
+    padding: 30px;
+    background: #0b0f19;
+    color: #f8fafc;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .container {
+    max-width: 1100px;
+    width: 100%;
+  }
+  .header-title {
+    font-size: 26px;
+    font-weight: 900;
+    color: #ffffff;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-sub {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-bottom: 30px;
+    line-height: 1.5;
+  }
+  .tiers-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 35px;
+  }
+  .tier-card {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 16px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    position: relative;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .tier-card:hover {
+    transform: translateY(-4px);
+  }
+  .tier-card.tier-1 { border-color: #f59e0b; background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(17, 24, 39, 0.98) 100%); }
+  .tier-card.tier-2 { border-color: #94a3b8; background: linear-gradient(180deg, rgba(148, 163, 184, 0.1) 0%, rgba(17, 24, 39, 0.98) 100%); }
+  .tier-card.tier-3 { border-color: #eab308; background: linear-gradient(180deg, rgba(234, 179, 8, 0.12) 0%, rgba(17, 24, 39, 0.98) 100%); box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+  .tier-card.tier-4 { border-color: #10b981; background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(17, 24, 39, 0.98) 100%); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2); }
+  .tier-card.tier-5 { border-color: #38bdf8; background: linear-gradient(180deg, rgba(56, 189, 248, 0.15) 0%, rgba(17, 24, 39, 0.98) 100%); box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25); }
+  .tier-card.tier-6 { border-color: #c084fc; background: linear-gradient(180deg, rgba(192, 132, 252, 0.18) 0%, rgba(17, 24, 39, 0.98) 100%); box-shadow: 0 10px 30px rgba(192, 132, 252, 0.35); }
+
+  .tier-level-badge {
+    font-size: 11px;
+    font-weight: 900;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+  }
+  .tier-1 .tier-level-badge { background: #fef3c7; color: #b45309; }
+  .tier-2 .tier-level-badge { background: #f1f5f9; color: #475569; }
+  .tier-3 .tier-level-badge { background: #fef08a; color: #a16207; }
+  .tier-4 .tier-level-badge { background: #d1fae5; color: #047857; }
+  .tier-5 .tier-level-badge { background: #e0f2fe; color: #0369a1; }
+  .tier-6 .tier-level-badge { background: #f3e8ff; color: #7e22ce; }
+
+  .tier-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 12px;
+  }
+  .big-badge-box {
+    width: 82px;
+    height: 82px;
+    background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.06) 0%, rgba(15, 23, 42, 0.8) 75%);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  .size-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  .actual-slot-box {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    background: #fffbeb;
+    border: 2px solid #fcd34d;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .tier-desc {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.4;
+  }
+
+  /* Profil Vitrinleri Karşılaştırma Bölümü */
+  .profile-showcase-section {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 24px;
+    margin-top: 10px;
+  }
+  .profiles-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-top: 18px;
+  }
+  .profile-card-mini {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 14px;
+    color: #1e293b;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  }
+  .mock-slot {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    background: #fffbeb;
+    border: 2px solid #fcd34d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  }
+  .mock-slot.empty {
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    box-shadow: none;
+    opacity: 0.55;
+  }
+  .tag-mini-lv {
+    font-size: 8px;
+    font-weight: 900;
+    background: rgba(245, 158, 11, 0.25);
+    color: #b45309;
+    padding: 1px 4px;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header-title">
+    <span>🥇</span>
+    <span>Konsept A (Altın Prestij Madalyonu) — Seviye İlerleme & Evrim Cetveli (Lv. 1 – 100)</span>
+  </div>
+  <div class="header-sub">
+    Seçtiğiniz <b>Konsept A: Prestij Madalyonu</b> tasarımı, oyuncu seviye atladıkça alaşımını, defne çelenginin taşlarını, sikke kenarlarını ve aurasını kademe kademe geliştirir. Düz bir rakam yerine RPG onur nişanı gibi parlar.
+  </div>
+
+  <!-- 6 KADEME KARTLARI -->
+  <div class="tiers-grid">
+
+    <!-- 1. KADEME: ÇAYLAK (Lv. 1 - 15) -->
+    <div class="tier-card tier-1">
+      <div class="tier-level-badge">Lv. 1 – 15</div>
+      <div class="tier-title">🥉 Çaylak Nişanı</div>
+
+      <div class="size-label">Büyük Detay (76x76)</div>
+      <div class="big-badge-box">
+        <!-- SVG TIER 1 BÜYÜK -->
+        <svg viewBox="0 0 54 54" width="76" height="76">
+          <defs>
+            <linearGradient id="rimT1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fef08a"/><stop offset="35%" stop-color="#f59e0b"/><stop offset="85%" stop-color="#b45309"/><stop offset="100%" stop-color="#fef3c7"/>
+            </linearGradient>
+            <radialGradient id="coreT1" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#fffbeb"/><stop offset="45%" stop-color="#fef08a"/><stop offset="85%" stop-color="#d97706"/><stop offset="100%" stop-color="#78350f"/>
+            </radialGradient>
+          </defs>
+          <g fill="#d97706" opacity="0.9">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+            <path d="M 22 47 C 25 49, 29 49, 32 47 C 30 44.5, 24 44.5, 22 47 Z"/>
+          </g>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT1)" stroke="#78350f" stroke-width="0.8"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#fef3c7" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT1)" stroke="#b45309" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="20" font-weight="950" fill="#78350f" text-anchor="middle">1</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="20" font-weight="950" fill="#92400e" text-anchor="middle">1</text>
+        </svg>
+      </div>
+
+      <div class="size-label">Oyun İçi (58x58)</div>
+      <div class="actual-slot-box" style="border-color: #fcd34d;">
+        <!-- SVG TIER 1 1:1 -->
+        <svg viewBox="0 0 54 54" width="46" height="46">
+          <g fill="#d97706" opacity="0.9">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+          </g>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT1)" stroke="#78350f" stroke-width="0.8"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#fef3c7" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT1)" stroke="#b45309" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="20" font-weight="950" fill="#78350f" text-anchor="middle">1</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="20" font-weight="950" fill="#92400e" text-anchor="middle">1</text>
+        </svg>
+      </div>
+      <div class="tier-desc">Sıcak kehribar & bronz defne yaprakları, yivli altın sikke.</div>
+    </div>
+
+    <!-- 2. KADEME: ESNAF & ZANAATKAR (Lv. 16 - 35) -->
+    <div class="tier-card tier-2">
+      <div class="tier-level-badge">Lv. 16 – 35</div>
+      <div class="tier-title">🥈 Esnaf (Gümüş & Safir)</div>
+
+      <div class="size-label">Büyük Detay (76x76)</div>
+      <div class="big-badge-box">
+        <!-- SVG TIER 2 BÜYÜK -->
+        <svg viewBox="0 0 54 54" width="76" height="76">
+          <defs>
+            <linearGradient id="rimT2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#cbd5e1"/><stop offset="85%" stop-color="#64748b"/><stop offset="100%" stop-color="#f8fafc"/>
+            </linearGradient>
+            <radialGradient id="coreT2" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#eff6ff"/><stop offset="35%" stop-color="#93c5fd"/><stop offset="85%" stop-color="#1e40af"/><stop offset="100%" stop-color="#0f172a"/>
+            </radialGradient>
+          </defs>
+          <g fill="#94a3b8" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+            <path d="M 22 47 C 25 49, 29 49, 32 47 C 30 44.5, 24 44.5, 22 47 Z"/>
+          </g>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT2)" stroke="#334155" stroke-width="0.8"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#f1f5f9" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT2)" stroke="#1e3a8a" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#0f172a" text-anchor="middle">25</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#ffffff" text-anchor="middle">25</text>
+        </svg>
+      </div>
+
+      <div class="size-label">Oyun İçi (58x58)</div>
+      <div class="actual-slot-box" style="border-color: #cbd5e1; background: #f8fafc;">
+        <svg viewBox="0 0 54 54" width="46" height="46">
+          <g fill="#94a3b8" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+          </g>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT2)" stroke="#334155" stroke-width="0.8"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#f1f5f9" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT2)" stroke="#1e3a8a" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#0f172a" text-anchor="middle">25</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#ffffff" text-anchor="middle">25</text>
+        </svg>
+      </div>
+      <div class="tier-desc">Parlak gümüş çelenk, derin gece safiri madalyon göbeği.</div>
+    </div>
+
+    <!-- 3. KADEME: MÜDAVİM (Lv. 36 - 60) -->
+    <div class="tier-card tier-3">
+      <div class="tier-level-badge">Lv. 36 – 60</div>
+      <div class="tier-title">🥇 Müdavim (Altın & Yakut)</div>
+
+      <div class="size-label">Büyük Detay (76x76)</div>
+      <div class="big-badge-box">
+        <!-- SVG TIER 3 BÜYÜK -->
+        <svg viewBox="0 0 54 54" width="76" height="76">
+          <defs>
+            <linearGradient id="rimT3" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fffbeb"/><stop offset="35%" stop-color="#fbbf24"/><stop offset="85%" stop-color="#b45309"/><stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <radialGradient id="coreT3" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#ffe4e6"/><stop offset="35%" stop-color="#f43f5e"/><stop offset="85%" stop-color="#881337"/><stop offset="100%" stop-color="#4c0519"/>
+            </radialGradient>
+          </defs>
+          <!-- Altın Çelenk & Yakut Meyveleri -->
+          <g fill="#eab308" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+            <path d="M 22 47 C 25 49, 29 49, 32 47 C 30 44.5, 24 44.5, 22 47 Z"/>
+          </g>
+          <!-- Yakut Noktaları -->
+          <circle cx="11" cy="20" r="1.3" fill="#e11d48"/>
+          <circle cx="9" cy="30" r="1.3" fill="#e11d48"/>
+          <circle cx="43" cy="20" r="1.3" fill="#e11d48"/>
+          <circle cx="45" cy="30" r="1.3" fill="#e11d48"/>
+
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT3)" stroke="#78350f" stroke-width="0.8" filter="drop-shadow(0 0 5px rgba(234, 179, 8, 0.5))"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#fef08a" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT3)" stroke="#9f1239" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#4c0519" text-anchor="middle">50</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#fef08a" text-anchor="middle">50</text>
+        </svg>
+      </div>
+
+      <div class="size-label">Oyun İçi (58x58)</div>
+      <div class="actual-slot-box" style="border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);">
+        <svg viewBox="0 0 54 54" width="46" height="46">
+          <g fill="#eab308" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+          </g>
+          <circle cx="11" cy="20" r="1" fill="#e11d48"/><circle cx="43" cy="20" r="1" fill="#e11d48"/>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT3)" stroke="#78350f" stroke-width="0.8"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#fef08a" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT3)" stroke="#9f1239" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#4c0519" text-anchor="middle">50</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#fef08a" text-anchor="middle">50</text>
+        </svg>
+      </div>
+      <div class="tier-desc">Som altın çelenk & yakut taşları, asil bordo çekirdek.</div>
+    </div>
+
+    <!-- 4. KADEME: ŞEHİR HAKİMİ (Lv. 61 - 85) -->
+    <div class="tier-card tier-4">
+      <div class="tier-level-badge">Lv. 61 – 85</div>
+      <div class="tier-title">✨ Hakim (Zümrüt & Platin)</div>
+
+      <div class="size-label">Büyük Detay (76x76)</div>
+      <div class="big-badge-box">
+        <!-- SVG TIER 4 BÜYÜK -->
+        <svg viewBox="0 0 54 54" width="76" height="76">
+          <defs>
+            <linearGradient id="rimT4" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/><stop offset="30%" stop-color="#e2e8f0"/><stop offset="85%" stop-color="#64748b"/><stop offset="100%" stop-color="#f1f5f9"/>
+            </linearGradient>
+            <radialGradient id="coreT4" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#ecfdf5"/><stop offset="35%" stop-color="#10b981"/><stop offset="85%" stop-color="#064e3b"/><stop offset="100%" stop-color="#022c22"/>
+            </radialGradient>
+          </defs>
+          <!-- Zümrüt Çelenk -->
+          <g fill="#10b981" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+            <path d="M 22 47 C 25 49, 29 49, 32 47 C 30 44.5, 24 44.5, 22 47 Z"/>
+          </g>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT4)" stroke="#047857" stroke-width="0.9" filter="drop-shadow(0 0 6px rgba(16, 185, 129, 0.6))"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#a7f3d0" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT4)" stroke="#065f46" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.5"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#022c22" text-anchor="middle">75</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#a7f3d0" text-anchor="middle">75</text>
+        </svg>
+      </div>
+
+      <div class="size-label">Oyun İçi (58x58)</div>
+      <div class="actual-slot-box" style="border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.45); background: #f0fdf4;">
+        <svg viewBox="0 0 54 54" width="46" height="46">
+          <g fill="#10b981" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+          </g>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT4)" stroke="#047857" stroke-width="0.8"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#a7f3d0" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT4)" stroke="#065f46" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.5"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#022c22" text-anchor="middle">75</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#a7f3d0" text-anchor="middle">75</text>
+        </svg>
+      </div>
+      <div class="tier-desc">Zümrüt ışıltılı çelenk, platin sikke & yeşil kristal aurası.</div>
+    </div>
+
+    <!-- 5. KADEME: DUAYEN (Lv. 86 - 99) -->
+    <div class="tier-card tier-5">
+      <div class="tier-level-badge">Lv. 86 – 99</div>
+      <div class="tier-title">💎 Duayen (Elmas Kristal)</div>
+
+      <div class="size-label">Büyük Detay (76x76)</div>
+      <div class="big-badge-box">
+        <!-- SVG TIER 5 BÜYÜK -->
+        <svg viewBox="0 0 54 54" width="76" height="76">
+          <defs>
+            <linearGradient id="rimT5" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/><stop offset="30%" stop-color="#7dd3fc"/><stop offset="70%" stop-color="#0284c7"/><stop offset="100%" stop-color="#e0f2fe"/>
+            </linearGradient>
+            <radialGradient id="coreT5" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#f0f9ff"/><stop offset="35%" stop-color="#38bdf8"/><stop offset="85%" stop-color="#0c4a6e"/><stop offset="100%" stop-color="#082f49"/>
+            </radialGradient>
+          </defs>
+          <!-- Elmas Kesim Çelenk -->
+          <g fill="#38bdf8" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+            <path d="M 22 47 C 25 49, 29 49, 32 47 C 30 44.5, 24 44.5, 22 47 Z"/>
+          </g>
+          <!-- Pırlanta Parıltıları -->
+          <polygon points="27,4 28,7 31,8 28,9 27,12 26,9 23,8 26,7" fill="#ffffff"/>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT5)" stroke="#0369a1" stroke-width="0.9" filter="drop-shadow(0 0 8px rgba(56, 189, 248, 0.7))"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#bae6fd" stroke-width="0.8" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT5)" stroke="#0284c7" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.6"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#082f49" text-anchor="middle">90</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#e0f2fe" text-anchor="middle">90</text>
+        </svg>
+      </div>
+
+      <div class="size-label">Oyun İçi (58x58)</div>
+      <div class="actual-slot-box" style="border-color: #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.5); background: #f0f9ff;">
+        <svg viewBox="0 0 54 54" width="46" height="46">
+          <g fill="#38bdf8" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+          </g>
+          <polygon points="27,5 28,7 30,8 28,9 27,11 26,9 24,8 26,7" fill="#ffffff"/>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT5)" stroke="#0369a1" stroke-width="0.8"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#bae6fd" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT5)" stroke="#0284c7" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.6"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#082f49" text-anchor="middle">90</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#e0f2fe" text-anchor="middle">90</text>
+        </svg>
+      </div>
+      <div class="tier-desc">Buzul mavisi elmas gövde, tepe parıltısı ve elmas ışıltısı.</div>
+    </div>
+
+    <!-- 6. KADEME: METAVERSE EFSANESİ (Lv. 100 MAX) -->
+    <div class="tier-card tier-6">
+      <div class="tier-level-badge">Lv. 100 MAX</div>
+      <div class="tier-title">👑 Metaverse Efsanesi</div>
+
+      <div class="size-label">Büyük Detay (76x76)</div>
+      <div class="big-badge-box">
+        <!-- SVG TIER 6 BÜYÜK -->
+        <svg viewBox="0 0 54 54" width="76" height="76">
+          <defs>
+            <linearGradient id="rimT6" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#e9d5ff"/><stop offset="35%" stop-color="#a855f7"/><stop offset="80%" stop-color="#3b0764"/><stop offset="100%" stop-color="#581c87"/>
+            </linearGradient>
+            <radialGradient id="coreT6" cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stop-color="#2e1065"/><stop offset="45%" stop-color="#0f051d"/><stop offset="100%" stop-color="#000000"/>
+            </radialGradient>
+          </defs>
+          <!-- Kozmik Altın & Alev Moru Çelenk -->
+          <g fill="#c084fc" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+            <path d="M 22 47 C 25 49, 29 49, 32 47 C 30 44.5, 24 44.5, 22 47 Z"/>
+          </g>
+          <!-- Tepe Efsane Tacı -->
+          <path d="M 22 8 L 24 5 L 27 7 L 30 5 L 32 8 Z" fill="#fbbf24" stroke="#78350f" stroke-width="0.5"/>
+
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT6)" stroke="#c084fc" stroke-width="1.0" filter="drop-shadow(0 0 10px #c084fc)"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#f3e8ff" stroke-width="0.8" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT6)" stroke="#7e22ce" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="16" font-weight="950" fill="#000000" text-anchor="middle" letter-spacing="-0.5">100</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="16" font-weight="950" fill="#facc15" text-anchor="middle" letter-spacing="-0.5" filter="drop-shadow(0 0 3px #fef08a)">100</text>
+        </svg>
+      </div>
+
+      <div class="size-label">Oyun İçi (58x58)</div>
+      <div class="actual-slot-box" style="border-color: #c084fc; box-shadow: 0 0 15px rgba(192, 132, 252, 0.6); background: #0f051d;">
+        <svg viewBox="0 0 54 54" width="46" height="46">
+          <g fill="#c084fc" opacity="0.95">
+            <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+            <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+            <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+            <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+            <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+            <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+          </g>
+          <path d="M 22 8 L 24 5 L 27 7 L 30 5 L 32 8 Z" fill="#fbbf24"/>
+          <circle cx="27" cy="25" r="18.5" fill="url(#rimT6)" stroke="#c084fc" stroke-width="0.9"/>
+          <circle cx="27" cy="25" r="16" fill="none" stroke="#f3e8ff" stroke-width="0.7" stroke-dasharray="1.5, 1.2"/>
+          <circle cx="27" cy="25" r="14" fill="url(#coreT6)" stroke="#7e22ce" stroke-width="0.6"/>
+          <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+          <text x="27" y="32" font-family="'Inter'" font-size="16" font-weight="950" fill="#000000" text-anchor="middle" letter-spacing="-0.5">100</text>
+          <text x="27" y="31" font-family="'Inter'" font-size="16" font-weight="950" fill="#facc15" text-anchor="middle" letter-spacing="-0.5">100</text>
+        </svg>
+      </div>
+      <div class="tier-desc">Obsidyen çekirdek, mor alev çelengi, tepe tacı ve altın "100".</div>
+    </div>
+
+  </div>
+
+  <!-- CANLI PROFİL VİTRİNİ KARŞILAŞTIRMASI (3 ÖRNEK SEVİYE) -->
+  <div class="profile-showcase-section">
+    <div style="font-size: 18px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+      <span>📱</span>
+      <span>Gerçek Oyun Profil Penceresinde Seviye Evrimi Duruşu (Canlı XP Kapsülü ile)</span>
+    </div>
+    <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">
+      Oyuncunun seviyesi arttıkça profil penceresinin 1. yuvasındaki Konsept A madalyonu otomatik olarak evrimleşir:
+    </div>
+
+    <div class="profiles-row">
+
+      <!-- 1. PROFİL: SEVİYE 1 BAŞLANGIÇ -->
+      <div class="profile-card-mini">
+        <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 6px;">
+          <b style="font-size: 14px; color: #0f172a;">yasin</b>
+          <span style="font-size: 10px; background: #f59e0b; color: #fff; font-weight: 900; padding: 2px 6px; border-radius: 10px;">♂️ LV 1</span>
+          <span style="font-size: 10px; background: #ef4444; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 6px;">👑 Admin</span>
+        </div>
+        <!-- XP Bar -->
+        <div class="profile-live-xp-card" style="display: block; margin-bottom: 10px; padding: 6px 10px;">
+          <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: 800; margin-bottom: 3px;">
+            <span style="color: #4f46e5;">⚡ Seviye 1 İlerlemesi</span>
+            <span style="color: #0d9488; background: #ccfbf1; padding: 1px 4px; border-radius: 4px;">7 / 20 XP (%35)</span>
+          </div>
+          <div class="profile-live-xp-track" style="height: 7px;">
+            <div class="profile-live-xp-fill" style="width: 35%;"></div>
+          </div>
+        </div>
+        <!-- Badges Grid -->
+        <div style="font-size: 12px; font-weight: 800; color: #1e293b; margin-bottom: 6px;">🏅 Rozetler (Lv. 1 Başlangıç)</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 50px); gap: 6px;">
+          <!-- 1. Yuva: TIER 1 -->
+          <div class="mock-slot" style="background: #fffbeb; border: 2px solid #f59e0b;">
+            <svg viewBox="0 0 54 54" width="40" height="40">
+              <use href="#rimT1"/>
+              <g fill="#d97706" opacity="0.9">
+                <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+                <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+                <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+                <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+                <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+                <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+              </g>
+              <circle cx="27" cy="25" r="18.5" fill="url(#rimT1)" stroke="#78350f" stroke-width="0.8"/>
+              <circle cx="27" cy="25" r="14" fill="url(#coreT1)"/>
+              <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+              <text x="27" y="32" font-family="'Inter'" font-size="20" font-weight="950" fill="#78350f" text-anchor="middle">1</text>
+              <text x="27" y="31" font-family="'Inter'" font-size="20" font-weight="950" fill="#92400e" text-anchor="middle">1</text>
+            </svg>
+          </div>
+          <div class="mock-slot"><span style="font-size: 18px;">🎮</span><span class="tag-mini-lv">Lv. 1</span></div>
+          <div class="mock-slot empty"></div>
+          <div class="mock-slot empty"></div>
+        </div>
+      </div>
+
+      <!-- 2. PROFİL: SEVİYE 50 MÜDAVİM -->
+      <div class="profile-card-mini" style="border: 1.5px solid #f59e0b; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);">
+        <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 6px;">
+          <b style="font-size: 14px; color: #0f172a;">yasin</b>
+          <span style="font-size: 10px; background: linear-gradient(135deg, #eab308, #ca8a04); color: #fff; font-weight: 900; padding: 2px 6px; border-radius: 10px;">♂️ LV 50</span>
+          <span style="font-size: 10px; background: #6366f1; color: #fff; font-weight: 800; padding: 2px 6px; border-radius: 6px;">✨ Kıdemli</span>
+        </div>
+        <!-- XP Bar -->
+        <div class="profile-live-xp-card" style="display: block; margin-bottom: 10px; padding: 6px 10px;">
+          <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: 800; margin-bottom: 3px;">
+            <span style="color: #4f46e5;">⚡ Seviye 50 İlerlemesi</span>
+            <span style="color: #0d9488; background: #ccfbf1; padding: 1px 4px; border-radius: 4px;">3.450 / 5.201 XP (%66)</span>
+          </div>
+          <div class="profile-live-xp-track" style="height: 7px;">
+            <div class="profile-live-xp-fill" style="width: 66%;"></div>
+          </div>
+        </div>
+        <!-- Badges Grid -->
+        <div style="font-size: 12px; font-weight: 800; color: #1e293b; margin-bottom: 6px;">🏅 Rozetler (Lv. 50 Altın Müdavim)</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 50px); gap: 6px;">
+          <!-- 1. Yuva: TIER 3 (Lv. 50) -->
+          <div class="mock-slot" style="background: #fffbeb; border: 2px solid #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);">
+            <svg viewBox="0 0 54 54" width="40" height="40">
+              <g fill="#eab308" opacity="0.95">
+                <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+                <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+                <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+                <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+                <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+                <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+              </g>
+              <circle cx="11" cy="20" r="1" fill="#e11d48"/><circle cx="43" cy="20" r="1" fill="#e11d48"/>
+              <circle cx="27" cy="25" r="18.5" fill="url(#rimT3)" stroke="#78350f" stroke-width="0.8"/>
+              <circle cx="27" cy="25" r="14" fill="url(#coreT3)" stroke="#9f1239" stroke-width="0.6"/>
+              <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+              <text x="27" y="32" font-family="'Inter'" font-size="19" font-weight="950" fill="#4c0519" text-anchor="middle">50</text>
+              <text x="27" y="31" font-family="'Inter'" font-size="19" font-weight="950" fill="#fef08a" text-anchor="middle">50</text>
+            </svg>
+          </div>
+          <div class="mock-slot"><span style="font-size: 18px;">🎮</span><span class="tag-mini-lv">Lv. 7</span></div>
+          <div class="mock-slot" style="border-color: #ea580c; box-shadow: 0 0 6px rgba(234, 88, 12, 0.4);"><span style="font-size: 18px;">⛏️</span><span class="tag-mini-lv" style="background: #ea580c; color: white;">Lv. 8</span></div>
+          <div class="mock-slot"><span style="font-size: 18px;">🎣</span><span class="tag-mini-lv">Lv. 5</span></div>
+        </div>
+      </div>
+
+      <!-- 3. PROFİL: SEVİYE 100 METAVERSE EFSANESİ -->
+      <div class="profile-card-mini" style="border: 2px solid #c084fc; box-shadow: 0 12px 30px rgba(192, 132, 252, 0.35); background: #faf5ff;">
+        <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 6px;">
+          <b style="font-size: 14px; color: #0f172a;">yasin</b>
+          <span style="font-size: 10px; background: linear-gradient(135deg, #a855f7, #6b21a8); color: #fff; font-weight: 900; padding: 2px 6px; border-radius: 10px; box-shadow: 0 0 6px #c084fc;">♂️ LV 100</span>
+          <span style="font-size: 10px; background: linear-gradient(135deg, #0f051d, #2e1065); color: #facc15; font-weight: 900; padding: 2px 6px; border-radius: 6px; border: 1px solid #c084fc;">🖤 Efsane</span>
+        </div>
+        <!-- XP Bar (MAX) -->
+        <div class="profile-live-xp-card" style="display: block; margin-bottom: 10px; padding: 6px 10px; border-color: #c084fc;">
+          <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: 800; margin-bottom: 3px;">
+            <span style="color: #7e22ce;">👑 Metaverse Efsanesi</span>
+            <span style="color: #6b21a8; background: #f3e8ff; padding: 1px 4px; border-radius: 4px; font-weight: 900;">MAKSİMUM SEVİYE</span>
+          </div>
+          <div class="profile-live-xp-track" style="height: 7px; background: #e9d5ff;">
+            <div class="profile-live-xp-fill" style="width: 100%; background: linear-gradient(90deg, #c084fc, #a855f7, #e879f9);"></div>
+          </div>
+        </div>
+        <!-- Badges Grid -->
+        <div style="font-size: 12px; font-weight: 800; color: #1e293b; margin-bottom: 6px;">🏅 Rozetler (Lv. 100 Obsidyen Efsane)</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 50px); gap: 6px;">
+          <!-- 1. Yuva: TIER 6 (Lv. 100) -->
+          <div class="mock-slot" style="background: #0f051d; border: 2px solid #c084fc; box-shadow: 0 0 14px rgba(192, 132, 252, 0.7);">
+            <svg viewBox="0 0 54 54" width="40" height="40">
+              <g fill="#c084fc" opacity="0.95">
+                <path d="M 8 28 C 4 23, 6 17, 12 15 C 10 19, 11 24, 14 27 Z"/>
+                <path d="M 6 36 C 3 31, 6 25, 12 24 C 10 28, 12 33, 15 35 Z"/>
+                <path d="M 10 44 C 7 39, 10 34, 16 33 C 14 37, 17 41, 20 43 Z"/>
+                <path d="M 46 28 C 50 23, 48 17, 42 15 C 44 19, 43 24, 40 27 Z"/>
+                <path d="M 48 36 C 51 31, 48 25, 42 24 C 44 28, 42 33, 39 35 Z"/>
+                <path d="M 44 44 C 47 39, 44 34, 38 33 C 40 37, 37 41, 34 43 Z"/>
+              </g>
+              <path d="M 22 8 L 24 5 L 27 7 L 30 5 L 32 8 Z" fill="#fbbf24"/>
+              <circle cx="27" cy="25" r="18.5" fill="url(#rimT6)" stroke="#c084fc" stroke-width="0.9"/>
+              <circle cx="27" cy="25" r="14" fill="url(#coreT6)" stroke="#7e22ce" stroke-width="0.6"/>
+              <path d="M 14 23 A 13.5 13.5 0 0 1 39 21 A 14.5 12 0 0 0 14 23 Z" fill="#ffffff" opacity="0.45"/>
+              <text x="27" y="32" font-family="'Inter'" font-size="16" font-weight="950" fill="#000000" text-anchor="middle" letter-spacing="-0.5">100</text>
+              <text x="27" y="31" font-family="'Inter'" font-size="16" font-weight="950" fill="#facc15" text-anchor="middle" letter-spacing="-0.5">100</text>
+            </svg>
+          </div>
+          <div class="mock-slot" style="border-color: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.4);"><span style="font-size: 18px;">🎮</span><span class="tag-mini-lv" style="background: #a855f7; color: white;">Lv. 10</span></div>
+          <div class="mock-slot" style="border-color: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.4);"><span style="font-size: 18px;">⛏️</span><span class="tag-mini-lv" style="background: #a855f7; color: white;">Lv. 10</span></div>
+          <div class="mock-slot" style="border-color: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.4);"><span style="font-size: 18px;">🎣</span><span class="tag-mini-lv" style="background: #a855f7; color: white;">Lv. 10</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
+

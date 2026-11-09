@@ -1,0 +1,1125 @@
+/* ==========================================================================
+   MINI METAVERSE - CHAT & SOCIAL
+   Sohbet paneli, baloncuklar, sesli sohbet (Voice Chat), profil kartı, rozetler, alt bar
+   ========================================================================== */
+
+/* 6. SABİT VE SÜRÜKLENEBİLİR CHAT PANELİ */
+#sideChatContainer {
+    position: fixed;
+    top: 65px;
+    right: 20px;
+    width: 290px;
+    height: 330px;
+    max-width: calc(100vw - 30px);
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    z-index: 40000;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.7), 0 0 20px rgba(13, 148, 136, 0.2);
+    backdrop-filter: blur(14px);
+    transition: height 0.2s ease, box-shadow 0.2s ease;
+}
+
+#sideChatContainer.chat-minimized {
+    height: auto !important;
+    min-height: auto !important;
+    padding-bottom: 8px !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+}
+
+#chatHeader {
+    cursor: move;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#sideChatContainer.chat-minimized #chatHeader {
+    margin-bottom: 0 !important;
+}
+
+#sideChatContainer .chat-header-btn {
+    padding: 2px 7px;
+    background: rgba(255, 255, 255, 0.18);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+#sideChatContainer .chat-header-btn:hover {
+    background: rgba(255, 255, 255, 0.32);
+    transform: scale(1.1);
+}
+
+#sideChatContainer .chat-header-btn.btn-close {
+    background: rgba(239, 68, 68, 0.4);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+#sideChatContainer .chat-header-btn.btn-close:hover {
+    background: rgba(239, 68, 68, 0.85);
+    border-color: #ef4444;
+}
+
+#chatBody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#sideChatContainer.chat-minimized #chatBody {
+    display: none !important;
+}
+
+#chatHistory {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 8px;
+    padding: 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+    color: #f1f5f9;
+    font-size: 13px;
+    word-break: break-word;
+}
+
+#chatHistory .chat-msg-row {
+    padding: 4px 7px;
+    border-radius: 6px;
+    line-height: 1.35;
+    font-size: 12px;
+    transition: background 0.15s ease;
+}
+
+#chatHistory .chat-msg-all {
+    background: rgba(245, 158, 11, 0.12);
+    border-left: 3px solid #f59e0b;
+}
+
+#chatHistory .chat-msg-room {
+    background: rgba(255, 255, 255, 0.06);
+    border-left: 3px solid #14b8a6;
+}
+
+.chat-tab-btn {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    background: transparent;
+    color: #94a3b8;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    position: relative;
+    user-select: none;
+}
+
+.chat-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
+}
+
+.chat-tab-btn.active {
+    background: rgba(15, 23, 42, 0.85);
+    color: #ffffff;
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.chat-tab-dot {
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 1s infinite;
+}
+
+#sideChatContainer input {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(30, 41, 59, 0.9);
+    color: white;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    outline: none;
+    font-size: 12.5px;
+}
+
+#sideChatContainer button#sideChatSendBtn {
+    padding: 8px 13px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 12.5px;
+    transition: transform 0.1s;
+}
+
+#sideChatContainer button#sideChatSendBtn:hover {
+    transform: scale(1.03);
+}
+
+
+/* --- WEBRTC CANLI SESLİ SOHBET (VOICE CHAT) STİLLERİ --- */
+.modal-voice-btn {
+    padding: 5px 12px;
+    background: linear-gradient(135deg, #475569, #334155);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.modal-voice-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}
+.modal-voice-btn:active {
+    transform: translateY(0);
+}
+
+/* Konuşurken Kart Etrafındaki Yeşil Halo ve Dalga */
+.voice-speaking {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.8), inset 0 0 8px rgba(16, 185, 129, 0.4) !important;
+    animation: voiceHaloPulse 1s infinite alternate ease-in-out;
+}
+
+@keyframes voiceHaloPulse {
+    0% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+    100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.95), 0 0 28px rgba(52, 211, 153, 0.5); }
+}
+
+/* Mini Ses Dalgası Barları (3 Çubuklu Animasyon) */
+.voice-wave-bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 11px;
+    margin-left: 3px;
+    vertical-align: middle;
+}
+.voice-wave-bars span {
+    width: 2.5px;
+    height: 100%;
+    background-color: #10b981;
+    border-radius: 1px;
+    animation: voiceBarWave 0.8s infinite ease-in-out;
+}
+.voice-wave-bars span:nth-child(1) { animation-delay: 0s; }
+.voice-wave-bars span:nth-child(2) { animation-delay: 0.2s; }
+.voice-wave-bars span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes voiceBarWave {
+    0%, 100% { height: 3px; }
+    50% { height: 11px; }
+}
+
+/* Sesli Sohbet Bildirim Toast'ı */
+.voice-toast {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-30px);
+    background: rgba(15, 23, 42, 0.94);
+    color: #38bdf8;
+    border: 1px solid #38bdf8;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    z-index: 99999;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.voice-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+
+/* =========================================================
+   CANLI SESLİ SOHBET (VOICE CHAT) & "C" TUŞU GÖSTERGELERİ
+   ========================================================= */
+
+/* Ses Bildirim Toast'u */
+.voice-toast {
+    position: fixed;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(15, 23, 42, 0.94);
+    color: #f8fafc;
+    border: 1.5px solid #10b981;
+    border-radius: 9999px;
+    padding: 8px 22px;
+    font-size: 13px;
+    font-weight: 800;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(16, 185, 129, 0.4);
+    z-index: 100000;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+}
+
+.voice-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Blackjack Masasında Konuşan Oyuncu Koltuğu Parıldaması */
+.bj-seat-box.voice-speaking {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 24px rgba(16, 185, 129, 0.9), inset 0 0 12px rgba(16, 185, 129, 0.35) !important;
+    animation: bjVoiceSeatPulse 1s infinite alternate ease-in-out !important;
+}
+
+@keyframes bjVoiceSeatPulse {
+    0% {
+        box-shadow: 0 0 16px rgba(16, 185, 129, 0.5), inset 0 0 8px rgba(16, 185, 129, 0.2);
+    }
+    100% {
+        box-shadow: 0 0 30px rgba(16, 185, 129, 1), inset 0 0 15px rgba(16, 185, 129, 0.5);
+    }
+}
+
+/* 101 Okey ve Masalarda Konuşma Dalgaları */
+.voice-wave-bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 12px;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+.voice-wave-bars span {
+    width: 2.5px;
+    background: #10b981;
+    border-radius: 1px;
+    animation: voiceBarWave 0.6s infinite ease-in-out alternate;
+}
+
+.voice-wave-bars span:nth-child(1) { height: 4px; animation-delay: 0.1s; }
+.voice-wave-bars span:nth-child(2) { height: 10px; animation-delay: 0.25s; }
+.voice-wave-bars span:nth-child(3) { height: 6px; animation-delay: 0.4s; }
+
+@keyframes voiceBarWave {
+    0% { height: 3px; }
+    100% { height: 12px; }
+}
+
+/* Üst Bar Sesli Sohbet Butonu Hover & Efekt */
+#globalVoiceNavBtn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.15);
+}
+
+#bjVoiceToggleBtn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.15);
+}
+
+
+/* Sanalika Profil Etkileşim Butonları Efektleri */
+.profile-action-btn {
+    transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+}
+.profile-action-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow: 0 5px 14px rgba(0,0,0,0.25) !important;
+}
+.profile-action-btn:active {
+    transform: translateY(1px);
+    filter: brightness(0.96);
+}
+
+/* ============================================================
+   YENİ OYUNCU PROFİLİ v2 (KOMPAKT, SÜRÜKLENEBİLİR, YAN SEKMELER & ROZETLER)
+   ============================================================ */
+
+/* Sağ Yan Sekmeler */
+.profile-side-tabs {
+    position: absolute;
+    left: 100%;
+    top: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 100;
+}
+
+.profile-side-tab {
+    position: relative;
+    width: 36px;
+    height: 35px;
+    border-radius: 0 10px 10px 0;
+    border: 1.5px solid rgba(255, 255, 255, 0.45);
+    border-left: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.22);
+    transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+    padding: 0;
+}
+
+.profile-side-tab:hover {
+    transform: translateX(4px) scale(1.08);
+    filter: brightness(1.15);
+    box-shadow: 3px 4px 12px rgba(0, 0, 0, 0.32);
+    z-index: 110;
+}
+
+.profile-side-tab .tab-icon {
+    font-size: 18px;
+    user-select: none;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-side-tab .tab-tooltip {
+    position: absolute;
+    left: calc(100% + 7px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-6px);
+    background: rgba(15, 23, 42, 0.95);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 5px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    z-index: 200;
+}
+
+.profile-side-tab:hover .tab-tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+.profile-side-tab.tab-tea {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+.profile-side-tab.tab-money {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+.profile-side-tab.tab-gift {
+    background: linear-gradient(135deg, #ec4899, #db2777);
+}
+.profile-side-tab.tab-whisper {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+.profile-side-tab.tab-friend {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+}
+.profile-side-tab.tab-jammer {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+.profile-side-tab.tab-mug {
+    background: linear-gradient(135deg, #64748b, #334155);
+}
+.profile-side-tab.tab-zeus {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
+    border: 1px solid rgba(254, 240, 138, 0.4);
+}
+.profile-side-tab.tab-zeus:hover {
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.75);
+    filter: brightness(1.18);
+}
+
+/* ==============================================================
+   ÖZEL EŞYA BUTONLARI & TEMATİK CANLI ANİMASYONLARI
+   (Zeus'un Şimşeği, Sinyal Kesici Jammer, Gasp Bıçağı)
+   ============================================================== */
+
+
+/* ============================================================== */
+/* 🏅 KARE ROZET SİSTEMİ (12 Yuvalı 4x3 Izgara & Seviye Parlamaları) */
+/* ============================================================== */
+.profile-badges-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 4px;
+    user-select: none;
+}
+
+.profile-badge-square {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    min-height: 58px;
+    max-height: 66px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.16s ease, border-color 0.16s ease;
+    padding: 3px 2px;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.profile-badge-square:hover {
+    transform: translateY(-3px) scale(1.08);
+    z-index: 25;
+}
+
+.profile-badge-square.active-selected {
+    outline: 2.5px solid #6366f1;
+    outline-offset: 2px;
+}
+
+.profile-badge-square .badge-icon {
+    font-size: 24px;
+    line-height: 1;
+    margin-bottom: 2px;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.18));
+}
+
+.profile-badge-square:hover .badge-icon {
+    transform: scale(1.15);
+}
+
+.profile-badge-square .badge-level-tag {
+    font-size: 8.5px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: rgba(0,0,0,0.08);
+    color: #475569;
+    line-height: 1.1;
+    letter-spacing: -0.2px;
+    white-space: nowrap;
+}
+
+/* 🌟 1. YUVA: KONSEPT A (ALTIN PRESTİJ MADALYONU) DİNAMİK SEVİYE TASARIMI (Lv. 1 - 100) */
+.profile-badge-square.profile-level-badge-slot {
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+    position: relative !important;
+    cursor: pointer !important;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.profile-badge-square.profile-level-badge-slot .concept-a-badge-svg {
+    display: block;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+.profile-badge-square.profile-level-badge-slot:hover {
+    transform: translateY(-3px) scale(1.08) !important;
+}
+
+.profile-badge-square.profile-level-badge-slot:hover .concept-a-badge-svg {
+    transform: scale(1.1);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+}
+
+/* KADEME 1: ÇAYLAK (Lv. 1 - 15) */
+.profile-badge-square.profile-level-badge-slot.tier-1 {
+    background: linear-gradient(145deg, #ffffff 0%, #fffbeb 50%, #fef3c7 100%) !important;
+    border: 2px solid #fcd34d !important;
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+.profile-badge-square.profile-level-badge-slot.tier-1:hover {
+    border-color: #f59e0b !important;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4), inset 0 1px 0 #ffffff !important;
+}
+
+/* KADEME 2: ESNAF (Lv. 16 - 35) */
+.profile-badge-square.profile-level-badge-slot.tier-2 {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%) !important;
+    border: 2px solid #cbd5e1 !important;
+    box-shadow: 0 3px 10px rgba(100, 116, 139, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+.profile-badge-square.profile-level-badge-slot.tier-2:hover {
+    border-color: #94a3b8 !important;
+    box-shadow: 0 6px 16px rgba(100, 116, 139, 0.4) !important;
+}
+
+/* KADEME 3: MÜDAVİM (Lv. 36 - 60) */
+.profile-badge-square.profile-level-badge-slot.tier-3 {
+    background: linear-gradient(145deg, #ffffff 0%, #fffbeb 50%, #fef08a 100%) !important;
+    border: 2px solid #f59e0b !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+.profile-badge-square.profile-level-badge-slot.tier-3:hover {
+    border-color: #d97706 !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.6) !important;
+}
+
+/* KADEME 4: HAKİM (Lv. 61 - 85) */
+.profile-badge-square.profile-level-badge-slot.tier-4 {
+    background: linear-gradient(145deg, #ffffff 0%, #f0fdf4 50%, #dcfce7 100%) !important;
+    border: 2px solid #10b981 !important;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+.profile-badge-square.profile-level-badge-slot.tier-4:hover {
+    border-color: #059669 !important;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.65) !important;
+}
+
+/* KADEME 5: DUAYEN (Lv. 86 - 99) */
+.profile-badge-square.profile-level-badge-slot.tier-5 {
+    background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 50%, #e0f2fe 100%) !important;
+    border: 2px solid #38bdf8 !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+.profile-badge-square.profile-level-badge-slot.tier-5:hover {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 22px rgba(56, 189, 248, 0.7) !important;
+}
+
+/* KADEME 6: YAŞAYAN EFSANE (Lv. 100 MAX) */
+.profile-badge-square.profile-level-badge-slot.tier-6 {
+    background: #0f051d !important;
+    border: 2px solid #c084fc !important;
+    box-shadow: 0 0 18px rgba(192, 132, 252, 0.7), inset 0 0 10px rgba(168, 85, 247, 0.3) !important;
+}
+.profile-badge-square.profile-level-badge-slot.tier-6:hover {
+    border-color: #e879f9 !important;
+    box-shadow: 0 0 25px rgba(232, 121, 249, 0.85), inset 0 0 14px rgba(192, 132, 252, 0.5) !important;
+}
+
+.profile-badge-square .badge-huge-level-number {
+    font-size: 34px;
+    font-weight: 950;
+    line-height: 1;
+    letter-spacing: -1.5px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, #f59e0b 0%, #d97706 60%, #b45309 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 2px rgba(217, 119, 6, 0.35));
+    user-select: none;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: block;
+}
+
+.profile-badge-square:hover .badge-huge-level-number {
+    transform: scale(1.1);
+}
+
+.profile-badge-square .badge-huge-level-number.digits-3 {
+    font-size: 26px;
+    letter-spacing: -2px;
+}
+
+/* Yüksek Seviye Auralarında Kocaman Sayının Parlama Efektleri */
+.profile-badge-square.profile-level-badge-slot.badge-glow-bronze .badge-huge-level-number {
+    background: linear-gradient(180deg, #fef3c7 0%, #fde68a 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    filter: drop-shadow(0 0 8px #f59e0b) !important;
+}
+
+.profile-badge-square.profile-level-badge-slot.badge-glow-silver .badge-huge-level-number {
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    filter: drop-shadow(0 0 8px #cbd5e1) !important;
+}
+
+.profile-badge-square.profile-level-badge-slot.badge-glow-gold .badge-huge-level-number {
+    background: linear-gradient(180deg, #ffffff 0%, #fef08a 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    filter: drop-shadow(0 0 10px #facc15) !important;
+}
+
+.profile-badge-square.profile-level-badge-slot.badge-glow-diamond .badge-huge-level-number {
+    background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    filter: drop-shadow(0 0 10px #38bdf8) !important;
+}
+
+.profile-badge-square.profile-level-badge-slot.badge-glow-black .badge-huge-level-number {
+    background: linear-gradient(180deg, #ffffff 0%, #f3e8ff 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    filter: drop-shadow(0 0 12px #c084fc) !important;
+}
+
+/* Boş Rozet Yuvası (Kazanılana kadar tertemiz & boş kalır) */
+.profile-badge-square.empty-slot {
+    background: #f8fafc !important;
+    border: 1.5px dashed #cbd5e1 !important;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02) !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    opacity: 0.65;
+}
+.profile-badge-square.empty-slot:hover {
+    transform: none !important;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02) !important;
+}
+
+/* Kilitli Rozet (Seviye 0) */
+.profile-badge-square.badge-level-0 {
+    opacity: 0.5;
+    background: #f1f5f9;
+    border: 1.5px dashed #cbd5e1;
+}
+.profile-badge-square.badge-level-0 .badge-icon {
+    filter: grayscale(1) opacity(0.35);
+}
+.profile-badge-square.badge-level-0 .badge-level-tag {
+    background: #e2e8f0;
+    color: #94a3b8;
+}
+
+/* Seviye 1 - 6 Renkleri */
+.profile-badge-square.badge-level-1 {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1.5px solid #d97706;
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
+}
+.profile-badge-square.badge-level-1 .badge-level-tag {
+    background: #fde68a;
+    color: #92400e;
+}
+
+.profile-badge-square.badge-level-2 {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1.5px solid #16a34a;
+    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.15);
+}
+.profile-badge-square.badge-level-2 .badge-level-tag {
+    background: #bbf7d0;
+    color: #15803d;
+}
+
+.profile-badge-square.badge-level-3 {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1.5px solid #0284c7;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.18);
+}
+.profile-badge-square.badge-level-3 .badge-level-tag {
+    background: #bae6fd;
+    color: #0369a1;
+}
+
+.profile-badge-square.badge-level-4 {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    border: 1.5px solid #9333ea;
+    box-shadow: 0 2px 6px rgba(147, 51, 234, 0.2);
+}
+.profile-badge-square.badge-level-4 .badge-level-tag {
+    background: #e9d5ff;
+    color: #7e22ce;
+}
+
+.profile-badge-square.badge-level-5 {
+    background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+    border: 1.5px solid #e11d48;
+    box-shadow: 0 2px 6px rgba(225, 29, 72, 0.2);
+}
+.profile-badge-square.badge-level-5 .badge-level-tag {
+    background: #fecdd3;
+    color: #be123c;
+}
+
+.profile-badge-square.badge-level-6 {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 1.5px solid #475569;
+    box-shadow: 0 2px 6px rgba(71, 85, 105, 0.22);
+}
+.profile-badge-square.badge-level-6 .badge-level-tag {
+    background: #cbd5e1;
+    color: #1e293b;
+}
+
+/* Seviye 6 - 10 Parlama Auraları */
+/* Seviye 6: 🥉 Bronz Parlar (Metalik) */
+.profile-badge-square.badge-glow-bronze {
+    background: linear-gradient(145deg, #451a03 0%, #78350f 40%, #b45309 80%, #d97706 100%) !important;
+    border: 2px solid #f59e0b !important;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.75), inset 0 0 8px rgba(254, 243, 199, 0.3) !important;
+    animation: bronzeGlowPulse 1.8s infinite ease-in-out !important;
+}
+.profile-badge-square.badge-glow-bronze .badge-level-tag {
+    background: #92400e !important;
+    color: #fef3c7 !important;
+    border: 1px solid #fde68a !important;
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+}
+.profile-badge-square.badge-glow-bronze .badge-icon {
+    filter: drop-shadow(0 0 8px #fbbf24);
+}
+
+/* Seviye 7: 🥈 Gümüş Parlar */
+.profile-badge-square.badge-glow-silver {
+    background: linear-gradient(145deg, #1e293b 0%, #334155 35%, #64748b 70%, #94a3b8 100%) !important;
+    border: 2px solid #e2e8f0 !important;
+    box-shadow: 0 0 16px rgba(203, 213, 225, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.4) !important;
+    animation: silverGlowPulse 1.8s infinite ease-in-out !important;
+}
+.profile-badge-square.badge-glow-silver .badge-level-tag {
+    background: #475569 !important;
+    color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 0 6px rgba(226, 232, 240, 0.7);
+}
+.profile-badge-square.badge-glow-silver .badge-icon {
+    filter: drop-shadow(0 0 8px #e2e8f0);
+}
+
+/* Seviye 8: 🥇 Gold Parlar (Altın) */
+.profile-badge-square.badge-glow-gold {
+    background: linear-gradient(145deg, #713f12 0%, #ca8a04 40%, #facc15 70%, #ca8a04 100%) !important;
+    border: 2px solid #fef08a !important;
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.85), inset 0 0 10px rgba(254, 240, 138, 0.6) !important;
+    animation: goldGlowPulse 1.5s infinite ease-in-out !important;
+}
+.profile-badge-square.badge-glow-gold .badge-level-tag {
+    background: #854d0e !important;
+    color: #fef9c3 !important;
+    border: 1px solid #fef08a !important;
+    box-shadow: 0 0 8px rgba(250, 204, 21, 0.8);
+}
+.profile-badge-square.badge-glow-gold .badge-icon {
+    filter: drop-shadow(0 0 10px #fef08a);
+}
+
+/* Seviye 9: 💎 Cafcaflı Elmas Parlar */
+.profile-badge-square.badge-glow-diamond {
+    background: linear-gradient(125deg, #0284c7 0%, #6366f1 25%, #ec4899 50%, #f59e0b 75%, #38bdf8 100%) !important;
+    background-size: 300% 300% !important;
+    border: 2px solid #67e8f9 !important;
+    box-shadow: 0 0 24px rgba(56, 189, 248, 0.9), 0 0 12px rgba(236, 72, 153, 0.7), inset 0 0 10px rgba(255,255,255,0.7) !important;
+    animation: diamondSparklePulse 1.4s infinite ease-in-out, diamondShimmer 3s infinite linear !important;
+}
+.profile-badge-square.badge-glow-diamond .badge-level-tag {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.85), rgba(236, 72, 153, 0.85)) !important;
+    color: #ffffff !important;
+    border: 1px solid #ffffff !important;
+    box-shadow: 0 0 8px #fff, 0 0 12px #38bdf8 !important;
+    font-weight: 900 !important;
+}
+.profile-badge-square.badge-glow-diamond .badge-icon {
+    filter: drop-shadow(0 0 10px #ffffff) drop-shadow(0 0 14px #38bdf8);
+}
+
+/* Seviye 10: 🖤 Siyah Parlar (Max Tier / Efsanevi Obsidyen) */
+.profile-badge-square.badge-glow-black {
+    background: linear-gradient(145deg, #050505 0%, #121214 40%, #18181b 75%, #27272a 100%) !important;
+    border: 2px solid #c084fc !important;
+    box-shadow: 0 0 24px rgba(168, 85, 247, 0.95), 0 0 12px rgba(0, 0, 0, 1), inset 0 0 12px rgba(192, 132, 252, 0.4) !important;
+    animation: blackAuraPulse 1.8s infinite ease-in-out !important;
+}
+.profile-badge-square.badge-glow-black .badge-level-tag {
+    background: #3b0764 !important;
+    color: #faf5ff !important;
+    border: 1.5px solid #d8b4fe !important;
+    box-shadow: 0 0 10px rgba(192, 132, 252, 0.8);
+    font-weight: 900 !important;
+}
+.profile-badge-square.badge-glow-black .badge-icon {
+    filter: drop-shadow(0 0 10px #c084fc) drop-shadow(0 0 14px #581c87);
+}
+
+/* Yüzen Rozet Bilgi Kartı (Floating Tooltip) */
+.profile-badge-floating-tooltip {
+    display: none;
+    position: fixed;
+    z-index: 26000;
+    width: 220px;
+    background: rgba(15, 23, 42, 0.96);
+    border: 1.5px solid rgba(255, 255, 255, 0.22);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+    animation: tooltipFadeIn 0.16s ease-out;
+}
+@keyframes tooltipFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+/* ========================================================
+   ALT PANEL EYLEM & EŞYA & KIYAFET BUTONLARI (İCON-ONLY & BÜYÜTÜLMÜŞ)
+   ======================================================== */
+.bottom-action-icon-btn {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+}
+
+.bottom-action-icon-btn .bottom-btn-icon {
+    font-size: 22px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
+    transition: transform 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bottom-action-icon-btn:hover .bottom-btn-icon {
+    transform: scale(1.16);
+}
+
+.bottom-action-icon-btn:active {
+    transform: translateY(1px) scale(0.95);
+}
+
+/* 🎒 Eşyalarım Butonu: Parlak Sıcak Kehribar / Altın Macera Teması */
+#btnBottomInventory {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%) !important;
+    border: 1.5px solid #fde68a !important;
+    box-shadow: 0 4px 14px rgba(217, 119, 6, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+}
+
+#btnBottomInventory:hover {
+    transform: translateY(-2px) scale(1.06) !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.7) !important;
+    filter: brightness(1.08) !important;
+}
+
+/* 🎒 Eşya Çantası Adet Sayacı Rozeti */
+#myPropsCountBadge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 900;
+    min-width: 17px;
+    height: 17px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
+    border: 1.5px solid #ffffff;
+    line-height: 1;
+}
+
+/* 🪝/ASKI Kıyafetlerim Butonu: Kraliyet Moru / Büyüleyici Moda Teması */
+#btnBottomDressingRoom {
+    background: linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7e22ce 100%) !important;
+    border: 1.5px solid #f5d0fe !important;
+    box-shadow: 0 4px 14px rgba(147, 51, 234, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+}
+
+#btnBottomDressingRoom:hover {
+    transform: translateY(-2px) scale(1.06) !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(168, 85, 247, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.7) !important;
+    filter: brightness(1.08) !important;
+}
+
+/* 🕺 Eylemler Butonu: Canlı İndigo Dans Teması */
+#btnEmoteMenuToggle {
+    width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    border: 1.5px solid #c7d2fe !important;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, filter 0.15s ease !important;
+}
+
+#btnEmoteMenuToggle:hover {
+    transform: translateY(-2px) scale(1.06) !important;
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.65) !important;
+    border-color: #ffffff !important;
+    filter: brightness(1.08) !important;
+}
+
+@media (max-width: 580px) {
+    .bottom-action-icon-btn,
+    #btnEmoteMenuToggle {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+    }
+    .bottom-action-icon-btn .bottom-btn-icon {
+        font-size: 20px;
+    }
+}
+
+
+/* Ruh Hali Seçici (Mood Picker) Stilleri - Minimalist & Emojisiz */
+.mood-select-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 800;
+    user-select: none;
+}
+.mood-select-btn:hover {
+    background: #eef2ff;
+    border-color: #6366f1;
+    transform: translateY(-1.5px);
+    box-shadow: 0 3px 8px rgba(99, 102, 241, 0.15);
+}
+.mood-select-btn.active {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    border-color: #6366f1;
+    color: #3730a3;
+    font-weight: 900;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
+}
+
+/* ==========================================================================
+   OYUNLAŞTIRILMIŞ CANLI XP İLERLEME ÇUBUĞU (GAMIFIED XP CAPSULE)
+   ========================================================================== */
+.profile-live-xp-card {
+    margin-bottom: 7px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1.5px solid #e0e7ff;
+    border-radius: 10px;
+    padding: 5px 9px;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.08), inset 0 1px 0 #ffffff;
+    transition: all 0.2s ease;
+}
+.profile-live-xp-card:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.14), inset 0 1px 0 #ffffff;
+}
+.profile-live-xp-track {
+    width: 100%;
+    height: 7px;
+    background: #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.profile-live-xp-fill {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%);
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+    position: relative;
+    overflow: hidden;
+    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* Cam Parlaması (Candy Glass Highlight) */
+.profile-live-xp-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-radius: 8px 8px 0 0;
+    pointer-events: none;
+}
+/* İçten Kayan Shimmer Işıltısı */
+.profile-live-xp-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.8) 50%, transparent 100%);
+    animation: xpBarShimmer 2.4s infinite linear;
+    pointer-events: none;
+}
+@keyframes xpBarShimmer {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(350%); }
+}
+

@@ -36,10 +36,27 @@ function generateRandomFleet() {
                 let cr = isHoriz ? r : r + i;
                 let cc = isHoriz ? c + i : c;
 
-                if (grid[cr][cc].ship !== null) {
+                if (cr < 0 || cr >= GRID_SIZE || cc < 0 || cc >= GRID_SIZE) {
                     canPlace = false;
                     break;
                 }
+
+                // Gemiler üst üste gelmesin ve en az 1 kare boşluk bıraksın
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        let nr = cr + dr;
+                        let nc = cc + dc;
+                        if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                            if (grid[nr][nc].ship !== null) {
+                                canPlace = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (!canPlace) break;
+                }
+                if (!canPlace) break;
+
                 coords.push({ r: cr, c: cc });
             }
 
@@ -91,6 +108,7 @@ function startAmiralGame(players) {
         turnIndex: 0,
         turnTimeout: 30,
         turnStartTime: Date.now(),
+        shotSeq: 0,
         lastShotResult: null,
         winner: null,
         gameOver: false,
@@ -177,7 +195,7 @@ function makeAmiralShot(gameData, playerId, r, c) {
         return { success: false, message: "Sıra sizde değil." };
     }
 
-    if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) {
+    if (!Number.isInteger(r) || !Number.isInteger(c) || r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) {
         return { success: false, message: "Geçersiz radar koordinatı." };
     }
 
@@ -209,7 +227,15 @@ function makeAmiralShot(gameData, playerId, r, c) {
             if (hitShip.hits >= hitShip.size) {
                 hitShip.sunk = true;
                 sunkShip = hitShip;
-                playerShotGrid[r][c].sunk = true;
+                if (Array.isArray(hitShip.coords)) {
+                    hitShip.coords.forEach(coord => {
+                        if (playerShotGrid[coord.r] && playerShotGrid[coord.r][coord.c]) {
+                            playerShotGrid[coord.r][coord.c].sunk = true;
+                        }
+                    });
+                } else {
+                    playerShotGrid[r][c].sunk = true;
+                }
             }
         }
 
@@ -225,17 +251,23 @@ function makeAmiralShot(gameData, playerId, r, c) {
         gameData.grids[oppId][r][c].miss = true;
     }
 
+    gameData.shotSeq = (gameData.shotSeq || 0) + 1;
     gameData.lastShotResult = {
         playerId,
         r,
         c,
         hit,
-        sunkShip: sunkShip ? { id: sunkShip.id, name: sunkShip.name } : null
+        sunkShip: sunkShip ? { id: sunkShip.id, name: sunkShip.name } : null,
+        extraShot: hit && !gameData.gameOver,
+        seq: gameData.shotSeq
     };
 
     if (!gameData.gameOver) {
-        // Sırayı diğer oyuncuya geçir
-        gameData.turnIndex = 1 - gameData.turnIndex;
+        // Normal Amiral Battı kuralı: İsabetli atış yapan oyuncu bir atış hakkı daha kazanır (sıra onda kalır).
+        // Sıra yalnızca ıska (karavana) durumunda diğer oyuncuya geçer.
+        if (!hit) {
+            gameData.turnIndex = 1 - gameData.turnIndex;
+        }
         gameData.turnStartTime = Date.now();
     }
 
@@ -243,6 +275,7 @@ function makeAmiralShot(gameData, playerId, r, c) {
         success: true,
         hit,
         sunkShip: sunkShip ? { id: sunkShip.id, name: sunkShip.name } : null,
+        extraShot: hit && !gameData.gameOver,
         gameOver: gameData.gameOver,
         winner: gameData.winner
     };

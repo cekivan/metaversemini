@@ -20,6 +20,7 @@ const { registerAuthHandlers } = require('./src/handlers/authHandler');
 const { registerSocialHandlers } = require('./src/handlers/socialHandler');
 const { registerHousingHandlers } = require('./src/handlers/housingHandler');
 const { registerEconomyHandlers, playerSwanTimers, clearKiraathaneDrinkForPlayer } = require('./src/handlers/economyHandler');
+const { registerFishingHandlers } = require('./src/handlers/fishingHandler');
 const { registerAdminHandlers } = require('./src/handlers/adminHandler');
 const { registerGameActionHandlers, handlePlayerLeaveTable } = require('./src/handlers/gameActionHandler');
 const { registerVoiceHandlers, cleanupSocketVoice } = require('./src/handlers/voiceHandler');
@@ -29,6 +30,12 @@ const { registerSlotHandlers } = require('./src/handlers/slotHandler');
 const { initGanyanEngine, registerGanyanHandlers } = require('./src/handlers/ganyanHandler');
 const { initNargileLounge, registerNargileLoungeHandlers, handlePlayerDisconnect: handleNargileDisconnect } = require('./src/handlers/nargileLoungeHandler');
 const { registerPetShopHandlers } = require('./src/handlers/petShopHandler');
+const { registerVipClubHandlers } = require('./src/handlers/vipClubHandler');
+const { registerKulturMerkeziHandlers } = require('./src/handlers/kulturMerkeziHandler');
+const { startBotanicEngine, registerBotanicHandlers } = require('./src/handlers/botanicHandler');
+const { startMiningEngine, registerMiningHandlers } = require('./src/handlers/miningHandler');
+const { registerZeusHandlers } = require('./src/handlers/zeusHandler');
+const { registerDailyRewardHandlers } = require('./src/handlers/dailyRewardHandler');
 const adManager = require('./src/adManager');
 
 const app = express();
@@ -67,6 +74,7 @@ app.post('/api/dev/save-pet-asset', (req, res) => {
 
 // Çevrimiçi Oyuncular Havuzu
 const players = {};
+dataManager.setServerContext(io, players);
 
 const {
     getPlayersInRoom,
@@ -101,6 +109,9 @@ const helpers = {
     playerTeaTimers
 };
 
+// Sunucu Bağlamını Veri Yöneticisine Kaydet
+dataManager.setServerContext(io, players);
+
 // Baba Peti (Denizden Babam Çıksa Yerim) Yöneticisini Başlat
 fatherPetManager.init(io, players, dataManager);
 
@@ -116,10 +127,20 @@ initNargileLounge(io, players);
 // Canlı Reklam Panoları ve TV Ağı Motorunu Başlat
 adManager.init(io, players);
 
+// 🌿 Botanik Dükkanı ve Acımasız Tarım Motorunu Başlat
+startBotanicEngine(io);
+startMiningEngine(io);
+
 // --- MONGODB VERİTABANI BAĞLANTISI ---
 const MONGO_URI = process.env.MONGO_URI;
+const USE_MONGODB = process.env.USE_MONGODB !== 'false' && MONGO_URI !== 'off';
 
 async function connectToDatabase() {
+    if (!USE_MONGODB) {
+        console.log('📁 [VERİTABANI]: USE_MONGODB=false ayarlandı, yerel data.json modu aktif.');
+        return;
+    }
+
     if (!MONGO_URI || MONGO_URI.includes('<kullanici_adi>') || MONGO_URI.includes('<username>') || MONGO_URI.includes('<password>') || MONGO_URI.includes('<sifre>')) {
         console.warn('\n⚠️ [MONGODB UYARI]: .env dosyasında henüz geçerli bir MONGO_URI tanımlanmamış.');
         console.warn('👉 Proje ana dizinindeki .env dosyasını açıp kendi MongoDB Atlas linkinizi yapıştırabilirsiniz:');
@@ -129,14 +150,13 @@ async function connectToDatabase() {
 
     try {
         console.log('🍃 MongoDB veritabanına bağlanılıyor...');
-        await mongoose.connect(MONGO_URI);
+        await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 2500 });
         console.log('✅ [MONGODB]: MongoDB veritabanı bağlantısı başarıyla kuruldu!');
         
         // İlk bağlantıda verileri eşitle / aktar
         await dataManager.syncDataJsonToMongo();
     } catch (err) {
-        console.error('❌ [MONGODB BAĞLANTI HATASI]:', err.message);
-        console.warn('👉 .env dosyasındaki bağlantı adresinizi ve MongoDB Atlas ağ erişim (Network Access / IP Whitelist 0.0.0.0/0) ayarlarınızı kontrol edin.\n');
+        console.warn('⚠️ [MONGODB]: Bağlantı sağlanamadı (' + err.message + '). Yerel data.json ile kesintisiz devam ediliyor.');
     }
 }
 
@@ -150,6 +170,7 @@ io.on('connection', (socket) => {
     registerSocialHandlers(io, socket, players, helpers);
     registerHousingHandlers(io, socket, players);
     registerEconomyHandlers(io, socket, players, helpers);
+    registerFishingHandlers(io, socket, players, helpers);
     registerAdminHandlers(io, socket, players, helpers);
     registerGameActionHandlers(io, socket, players);
     registerVoiceHandlers(io, socket, players);
@@ -158,6 +179,12 @@ io.on('connection', (socket) => {
     registerSlotHandlers(io, socket, players);
     registerGanyanHandlers(io, socket, players);
     registerNargileLoungeHandlers(io, socket, players);
+    registerVipClubHandlers(io, socket, players, helpers);
+    registerKulturMerkeziHandlers(io, socket, players, helpers);
+    registerBotanicHandlers(io, socket, players, helpers);
+    registerMiningHandlers(io, socket, players, helpers);
+    registerZeusHandlers(io, socket, players, helpers);
+    registerDailyRewardHandlers(io, socket, players, helpers);
 
     // Çevrimiçi Oyuncu Sayısını Gönder (Botlar hariç)
     socket.emit('onlineCountUpdate', Object.keys(players).filter(sid => {
@@ -172,7 +199,13 @@ io.on('connection', (socket) => {
 
     // 2. Oyuncu Hareketi (Akıcı Ağ Filtrelemesi)
     socket.on('playerMovement', (movementData) => {
-        if (players[socket.id] && movementData && typeof movementData.x === 'number' && typeof movementData.y === 'number' && !isNaN(movementData.x) && !isNaN(movementData.y)) {
+        if (!players[socket.id]) return;
+        if (players[socket.id].zombieStunnedUntil > Date.now()) return;
+        // Zeus'un Yıldırımı ile Çarpılma & Kül Halinde Hareket Yasağı
+        if ((players[socket.id].isAshed || players[socket.id].isElectrocuted) && Date.now() < (players[socket.id].ashedUntil || 0)) {
+            return;
+        }
+        if (movementData && typeof movementData.x === 'number' && typeof movementData.y === 'number' && !isNaN(movementData.x) && !isNaN(movementData.y)) {
             let prevX = players[socket.id].x;
             let prevY = players[socket.id].y;
             let hasMoved = (prevX === undefined || prevY === undefined || Math.abs(prevX - movementData.x) > 0.05 || Math.abs(prevY - movementData.y) > 0.05);
@@ -229,8 +262,36 @@ io.on('connection', (socket) => {
     });
 
     // 3. Mekan Değiştirme
-    socket.on('changeRoom', (newRoom) => {
+    socket.on('changeRoom', (rawRoom) => {
+        let newRoom = (typeof rawRoom === 'object' && rawRoom && rawRoom.room) ? rawRoom.room : rawRoom;
         if (!players[socket.id] || !newRoom || typeof newRoom !== 'string') return;
+        if (players[socket.id].zombieStunnedUntil > Date.now()) {
+            socket.emit('gameError', 'Zombi sersemliği bitene kadar odadan ayrılamazsın.');
+            return;
+        }
+        // Zeus'un Yıldırımı ile Çarpılma & Kül Halinde Mekan Değiştirme Yasağı
+        if ((players[socket.id].isAshed || players[socket.id].isElectrocuted) && Date.now() < (players[socket.id].ashedUntil || 0)) {
+            socket.emit('gameError', '💀 Kül halindeyken mekan değiştiremezsiniz! Küllerinizden doğmayı bekleyin.');
+            return;
+        }
+
+        // Kaya Madeni İSG (İş Sağlığı ve Güvenliği) Denetimi: Baretsiz ve Yeleksiz Giriş Yasağı
+        if (newRoom === 'mine_cave') {
+            const pObj = players[socket.id];
+            const hat = (pObj && pObj.hat) || (pObj && pObj.avatar && pObj.avatar.hat) || '';
+            const shirt = (pObj && pObj.shirt) || (pObj && pObj.avatar && pObj.avatar.shirt) || (pObj && pObj.color) || '';
+            const outfit = (pObj && pObj.outfit) || (pObj && pObj.avatar && pObj.avatar.outfit) || '';
+
+            const hasHardhat = typeof hat === 'string' && (hat.startsWith('baret_') || hat.startsWith('hats_baret_'));
+            const hasVest = (typeof shirt === 'string' && (shirt.startsWith('vest_reflector_') || shirt.startsWith('tshirts_vest_reflector_') || shirt.startsWith('shirts_vest_reflector_'))) ||
+                            (typeof outfit === 'string' && (outfit.startsWith('vest_reflector_') || outfit.startsWith('tshirts_vest_reflector_') || outfit.startsWith('shirts_vest_reflector_')));
+
+            if (!hasHardhat || !hasVest) {
+                let errReason = (!hasHardhat && !hasVest) ? "Baretsiz ve reflektörlü yeleksiz almam gençler!" : (!hasHardhat ? "Baretsiz almam gençler! Baret olmadan madene girilemez." : "Reflektörlü yeleksiz almam gençler! Yelek olmadan madene girilemez.");
+                socket.emit('gameError', `⚠️ ${errReason} İSG Şefi Semihus Aydınus madene girişinize izin vermedi.`);
+                return;
+            }
+        }
         let oldRoom = players[socket.id].room;
 
         if (players[socket.id].isFishing) {
@@ -347,6 +408,7 @@ io.on('connection', (socket) => {
             handlePlayerLeaveTable(io, players, socket, true);
             removePlayerFromBlackjack(io, socket.id, players);
 
+            dataManager.saveUserData(pName);
             delete players[socket.id];
             io.to(room).emit('playerDisconnected', socket.id);
             broadcastOnlineCount();

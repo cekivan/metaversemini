@@ -62,6 +62,7 @@ function checkMobileDeviceHUD() {
 // Kumanda Konumunu Ekrana Uygula (Varsayılan: SAĞ ALT)
 function applyJoystickPosition() {
     const joy = document.getElementById('mobileControlsOverlay');
+    const actionBtn = document.getElementById('mobileActionBtn');
     if (!joy) return;
 
     // Önceki pozisyonlama stillerini sıfırla
@@ -70,28 +71,68 @@ function applyJoystickPosition() {
     joy.style.left = 'auto';
     joy.style.right = 'auto';
 
+    if (actionBtn) {
+        actionBtn.style.top = 'auto';
+        actionBtn.style.bottom = 'auto';
+        actionBtn.style.left = 'auto';
+        actionBtn.style.right = 'auto';
+    }
+
     const s = currentJoystickSettings;
+    let isLeftSide = false;
 
     if (s.preset === 'custom' && s.customX !== null && s.customY !== null) {
         // Kullanıcının serbest sürükleyip bıraktığı özel koordinatlar
-        joy.style.left = Math.max(10, Math.min(window.innerWidth - 140, s.customX)) + 'px';
-        joy.style.top = Math.max(10, Math.min(window.innerHeight - 140, s.customY)) + 'px';
+        const clampedX = Math.max(10, Math.min(window.innerWidth - 140, s.customX));
+        const clampedY = Math.max(10, Math.min(window.innerHeight - 140, s.customY));
+        isLeftSide = (clampedX + 60) < (window.innerWidth / 2);
+        joy.style.left = clampedX + 'px';
+        joy.style.top = clampedY + 'px';
+        if (actionBtn) {
+            const actY = (clampedY > 80) ? (clampedY - 64) : (clampedY + 136);
+            actionBtn.style.left = Math.max(10, Math.min(window.innerWidth - 64, clampedX + 38)) + 'px';
+            actionBtn.style.top = Math.max(10, Math.min(window.innerHeight - 64, actY)) + 'px';
+        }
     } else if (s.preset === 'bottom-left') {
         // Sol Alt
+        isLeftSide = true;
         joy.style.bottom = 'clamp(40px, 10vh, 100px)';
         joy.style.left = 'clamp(16px, 4vw, 40px)';
+        if (actionBtn) {
+            actionBtn.style.bottom = 'clamp(178px, 27vh, 240px)';
+            actionBtn.style.left = 'clamp(52px, 8vw, 78px)';
+        }
     } else if (s.preset === 'top-right') {
         // Sağ Üst
+        isLeftSide = false;
         joy.style.top = '85px';
         joy.style.right = 'clamp(16px, 4vw, 40px)';
+        if (actionBtn) {
+            actionBtn.style.top = '222px';
+            actionBtn.style.right = 'clamp(52px, 8vw, 78px)';
+        }
     } else if (s.preset === 'top-left') {
         // Sol Üst
+        isLeftSide = true;
         joy.style.top = '85px';
         joy.style.left = 'clamp(16px, 4vw, 40px)';
+        if (actionBtn) {
+            actionBtn.style.top = '222px';
+            actionBtn.style.left = 'clamp(52px, 8vw, 78px)';
+        }
     } else {
         // VARSAYILAN: SAĞ ALT (Bottom-Right)
+        isLeftSide = false;
         joy.style.bottom = 'clamp(40px, 10vh, 100px)';
         joy.style.right = 'clamp(16px, 4vw, 40px)';
+        if (actionBtn) {
+            actionBtn.style.bottom = 'clamp(178px, 27vh, 240px)';
+            actionBtn.style.right = 'clamp(52px, 8vw, 78px)';
+        }
+    }
+
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.joystickSide = isLeftSide ? 'left' : 'right';
     }
 }
 
@@ -136,9 +177,11 @@ function startJoystickDragMode() {
         helperBar.style.cssText = `
             position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
             background: rgba(15, 23, 42, 0.95); border: 2px solid #facc15;
-            border-radius: 14px; padding: 10px 18px; color: white; z-index: 999999;
+            border-radius: 14px; padding: 10px 14px; color: white; z-index: 999999;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-            display: flex; align-items: center; gap: 14px; font-family: sans-serif;
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            gap: 10px; font-family: sans-serif; max-width: calc(100vw - 20px);
+            box-sizing: border-box; text-align: center;
             animation: popIn 0.2s ease-out;
         `;
         document.body.appendChild(helperBar);
@@ -191,6 +234,18 @@ function startJoystickDragMode() {
         joy.style.top = newY + 'px';
         joy.style.right = 'auto';
         joy.style.bottom = 'auto';
+
+        const actionBtn = document.getElementById('mobileActionBtn');
+        if (actionBtn) {
+            const actY = (newY > 80) ? (newY - 64) : (newY + 136);
+            actionBtn.style.left = Math.max(10, Math.min(window.innerWidth - 64, newX + 38)) + 'px';
+            actionBtn.style.top = Math.max(10, Math.min(window.innerHeight - 64, actY)) + 'px';
+            actionBtn.style.right = 'auto';
+            actionBtn.style.bottom = 'auto';
+        }
+        if (document.body) {
+            document.body.dataset.joystickSide = ((newX + 60) < (window.innerWidth / 2)) ? 'left' : 'right';
+        }
 
         if (e.cancelable) e.preventDefault();
     };
@@ -396,10 +451,11 @@ function initMobileDpadTracking() {
 
     joy.addEventListener('touchstart', (e) => {
         if (isJoystickDragModeActive) return;
-        if (e.changedTouches.length > 0) {
+        if (touchId === null && e.changedTouches.length > 0) {
             let t = e.changedTouches[0];
             touchId = t.identifier;
             handleTouchMove(t.clientX, t.clientY);
+            if (e.cancelable) e.preventDefault();
         }
     }, { passive: false });
 
@@ -427,6 +483,16 @@ function initMobileDpadTracking() {
 
     joy.addEventListener('touchend', endTouch);
     joy.addEventListener('touchcancel', endTouch);
+
+    // Mobil Etkileşim Butonuna (✋) Sıfır-Gecikmeli (0ms) Dokunmatik Dinleyici
+    const actionBtn = document.getElementById('mobileActionBtn');
+    if (actionBtn && !actionBtn._boundTouch) {
+        actionBtn._boundTouch = true;
+        actionBtn.addEventListener('touchstart', (e) => {
+            if (typeof triggerMobileInteract === 'function') triggerMobileInteract();
+            if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+    }
 }
 
 // Global olarak erişilebilir yap

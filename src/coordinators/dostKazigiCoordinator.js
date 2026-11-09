@@ -1,3 +1,47 @@
+
+const { handleTableGameEndXP } = require('../utils/levelSystem');
+
+function recordDostKazigiHandBadge(game, io, players) {
+    if (!game || !game.players) return;
+    const handKey = `${game.tableId}_hand_${game.currentHand}`;
+    if (game.lastRecordedHandBadge === handKey) return;
+    game.lastRecordedHandBadge = handKey;
+    const isBotPlayer = (pid) => {
+        const pName = (players && players[pid]?.name) || game.playerProfiles?.[pid]?.name;
+        return !pid || pid.startsWith('bot_') || game.playerProfiles?.[pid]?.isBot || (typeof pName === 'string' && (pName.startsWith('🤖') || pName.includes('🤖')));
+    };
+
+    const humanPids = game.players.filter(pid => !isBotPlayer(pid));
+    // Çok oyunculu kuralı: En az 2 gerçek insan oyuncu olmalıdır
+    if (humanPids.length < 2) return;
+
+    const lastHist = game.handHistory && game.handHistory[game.handHistory.length - 1];
+    let winningPids = [];
+    if (lastHist) {
+        if (!game.is3P) {
+            if (lastHist.winnerTeam === 'Takım A') {
+                winningPids = [game.players[0], game.players[2]];
+            } else if (lastHist.winnerTeam === 'Takım B') {
+                winningPids = [game.players[1], game.players[3]];
+            }
+        } else {
+            if (lastHist.bestPlayerPid) {
+                winningPids = [lastHist.bestPlayerPid];
+            }
+        }
+    }
+
+    humanPids.forEach(pid => {
+        const pName = (players && players[pid]?.name) || game.playerProfiles?.[pid]?.name;
+        if (pName) {
+            const isWinner = winningPids.includes(pid);
+            const multiplier = isWinner ? 2 : 1; // Kazanan Bonusu (2x Multiplier)
+            dataManager.recordGamePlayed(pName, 'dostkazigi', multiplier);
+        }
+    });
+    handleTableGameEndXP(io, players, 'dostkazigi', game.players.map(pid => ({ socketId: pid, name: game.playerProfiles?.[pid]?.name || (players && players[pid]?.name), isBot: isBotPlayer(pid) })), winningPids);
+}
+
 // src/coordinators/dostKazigiCoordinator.js - Dost Kazığı Oyun Koordinatörü
 // 4 Kişilik Eşli & 3 Kişilik Tekli, Tek/Çift Deste Lobi ve Oyun Yönetimi
 const dostKazigiEngine = require('../engines/dostKazigi.js');
@@ -113,6 +157,7 @@ function handleDostKazigiCardPlayed(game, io, players) {
         game.players.forEach(pid => io.to(pid).emit('systemMessage', summaryText));
         if (game.spectators) game.spectators.forEach(sid => io.to(sid).emit('systemMessage', summaryText));
 
+        recordDostKazigiHandBadge(game, io, players);
         sendDostKazigiUpdate(game, io, players);
 
         // 5 saniye sonra otomatik bir sonraki ele geç
@@ -147,6 +192,7 @@ function handleDostKazigiCardPlayed(game, io, players) {
             distributeDostKazigiPot(game, [winnerPid], io, players);
         }
 
+        recordDostKazigiHandBadge(game, io, players);
         const gameEndMsg = `🎉 DOST KAZIĞI OYUNU TAMAMLANDI!\n${winnerDesc}`;
         game.players.forEach(pid => io.to(pid).emit('systemMessage', gameEndMsg));
         if (game.spectators) game.spectators.forEach(sid => io.to(sid).emit('systemMessage', gameEndMsg));

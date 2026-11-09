@@ -134,8 +134,11 @@ function renderOnlinePlayersCards(list) {
 
     list.forEach(p => {
         let isFemale = p.gender === 'female';
-        let avatarEmoji = isFemale ? '👧' : '👦';
-        let avatarBg = isFemale ? 'linear-gradient(135deg, #ec4899, #be185d)' : 'linear-gradient(135deg, #0ea5e9, #0284c7)';
+        let isMasked = !!(p.isAnon || p.username === '???');
+        let avatarEmoji = isMasked ? '🎭' : (isFemale ? '👧' : '👦');
+        let avatarBg = isMasked 
+            ? 'linear-gradient(135deg, #18181b, #09090b)' 
+            : (isFemale ? 'linear-gradient(135deg, #ec4899, #be185d)' : 'linear-gradient(135deg, #0ea5e9, #0284c7)');
 
         let card = document.createElement('div');
         card.className = 'online-player-card';
@@ -155,6 +158,9 @@ function renderOnlinePlayersCards(list) {
         let badgesHtml = '';
         if (p.isSelf) {
             badgesHtml += `<span style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; color: #93c5fd; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 8px;">Sen</span>`;
+        }
+        if (isMasked && !p.isSelf) {
+            badgesHtml += `<span style="background: linear-gradient(135deg, #3f3f46, #18181b); border: 1px solid #52525b; color: #f1f5f9; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 8px;">🎭 Gizli Kimlik</span>`;
         }
         if (p.isAdmin) {
             badgesHtml += `<span style="background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; color: #fca5a5; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 8px;">👑 Admin</span>`;
@@ -177,16 +183,23 @@ function renderOnlinePlayersCards(list) {
 
         // Aksiyon Butonları
         let actionsHtml = '';
-        if (!p.isSelf) {
-            // Fısılda butonu
+        if (p.isSelf) {
             actionsHtml += `
-                <button type="button" onclick="whisperToPlayer('${p.username}')" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border: none; color: white; padding: 6px 11px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); transition: transform 0.1s;" title="${p.username} kullanıcısına özel fısılda">
+                <button type="button" onclick="openMyPlayerProfile(); closeOnlinePlayersModal();" style="background: linear-gradient(135deg, #6366f1, #4f46e5); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);" title="Kendi Profilini ve 12 Kare Rozetini İncele">
+                    <span>👤</span> Profilim
+                </button>
+            `;
+        } else {
+            // Fısılda butonu (Maskeli ise @id üzerinden hedefler, gerçek adı sızdırmaz)
+            const whisperTarget = isMasked ? ('@' + p.id) : p.username;
+            actionsHtml += `
+                <button type="button" onclick="whisperToPlayer('${whisperTarget}')" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border: none; color: white; padding: 6px 11px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); transition: transform 0.1s;" title="${isMasked ? 'Maskeli oyuncuya' : p.username + ' kullanıcısına'} özel fısılda">
                     <span>💬</span> Fısılda
                 </button>
             `;
 
-            // Arkadaşlık butonu
-            if (!p.isFriend) {
+            // Arkadaşlık butonu (Maskeli oyuncu eklenemez)
+            if (!isMasked && !p.isFriend) {
                 actionsHtml += `
                     <button type="button" onclick="addFriendFromOnlineList('${p.username}')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; padding: 6px 11px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Arkadaş ekle">
                         <span>➕</span> Ekle
@@ -194,8 +207,8 @@ function renderOnlinePlayersCards(list) {
                 `;
             }
 
-            // Evine Git butonu (Eğer evi varsa)
-            if (p.house && typeof visitFriendHouse === 'function') {
+            // Evine Git butonu (Eğer evi varsa ve maskeli değilse)
+            if (!isMasked && p.house && typeof visitFriendHouse === 'function') {
                 actionsHtml += `
                     <button type="button" onclick="visitFriendHouse('${p.username}', '${p.house.type || 'standart'}'); closeOnlinePlayersModal();" style="background: rgba(14, 165, 233, 0.2); border: 1px solid #0ea5e9; color: #7dd3fc; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer;" title="Evini Ziyaret Et">
                         🏠 Ev

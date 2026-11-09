@@ -5,111 +5,779 @@
  */
 
 window.FURNITURE_DRAWERS = {
-    // 1. OTANTİK ŞARK SEDİRİ (94x54 / 52x88)
+        // 1. OTANTİK ŞARK SEDİRİ (2.5D İZOMETRİK - 4 ÖZGÜN AÇI)
     'sedir': function(ctx, x, y, rot, now) {
+        ctx.save();
+        now = now || Date.now();
+
         if (rot === 0) {
-            // ÖN - AŞAĞI (0° Geniş Ön Görünüm)
-            ctx.fillStyle = "#451a03";
-            ctx.beginPath(); ctx.roundRect(x - 47, y + 8, 94, 18, 4); ctx.fill();
-            ctx.strokeStyle = "#78350f"; ctx.lineWidth = 1.5; ctx.stroke();
-            ctx.fillStyle = "#d97706";
-            for (let bx = x - 38; bx <= x + 38; bx += 18) {
-                ctx.beginPath(); ctx.arc(bx, y + 17, 3, 0, Math.PI * 2); ctx.fill();
+            // ==============================================================
+            // ROT 0: 👉 ÖN-SAĞ (Facing Down-Right / South-East, 30° Eğim)
+            // Sedir Kuzey-Batı duvarına dayalı, oturma yönü Güneydoğu
+            // ==============================================================
+
+            // 1. Zemin Ahşap Kaide Ayakları (Tornalanmış Masif Ayaklar)
+            ctx.fillStyle = "#290e03";
+            ctx.fillRect(x - 44, y + 5, 5, 8);
+            ctx.fillRect(x + 18, y + 36, 5, 8);
+            ctx.fillRect(x - 22, y - 6, 5, 6);
+            ctx.fillRect(x + 40, y + 23, 5, 6);
+
+            // 2. Masif Ceviz Ahşap Kaide (2.5D İzometrik Baza)
+            ctx.fillStyle = "#3e1704";
+            ctx.beginPath();
+            ctx.moveTo(x - 46, y + 6);
+            ctx.lineTo(x + 20, y + 39);
+            ctx.lineTo(x + 20, y + 43);
+            ctx.lineTo(x - 46, y + 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#1c0902";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Sağ Yan Yüzey
+            ctx.fillStyle = "#270e02";
+            ctx.beginPath();
+            ctx.moveTo(x + 20, y + 39);
+            ctx.lineTo(x + 44, y + 27);
+            ctx.lineTo(x + 44, y + 31);
+            ctx.lineTo(x + 20, y + 43);
+            ctx.closePath();
+            ctx.fill();
+
+            // Kaide Üst Yüzeyi
+            let baseGrad = ctx.createLinearGradient(x - 30, y, x + 30, y + 20);
+            baseGrad.addColorStop(0, '#5c2409');
+            baseGrad.addColorStop(0.5, '#78350f');
+            baseGrad.addColorStop(1, '#451a03');
+            ctx.fillStyle = baseGrad;
+            ctx.beginPath();
+            ctx.moveTo(x - 22, y - 6);
+            ctx.lineTo(x + 44, y + 27);
+            ctx.lineTo(x + 20, y + 39);
+            ctx.lineTo(x - 46, y + 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#92400e";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Altın Pirinç Kabara Çivileri (Baza süslemesi)
+            ctx.fillStyle = "#facc15";
+            for (let i = 0; i <= 6; i++) {
+                let t = i / 6;
+                let kx = (x - 42) * (1 - t) + (x + 16) * t;
+                let ky = (y + 8) * (1 - t) + (y + 41) * t;
+                ctx.beginPath();
+                ctx.arc(kx, ky, 1.6, 0, Math.PI * 2);
+                ctx.fill();
             }
-            let cushionGrad = ctx.createLinearGradient(0, y - 6, 0, y + 10);
-            cushionGrad.addColorStop(0, '#9d174d'); cushionGrad.addColorStop(0.5, '#831843'); cushionGrad.addColorStop(1, '#500724');
+
+            // 3. Kalın Kadife Oturma Şiltesi
+            // Ön Düşey Yüzey: Altın Püsküllü Bordo Kadife Etek
+            let skirtGrad = ctx.createLinearGradient(x - 46, y, x + 20, y + 20);
+            skirtGrad.addColorStop(0, '#700a25');
+            skirtGrad.addColorStop(0.5, '#881337');
+            skirtGrad.addColorStop(1, '#4c0519');
+            ctx.fillStyle = skirtGrad;
+            ctx.beginPath();
+            ctx.moveTo(x - 46, y - 5);
+            ctx.lineTo(x + 20, y + 28);
+            ctx.lineTo(x + 20, y + 38);
+            ctx.lineTo(x - 46, y + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.85)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Sağ Yan Düşey Yüzey (Gölgede)
+            ctx.fillStyle = "#4c0519";
+            ctx.beginPath();
+            ctx.moveTo(x + 20, y + 28);
+            ctx.lineTo(x + 44, y + 16);
+            ctx.lineTo(x + 44, y + 26);
+            ctx.lineTo(x + 20, y + 38);
+            ctx.closePath();
+            ctx.fill();
+
+            // Altın İpek Püsküller (Gold Tassels / Fringes)
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 1.3;
+            ctx.fillStyle = "#facc15";
+            for (let i = 0; i <= 8; i++) {
+                let t = i / 8;
+                let px = (x - 44) * (1 - t) + (x + 18) * t;
+                let py = (y + 5) * (1 - t) + (y + 37) * t;
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px, py + 4);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(px, py + 4.5, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Şilte Üst Oturma Yüzeyi (2:1 İzometrik Elmas Düzlem)
+            let cushionGrad = ctx.createLinearGradient(x - 22, y - 18, x + 44, y + 15);
+            cushionGrad.addColorStop(0, '#9f1239');
+            cushionGrad.addColorStop(0.5, '#be123c');
+            cushionGrad.addColorStop(1, '#881337');
             ctx.fillStyle = cushionGrad;
-            ctx.beginPath(); ctx.roundRect(x - 46, y - 8, 92, 18, 5); ctx.fill();
-            ctx.strokeStyle = "rgba(250, 204, 21, 0.75)"; ctx.lineWidth = 1.2; ctx.stroke();
-            let backGrad = ctx.createLinearGradient(0, y - 27, 0, y - 8);
-            backGrad.addColorStop(0, '#be185d'); backGrad.addColorStop(1, '#831843');
+            ctx.beginPath();
+            ctx.moveTo(x - 22, y - 18);
+            ctx.lineTo(x + 44, y + 15);
+            ctx.lineTo(x + 20, y + 27);
+            ctx.lineTo(x - 46, y - 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.9)";
+            ctx.lineWidth = 1.6;
+            ctx.stroke();
+
+            // İnce dikiş olukları
+            ctx.strokeStyle = "rgba(136, 19, 55, 0.6)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x - 24, y - 6); ctx.lineTo(x - 2, y + 5);
+            ctx.moveTo(x - 2, y + 5); ctx.lineTo(x + 20, y + 16);
+            ctx.stroke();
+
+            // 4. Anadolu Kilim Desenli Kalın Sırt Minderi (Backrest)
+            let backGrad = ctx.createLinearGradient(x - 22, y - 44, x + 44, y - 10);
+            backGrad.addColorStop(0, '#881337');
+            backGrad.addColorStop(0.5, '#9f1239');
+            backGrad.addColorStop(1, '#700a25');
             ctx.fillStyle = backGrad;
-            ctx.beginPath(); ctx.roundRect(x - 46, y - 27, 92, 20, [8, 8, 0, 0]); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x - 22, y - 44);
+            ctx.lineTo(x + 44, y - 11);
+            ctx.lineTo(x + 44, y + 14);
+            ctx.lineTo(x - 22, y - 19);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#4c0519";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Sırt Üst Yüzeyi
+            ctx.fillStyle = "#be123c";
+            ctx.beginPath();
+            ctx.moveTo(x - 22, y - 44);
+            ctx.lineTo(x + 44, y - 11);
+            ctx.lineTo(x + 38, y - 14);
+            ctx.lineTo(x - 28, y - 47);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.8)";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Sırt Sol Yan Yüzeyi
+            ctx.fillStyle = "#50071c";
+            ctx.beginPath();
+            ctx.moveTo(x - 28, y - 47);
+            ctx.lineTo(x - 22, y - 44);
+            ctx.lineTo(x - 22, y - 19);
+            ctx.lineTo(x - 28, y - 22);
+            ctx.closePath();
+            ctx.fill();
+
+            // Otantik Anadolu Kilim Nakışları
+            const panels0 = [-8, 14, 34];
+            panels0.forEach((pxOff) => {
+                let pyOff = pxOff * 0.5 - 28;
+                let cx0 = x + pxOff;
+                let cy0 = y + pyOff;
+
+                ctx.fillStyle = "#facc15";
+                ctx.beginPath();
+                ctx.moveTo(cx0, cy0 - 7);
+                ctx.lineTo(cx0 + 7, cy0 - 3.5);
+                ctx.lineTo(cx0, cy0);
+                ctx.lineTo(cx0 - 7, cy0 - 3.5);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = "#0284c7";
+                ctx.beginPath();
+                ctx.moveTo(cx0, cy0 - 6);
+                ctx.lineTo(cx0 + 5, cy0 - 3.5);
+                ctx.lineTo(cx0, cy0 - 1);
+                ctx.lineTo(cx0 - 5, cy0 - 3.5);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = "#fef08a";
+                ctx.beginPath();
+                ctx.arc(cx0, cy0 - 3.5, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Dikey Dikiş Hatları
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.6)";
+            ctx.lineWidth = 1.2;
+            [3, 24].forEach(sxOff => {
+                ctx.beginPath();
+                ctx.moveTo(x + sxOff, y + sxOff * 0.5 - 31);
+                ctx.lineTo(x + sxOff, y + sxOff * 0.5 - 5);
+                ctx.stroke();
+            });
+
+            // 5. Sol-Üst Silindirik Rulo Baş Yastığı (Bolster)
+            let b1X = x - 32, b1Y = y - 10;
+            ctx.save();
+            ctx.translate(b1X, b1Y);
+            ctx.rotate(-0.46);
+            let ruloGrad1 = ctx.createLinearGradient(0, -6, 0, 6);
+            ruloGrad1.addColorStop(0, '#f59e0b');
+            ruloGrad1.addColorStop(0.5, '#fbbf24');
+            ruloGrad1.addColorStop(1, '#b45309');
+            ctx.fillStyle = ruloGrad1;
+            ctx.beginPath();
+            ctx.roundRect(-10, -6, 20, 12, 4);
+            ctx.fill();
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-6, -6, 12, 12);
+            ctx.fillStyle = "#78350f";
+            ctx.beginPath(); ctx.ellipse(-10, 0, 2.5, 5, 0, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = "#facc15";
-            for (let kx = x - 36; kx <= x + 36; kx += 16) {
-                ctx.beginPath(); ctx.moveTo(kx, y - 23); ctx.lineTo(kx + 5, y - 18); ctx.lineTo(kx, y - 13); ctx.lineTo(kx - 5, y - 18); ctx.closePath(); ctx.fill();
-            }
-            // Sol ve Sağ Altın Silindirik Kırlentler
-            ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.roundRect(x - 44, y - 22, 16, 22, 6); ctx.fill();
-            ctx.fillStyle = "#fbbf24"; ctx.fillRect(x - 42, y - 20, 12, 18);
-            ctx.fillStyle = "#facc15"; ctx.beginPath(); ctx.arc(x - 46, y - 11, 2.5, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.roundRect(x + 28, y - 22, 16, 22, 6); ctx.fill();
-            ctx.fillStyle = "#fbbf24"; ctx.fillRect(x + 30, y - 20, 12, 18);
-            ctx.fillStyle = "#facc15"; ctx.beginPath(); ctx.arc(x + 46, y - 11, 2.5, 0, Math.PI * 2); ctx.fill();
-            // Orta Turkuaz Kırlent
-            ctx.fillStyle = "#0284c7"; ctx.beginPath(); ctx.roundRect(x - 10, y - 22, 20, 16, 4); ctx.fill();
-            ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 1; ctx.stroke();
+            ctx.beginPath(); ctx.arc(-10, 0, 1.8, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-14, 4); ctx.stroke();
+            ctx.restore();
+
+            // 6. Aksan Kilim Kırlentleri
+            let p1X = x - 10, p1Y = y - 12;
+            ctx.fillStyle = "#0284c7";
+            ctx.beginPath();
+            ctx.moveTo(p1X - 8, p1Y - 4);
+            ctx.lineTo(p1X + 4, p1Y - 10);
+            ctx.lineTo(p1X + 10, p1Y - 1);
+            ctx.lineTo(p1X - 2, p1Y + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#38bdf8";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = "#facc15";
+            ctx.beginPath(); ctx.arc(p1X + 1, p1Y - 2.5, 1.8, 0, Math.PI * 2); ctx.fill();
+
+            let p2X = x + 10, p2Y = y - 2;
+            ctx.fillStyle = "#d97706";
+            ctx.beginPath();
+            ctx.moveTo(p2X - 8, p2Y - 4);
+            ctx.lineTo(p2X + 4, p2Y - 10);
+            ctx.lineTo(p2X + 10, p2Y - 1);
+            ctx.lineTo(p2X - 2, p2Y + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#fbbf24";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = "#991b1b";
+            ctx.beginPath(); ctx.arc(p2X + 1, p2Y - 2.5, 1.8, 0, Math.PI * 2); ctx.fill();
+
+            // 7. Sağ-Alt Silindirik Rulo Baş Yastığı (Ön Uçta Tam Görünür)
+            let b2X = x + 24, b2Y = y + 18;
+            ctx.save();
+            ctx.translate(b2X, b2Y);
+            ctx.rotate(-0.46);
+            ctx.fillStyle = ruloGrad1;
+            ctx.beginPath();
+            ctx.roundRect(-10, -6, 20, 12, 4);
+            ctx.fill();
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-6, -6, 12, 12);
+            ctx.fillStyle = "#78350f";
+            ctx.beginPath(); ctx.ellipse(10, 0, 2.5, 5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#facc15";
+            ctx.beginPath(); ctx.arc(10, 0, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(14, 5); ctx.stroke();
+            ctx.beginPath(); ctx.arc(14.5, 5.5, 1.2, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+
         } else if (rot === 1) {
-            // YAN - SOL (90° Derinlik Profili: Sedir Sağa/Odaya Bakar)
-            ctx.fillStyle = "#451a03";
-            ctx.beginPath(); ctx.roundRect(x - 22, y - 40, 44, 80, 4); ctx.fill();
-            ctx.strokeStyle = "#78350f"; ctx.lineWidth = 1.5; ctx.stroke();
-            // Sol Sırtlık (Sol duvar boyunca yükselen kilim bordürü)
-            let backGrad = ctx.createLinearGradient(x - 24, 0, x - 8, 0);
-            backGrad.addColorStop(0, '#be185d'); backGrad.addColorStop(1, '#831843');
-            ctx.fillStyle = backGrad;
-            ctx.beginPath(); ctx.roundRect(x - 24, y - 42, 16, 84, [6, 0, 0, 6]); ctx.fill();
+            // ==============================================================
+            // ROT 1: 👇 ÖN-SOL (Facing Down-Left / South-West, -30° Eğim)
+            // Sedir Kuzey-Doğu duvarına dayalı, oturma yönü Güneybatı
+            // ==============================================================
+
+            // 1. Zemin Ahşap Kaide Ayakları
+            ctx.fillStyle = "#290e03";
+            ctx.fillRect(x + 39, y + 5, 5, 8);
+            ctx.fillRect(x - 23, y + 36, 5, 8);
+            ctx.fillRect(x + 17, y - 6, 5, 6);
+            ctx.fillRect(x - 45, y + 23, 5, 6);
+
+            // 2. Masif Ahşap Kaide
+            ctx.fillStyle = "#3e1704";
+            ctx.beginPath();
+            ctx.moveTo(x + 46, y + 6);
+            ctx.lineTo(x - 20, y + 39);
+            ctx.lineTo(x - 20, y + 43);
+            ctx.lineTo(x + 46, y + 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#1c0902";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Sol Yan Yüzey
+            ctx.fillStyle = "#270e02";
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y + 39);
+            ctx.lineTo(x - 44, y + 27);
+            ctx.lineTo(x - 44, y + 31);
+            ctx.lineTo(x - 20, y + 43);
+            ctx.closePath();
+            ctx.fill();
+
+            // Kaide Üst Yüzeyi
+            let baseGrad = ctx.createLinearGradient(x + 30, y, x - 30, y + 20);
+            baseGrad.addColorStop(0, '#5c2409');
+            baseGrad.addColorStop(0.5, '#78350f');
+            baseGrad.addColorStop(1, '#451a03');
+            ctx.fillStyle = baseGrad;
+            ctx.beginPath();
+            ctx.moveTo(x + 22, y - 6);
+            ctx.lineTo(x - 44, y + 27);
+            ctx.lineTo(x - 20, y + 39);
+            ctx.lineTo(x + 46, y + 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#92400e";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Altın Pirinç Kabaralar
             ctx.fillStyle = "#facc15";
-            for (let ky = y - 32; ky <= y + 32; ky += 16) {
-                ctx.beginPath(); ctx.moveTo(x - 16, ky - 4); ctx.lineTo(x - 12, ky); ctx.lineTo(x - 16, ky + 4); ctx.lineTo(x - 20, ky); ctx.closePath(); ctx.fill();
+            for (let i = 0; i <= 6; i++) {
+                let t = i / 6;
+                let kx = (x + 42) * (1 - t) + (x - 16) * t;
+                let ky = (y + 8) * (1 - t) + (y + 41) * t;
+                ctx.beginPath();
+                ctx.arc(kx, ky, 1.6, 0, Math.PI * 2);
+                ctx.fill();
             }
-            // Oturma Alanı (Sağda)
-            let seatGrad = ctx.createLinearGradient(x - 8, 0, x + 20, 0);
-            seatGrad.addColorStop(0, '#9d174d'); seatGrad.addColorStop(1, '#500724');
-            ctx.fillStyle = seatGrad;
-            ctx.beginPath(); ctx.roundRect(x - 8, y - 38, 28, 76, 4); ctx.fill();
-            ctx.strokeStyle = "rgba(250, 204, 21, 0.75)"; ctx.lineWidth = 1.2; ctx.stroke();
-            // Üst ve Alt Kırlentler
-            ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.roundRect(x - 6, y - 36, 24, 14, 5); ctx.fill();
-            ctx.fillStyle = "#fbbf24"; ctx.fillRect(x - 4, y - 34, 20, 10);
-            ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.roundRect(x - 6, y + 22, 24, 14, 5); ctx.fill();
-            ctx.fillStyle = "#fbbf24"; ctx.fillRect(x - 4, y + 24, 20, 10);
-            // Orta Kırlent
-            ctx.fillStyle = "#0284c7"; ctx.beginPath(); ctx.roundRect(x - 4, y - 8, 20, 16, 4); ctx.fill();
+
+            // 3. Kalın Kadife Oturma Şiltesi
+            // Ön Düşey Yüzey (Güneybatıya Bakan Etek)
+            let skirtGrad = ctx.createLinearGradient(x + 46, y, x - 20, y + 20);
+            skirtGrad.addColorStop(0, '#700a25');
+            skirtGrad.addColorStop(0.5, '#881337');
+            skirtGrad.addColorStop(1, '#4c0519');
+            ctx.fillStyle = skirtGrad;
+            ctx.beginPath();
+            ctx.moveTo(x + 46, y - 5);
+            ctx.lineTo(x - 20, y + 28);
+            ctx.lineTo(x - 20, y + 38);
+            ctx.lineTo(x + 46, y + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.85)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Sol Yan Düşey Yüzey
+            ctx.fillStyle = "#4c0519";
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y + 28);
+            ctx.lineTo(x - 44, y + 16);
+            ctx.lineTo(x - 44, y + 26);
+            ctx.lineTo(x - 20, y + 38);
+            ctx.closePath();
+            ctx.fill();
+
+            // Altın İpek Püsküller
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 1.3;
+            ctx.fillStyle = "#facc15";
+            for (let i = 0; i <= 8; i++) {
+                let t = i / 8;
+                let px = (x + 44) * (1 - t) + (x - 18) * t;
+                let py = (y + 5) * (1 - t) + (y + 37) * t;
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px, py + 4);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(px, py + 4.5, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Şilte Üst Oturma Yüzeyi
+            let cushionGrad = ctx.createLinearGradient(x + 22, y - 18, x - 44, y + 15);
+            cushionGrad.addColorStop(0, '#9f1239');
+            cushionGrad.addColorStop(0.5, '#be123c');
+            cushionGrad.addColorStop(1, '#881337');
+            ctx.fillStyle = cushionGrad;
+            ctx.beginPath();
+            ctx.moveTo(x + 22, y - 18);
+            ctx.lineTo(x - 44, y + 15);
+            ctx.lineTo(x - 20, y + 27);
+            ctx.lineTo(x + 46, y - 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.9)";
+            ctx.lineWidth = 1.6;
+            ctx.stroke();
+
+            // 4. Anadolu Kilim Desenli Kalın Sırt Minderi
+            let backGrad = ctx.createLinearGradient(x + 22, y - 44, x - 44, y - 10);
+            backGrad.addColorStop(0, '#881337');
+            backGrad.addColorStop(0.5, '#9f1239');
+            backGrad.addColorStop(1, '#700a25');
+            ctx.fillStyle = backGrad;
+            ctx.beginPath();
+            ctx.moveTo(x + 22, y - 44);
+            ctx.lineTo(x - 44, y - 11);
+            ctx.lineTo(x - 44, y + 14);
+            ctx.lineTo(x + 22, y - 19);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#4c0519";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Sırt Üst Yüzeyi
+            ctx.fillStyle = "#be123c";
+            ctx.beginPath();
+            ctx.moveTo(x + 22, y - 44);
+            ctx.lineTo(x - 44, y - 11);
+            ctx.lineTo(x - 38, y - 14);
+            ctx.lineTo(x + 28, y - 47);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.8)";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Sırt Sağ Yan Yüzeyi
+            ctx.fillStyle = "#50071c";
+            ctx.beginPath();
+            ctx.moveTo(x + 28, y - 47);
+            ctx.lineTo(x + 22, y - 44);
+            ctx.lineTo(x + 22, y - 19);
+            ctx.lineTo(x + 28, y - 22);
+            ctx.closePath();
+            ctx.fill();
+
+            // Kilim Nakışları
+            const panels1 = [8, -14, -34];
+            panels1.forEach((pxOff) => {
+                let pyOff = -pxOff * 0.5 - 28;
+                let cx1 = x + pxOff;
+                let cy1 = y + pyOff;
+
+                ctx.fillStyle = "#facc15";
+                ctx.beginPath();
+                ctx.moveTo(cx1, cy1 - 7);
+                ctx.lineTo(cx1 + 7, cy1 - 3.5);
+                ctx.lineTo(cx1, cy1);
+                ctx.lineTo(cx1 - 7, cy1 - 3.5);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = "#0284c7";
+                ctx.beginPath();
+                ctx.moveTo(cx1, cy1 - 6);
+                ctx.lineTo(cx1 + 5, cy1 - 3.5);
+                ctx.lineTo(cx1, cy1 - 1);
+                ctx.lineTo(cx1 - 5, cy1 - 3.5);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = "#fef08a";
+                ctx.beginPath();
+                ctx.arc(cx1, cy1 - 3.5, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Dikey Dikiş Hatları
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.6)";
+            ctx.lineWidth = 1.2;
+            [-3, -24].forEach(sxOff => {
+                ctx.beginPath();
+                ctx.moveTo(x + sxOff, y - sxOff * 0.5 - 31);
+                ctx.lineTo(x + sxOff, y - sxOff * 0.5 - 5);
+                ctx.stroke();
+            });
+
+            // 5. Sağ-Üst Rulo Yastık (Bolster)
+            let b1X = x + 32, b1Y = y - 10;
+            ctx.save();
+            ctx.translate(b1X, b1Y);
+            ctx.rotate(0.46);
+            let ruloGrad1 = ctx.createLinearGradient(0, -6, 0, 6);
+            ruloGrad1.addColorStop(0, '#f59e0b');
+            ruloGrad1.addColorStop(0.5, '#fbbf24');
+            ruloGrad1.addColorStop(1, '#b45309');
+            ctx.fillStyle = ruloGrad1;
+            ctx.beginPath();
+            ctx.roundRect(-10, -6, 20, 12, 4);
+            ctx.fill();
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-6, -6, 12, 12);
+            ctx.fillStyle = "#78350f";
+            ctx.beginPath(); ctx.ellipse(10, 0, 2.5, 5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#facc15";
+            ctx.beginPath(); ctx.arc(10, 0, 1.8, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(14, 4); ctx.stroke();
+            ctx.restore();
+
+            // 6. Aksan Kilim Kırlentleri
+            let p1X = x + 10, p1Y = y - 12;
+            ctx.fillStyle = "#0284c7";
+            ctx.beginPath();
+            ctx.moveTo(p1X + 8, p1Y - 4);
+            ctx.lineTo(p1X - 4, p1Y - 10);
+            ctx.lineTo(p1X - 10, p1Y - 1);
+            ctx.lineTo(p1X + 2, p1Y + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#38bdf8";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = "#facc15";
+            ctx.beginPath(); ctx.arc(p1X - 1, p1Y - 2.5, 1.8, 0, Math.PI * 2); ctx.fill();
+
+            let p2X = x - 10, p2Y = y - 2;
+            ctx.fillStyle = "#d97706";
+            ctx.beginPath();
+            ctx.moveTo(p2X + 8, p2Y - 4);
+            ctx.lineTo(p2X - 4, p2Y - 10);
+            ctx.lineTo(p2X - 10, p2Y - 1);
+            ctx.lineTo(p2X + 2, p2Y + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#fbbf24";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = "#991b1b";
+            ctx.beginPath(); ctx.arc(p2X - 1, p2Y - 2.5, 1.8, 0, Math.PI * 2); ctx.fill();
+
+            // 7. Sol-Alt Rulo Yastık (Ön Uçta Tam Görünür)
+            let b2X = x - 24, b2Y = y + 18;
+            ctx.save();
+            ctx.translate(b2X, b2Y);
+            ctx.rotate(0.46);
+            ctx.fillStyle = ruloGrad1;
+            ctx.beginPath();
+            ctx.roundRect(-10, -6, 20, 12, 4);
+            ctx.fill();
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(-6, -6, 12, 12);
+            ctx.fillStyle = "#78350f";
+            ctx.beginPath(); ctx.ellipse(-10, 0, 2.5, 5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#facc15";
+            ctx.beginPath(); ctx.arc(-10, 0, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-14, 5); ctx.stroke();
+            ctx.beginPath(); ctx.arc(-14.5, 5.5, 1.2, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+
         } else if (rot === 2) {
-            // ARKA (180° Geniş Arka Görünüm: Sedir Odanın İçine Doğru Bakar)
-            ctx.fillStyle = "#451a03";
-            ctx.beginPath(); ctx.roundRect(x - 47, y + 10, 94, 16, 4); ctx.fill();
-            // Masif Meşe Oymalı Sırt Paneli
-            let oakGrad = ctx.createLinearGradient(0, y - 26, 0, y + 12);
-            oakGrad.addColorStop(0, '#78350f'); oakGrad.addColorStop(0.5, '#451a03'); oakGrad.addColorStop(1, '#290e03');
-            ctx.fillStyle = oakGrad;
-            ctx.beginPath(); ctx.roundRect(x - 46, y - 26, 92, 38, [8, 8, 2, 2]); ctx.fill();
-            ctx.strokeStyle = "#ca8a04"; ctx.lineWidth = 1.5; ctx.stroke();
-            // Dikey ahşap çıtalar ve altın kabara perçinleri
-            ctx.strokeStyle = "rgba(202, 138, 4, 0.4)"; ctx.lineWidth = 1;
-            for (let px = x - 36; px <= x + 36; px += 18) {
-                ctx.beginPath(); ctx.moveTo(px, y - 24); ctx.lineTo(px, y + 10); ctx.stroke();
-                ctx.fillStyle = "#facc15"; ctx.beginPath(); ctx.arc(px, y - 20, 2, 0, Math.PI * 2); ctx.fill();
+            // ==============================================================
+            // ROT 2: 👈 ARKA-SOL (Facing Up-Left / North-West)
+            // Sedir odaya bakar, arkası Güneydoğuya (bize) dönük
+            // ==============================================================
+
+            // 1. Üstten Taşarak Görünen Yastık Kubbeleri (2.5D Derinlik)
+            // Sırtlığın üst ahşap küpeştesi hizasında kabaran kadife minder
+            ctx.fillStyle = "#9f1239";
+            ctx.beginPath();
+            ctx.ellipse(x - 13, y - 13, 26, 6, 0.46, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.7)";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Kırlent uçları
+            ctx.fillStyle = "#0284c7";
+            ctx.beginPath();
+            ctx.moveTo(x - 22, y - 20); ctx.lineTo(x - 17, y - 28); ctx.lineTo(x - 12, y - 21);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = "#d97706";
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y - 12); ctx.lineTo(x, y - 19); ctx.lineTo(x + 5, y - 13);
+            ctx.closePath(); ctx.fill();
+
+            // Rulo yastıkların kabarık uçları
+            ctx.fillStyle = "#fbbf24";
+            ctx.beginPath(); ctx.arc(x - 34, y - 22, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + 8, y + 2, 5, 0, Math.PI * 2); ctx.fill();
+
+            // 2. Tornalanmış Ahşap Ayaklar
+            ctx.fillStyle = "#290e03";
+            ctx.fillRect(x - 44, y + 10, 5, 8);
+            ctx.fillRect(x + 18, y + 41, 5, 8);
+
+            // 3. Masif Oymalı Ahşap Sırt Paneli
+            // Baza Alt Çizgisi: (x-46, y+10) -> (x+20, y+43)
+            // Üst Sırt Çizgisi: (x-46, y-26) -> (x+20, y+7)
+            let oakBackGrad = ctx.createLinearGradient(x - 46, y - 26, x + 20, y + 43);
+            oakBackGrad.addColorStop(0, '#5c2409');
+            oakBackGrad.addColorStop(0.5, '#78350f');
+            oakBackGrad.addColorStop(1, '#3e1704');
+            ctx.fillStyle = oakBackGrad;
+            ctx.beginPath();
+            ctx.moveTo(x - 46, y - 26);
+            ctx.lineTo(x + 20, y + 7);
+            ctx.lineTo(x + 20, y + 43);
+            ctx.lineTo(x - 46, y + 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#ca8a04";
+            ctx.lineWidth = 1.6;
+            ctx.stroke();
+
+            // Üst Ahşap Küpeşte / Pervaz (Ahşap taç bordürü)
+            ctx.fillStyle = "#92400e";
+            ctx.beginPath();
+            ctx.moveTo(x - 46, y - 26);
+            ctx.lineTo(x + 20, y + 7);
+            ctx.lineTo(x + 20, y + 3);
+            ctx.lineTo(x - 46, y - 30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Dikey Ahşap Çıtalar ve Sedef Kakmalı Yıldızlar
+            ctx.strokeStyle = "rgba(202, 138, 4, 0.45)";
+            ctx.lineWidth = 1.2;
+            for (let i = 1; i <= 4; i++) {
+                let t = i / 5;
+                let px = (x - 46) * (1 - t) + (x + 20) * t;
+                let pyTop = (y - 26) * (1 - t) + (y + 7) * t;
+                let pyBot = (y + 10) * (1 - t) + (y + 43) * t;
+                ctx.beginPath();
+                ctx.moveTo(px, pyTop);
+                ctx.lineTo(px, pyBot);
+                ctx.stroke();
+
+                // Sedef kakma elmas
+                ctx.fillStyle = "#fef08a";
+                let my = (pyTop + pyBot) / 2;
+                ctx.beginPath();
+                ctx.moveTo(px, my - 3); ctx.lineTo(px + 2.5, my); ctx.lineTo(px, my + 3); ctx.lineTo(px - 2.5, my);
+                ctx.closePath(); ctx.fill();
             }
-        } else if (rot === 3) {
-            // YAN - SAĞ (270° Derinlik Profili: Sedir Sola/Odaya Bakar)
-            ctx.fillStyle = "#451a03";
-            ctx.beginPath(); ctx.roundRect(x - 22, y - 40, 44, 80, 4); ctx.fill();
-            ctx.strokeStyle = "#78350f"; ctx.lineWidth = 1.5; ctx.stroke();
-            // Sağ Sırtlık
-            let backGrad = ctx.createLinearGradient(x + 8, 0, x + 24, 0);
-            backGrad.addColorStop(0, '#831843'); backGrad.addColorStop(1, '#be185d');
-            ctx.fillStyle = backGrad;
-            ctx.beginPath(); ctx.roundRect(x + 8, y - 42, 16, 84, [0, 6, 6, 0]); ctx.fill();
+
+            // Altın Kabara Perçinleri
             ctx.fillStyle = "#facc15";
-            for (let ky = y - 32; ky <= y + 32; ky += 16) {
-                ctx.beginPath(); ctx.moveTo(x + 16, ky - 4); ctx.lineTo(x + 20, ky); ctx.lineTo(x + 16, ky + 4); ctx.lineTo(x + 12, ky); ctx.closePath(); ctx.fill();
+            for (let i = 0; i <= 6; i++) {
+                let t = i / 6;
+                let kx = (x - 44) * (1 - t) + (x + 18) * t;
+                let ky = (y + 7) * (1 - t) + (y + 40) * t;
+                ctx.beginPath();
+                ctx.arc(kx, ky, 1.5, 0, Math.PI * 2);
+                ctx.fill();
             }
-            // Oturma Alanı (Solda)
-            let seatGrad = ctx.createLinearGradient(x - 20, 0, x + 8, 0);
-            seatGrad.addColorStop(0, '#500724'); seatGrad.addColorStop(1, '#9d174d');
-            ctx.fillStyle = seatGrad;
-            ctx.beginPath(); ctx.roundRect(x - 20, y - 38, 28, 76, 4); ctx.fill();
-            ctx.strokeStyle = "rgba(250, 204, 21, 0.75)"; ctx.lineWidth = 1.2; ctx.stroke();
-            // Üst ve Alt Kırlentler
-            ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.roundRect(x - 18, y - 36, 24, 14, 5); ctx.fill();
-            ctx.fillStyle = "#fbbf24"; ctx.fillRect(x - 16, y - 34, 20, 10);
-            ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.roundRect(x - 18, y + 22, 24, 14, 5); ctx.fill();
-            ctx.fillStyle = "#fbbf24"; ctx.fillRect(x - 16, y + 24, 20, 10);
-            // Orta Kırlent
-            ctx.fillStyle = "#0284c7"; ctx.beginPath(); ctx.roundRect(x - 16, y - 8, 20, 16, 4); ctx.fill();
+
+        } else if (rot === 3) {
+            // ==============================================================
+            // ROT 3: 👆 ARKA-SAĞ (Facing Up-Right / North-East)
+            // Sedir odaya bakar, arkası Güneybatıya (bize) dönük
+            // ==============================================================
+
+            // 1. Üstten Taşarak Görünen Yastık Kubbeleri
+            ctx.fillStyle = "#9f1239";
+            ctx.beginPath();
+            ctx.ellipse(x + 13, y - 13, 26, 6, -0.46, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "rgba(250, 204, 21, 0.7)";
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Kırlent uçları
+            ctx.fillStyle = "#0284c7";
+            ctx.beginPath();
+            ctx.moveTo(x + 12, y - 21); ctx.lineTo(x + 17, y - 28); ctx.lineTo(x + 22, y - 20);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = "#d97706";
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y - 13); ctx.lineTo(x, y - 19); ctx.lineTo(x + 5, y - 12);
+            ctx.closePath(); ctx.fill();
+
+            // Rulo yastık uçları
+            ctx.fillStyle = "#fbbf24";
+            ctx.beginPath(); ctx.arc(x + 34, y - 22, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x - 8, y + 2, 5, 0, Math.PI * 2); ctx.fill();
+
+            // 2. Tornalanmış Ayaklar
+            ctx.fillStyle = "#290e03";
+            ctx.fillRect(x + 39, y + 10, 5, 8);
+            ctx.fillRect(x - 23, y + 41, 5, 8);
+
+            // 3. Masif Oymalı Ahşap Sırt Paneli
+            let oakBackGrad = ctx.createLinearGradient(x + 46, y - 26, x - 20, y + 43);
+            oakBackGrad.addColorStop(0, '#5c2409');
+            oakBackGrad.addColorStop(0.5, '#78350f');
+            oakBackGrad.addColorStop(1, '#3e1704');
+            ctx.fillStyle = oakBackGrad;
+            ctx.beginPath();
+            ctx.moveTo(x + 46, y - 26);
+            ctx.lineTo(x - 20, y + 7);
+            ctx.lineTo(x - 20, y + 43);
+            ctx.lineTo(x + 46, y + 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#ca8a04";
+            ctx.lineWidth = 1.6;
+            ctx.stroke();
+
+            // Üst Küpeşte / Pervaz
+            ctx.fillStyle = "#92400e";
+            ctx.beginPath();
+            ctx.moveTo(x + 46, y - 26);
+            ctx.lineTo(x - 20, y + 7);
+            ctx.lineTo(x - 20, y + 3);
+            ctx.lineTo(x + 46, y - 30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Dikey Çıtalar ve Sedef Kakmalı Yıldızlar
+            ctx.strokeStyle = "rgba(202, 138, 4, 0.45)";
+            ctx.lineWidth = 1.2;
+            for (let i = 1; i <= 4; i++) {
+                let t = i / 5;
+                let px = (x + 46) * (1 - t) + (x - 20) * t;
+                let pyTop = (y - 26) * (1 - t) + (y + 7) * t;
+                let pyBot = (y + 10) * (1 - t) + (y + 43) * t;
+                ctx.beginPath();
+                ctx.moveTo(px, pyTop);
+                ctx.lineTo(px, pyBot);
+                ctx.stroke();
+
+                ctx.fillStyle = "#fef08a";
+                let my = (pyTop + pyBot) / 2;
+                ctx.beginPath();
+                ctx.moveTo(px, my - 3); ctx.lineTo(px + 2.5, my); ctx.lineTo(px, my + 3); ctx.lineTo(px - 2.5, my);
+                ctx.closePath(); ctx.fill();
+            }
+
+            // Altın Kabara Perçinleri
+            ctx.fillStyle = "#facc15";
+            for (let i = 0; i <= 6; i++) {
+                let t = i / 6;
+                let kx = (x + 44) * (1 - t) + (x - 18) * t;
+                let ky = (y + 7) * (1 - t) + (y + 40) * t;
+                ctx.beginPath();
+                ctx.arc(kx, ky, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
+
+        ctx.restore();
     },
 
     // 2. LÜKS DERİ BERJER (56x52 / 46x54)

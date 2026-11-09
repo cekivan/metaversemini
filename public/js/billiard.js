@@ -185,6 +185,7 @@ socket.on('billiardUpdate', (state) => {
         clearPocketGlows();
     }
     updateBilliardScoreboard(state);
+    if (typeof updateBilliardMobileScale === 'function') updateBilliardMobileScale();
 });
 
 // Canlı Skor ve Kalan Toplar Bilardo Panosu
@@ -293,14 +294,53 @@ function updateBilliardScoreboard(state) {
 function resetBilliardSpin() {}
 window.resetBilliardSpin = resetBilliardSpin;
 
+function updateBilliardMobileScale() {
+    const tbl = document.getElementById('billiardTable');
+    if (!tbl) return;
+    const viewport = document.getElementById('billiardTableViewport');
+    const area = document.getElementById('billiardArea');
+    let availW = 0;
+    if (viewport && viewport.clientWidth > 50) {
+        availW = viewport.clientWidth;
+    } else if (area && area.clientWidth > 50) {
+        availW = area.clientWidth - 8;
+    } else {
+        availW = Math.max(220, window.innerWidth - 56);
+        if (typeof requestAnimationFrame === 'function' && !updateBilliardMobileScale._rafQueued) {
+            updateBilliardMobileScale._rafQueued = true;
+            requestAnimationFrame(() => {
+                updateBilliardMobileScale._rafQueued = false;
+                const vp = document.getElementById('billiardTableViewport');
+                if (vp && vp.clientWidth > 50) updateBilliardMobileScale();
+            });
+        }
+    }
+    const fullOuterW = 620; // 600px + 2 * 10px ahşap çerçeve
+    const fullOuterH = 320;
+    if (availW < fullOuterW) {
+        const scale = Math.max(0.46, (availW - 4) / fullOuterW);
+        tbl.style.transformOrigin = 'top center';
+        tbl.style.transform = `scale(${scale.toFixed(4)})`;
+        tbl.style.marginBottom = `-${Math.round(fullOuterH * (1 - scale))}px`;
+    } else {
+        tbl.style.transform = '';
+        tbl.style.transformOrigin = '';
+        tbl.style.marginBottom = '';
+    }
+}
+window.updateBilliardMobileScale = updateBilliardMobileScale;
+window.addEventListener('resize', updateBilliardMobileScale);
+window.addEventListener('orientationchange', () => setTimeout(updateBilliardMobileScale, 120));
+
 function getCanvasCoords(e) {
     if (!cueCanvas) cueCanvas = document.getElementById('cueCanvas');
     let rect = cueCanvas.getBoundingClientRect();
-    let clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-    let clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    let pt = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+    let clientX = (pt && pt.clientX !== undefined) ? pt.clientX : 0;
+    let clientY = (pt && pt.clientY !== undefined) ? pt.clientY : 0;
     return {
-        x: (clientX - rect.left) * (600 / rect.width),
-        y: (clientY - rect.top) * (300 / rect.height)
+        x: (clientX - rect.left) * (600 / (rect.width || 600)),
+        y: (clientY - rect.top) * (300 / (rect.height || 300))
     };
 }
 
@@ -763,6 +803,11 @@ socket.on('billiardRoundStarted', (data) => {
     const overlay = document.getElementById('billiardRematchOverlay');
     if (overlay) overlay.style.display = 'none';
     clearPocketGlows();
+    if (window.playSound) window.playSound('billiardHit');
+});
+
+socket.on('billiardBallPlaced', () => {
+    isBallInHand = false;
     if (window.playSound) window.playSound('billiardHit');
 });
 

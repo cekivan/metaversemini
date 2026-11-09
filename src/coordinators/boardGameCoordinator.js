@@ -4,15 +4,79 @@ const xoxEngine = require('../engines/xox');
 const amiralEngine = require('../engines/amiral');
 const chessEngine = require('../engines/chessEngine');
 const dataManager = require('../dataManager');
+const { handleTableGameEndXP } = require('../utils/levelSystem');
 
+const tavlaBotTimers = {};
 const xoxBotTimers = {};
 const amiralBotTimers = {};
 const chessBotTimers = {};
 const chessClockIntervals = {};
 
+function isBotPlayer(pid, profile) {
+    if (!pid || typeof pid !== 'string') return true;
+    if (pid.startsWith('bot_')) return true;
+    if (profile?.isBot) return true;
+    const name = profile?.name;
+    if (typeof name === 'string' && (name.startsWith('🤖') || name.includes('🤖'))) return true;
+    return false;
+}
+
+function clearTavlaBotTimer(tableId) {
+    if (tableId && tavlaBotTimers[tableId]) {
+        clearTimeout(tavlaBotTimers[tableId]);
+        delete tavlaBotTimers[tableId];
+    }
+}
+
+function recordTavlaWinnerIfNeeded(game, io) {
+    if (!game || !game.gameOver || !game.winner || game.winnerRecorded) return;
+    game.winnerRecorded = true;
+    let wName = game.playerProfiles?.[game.winner]?.name;
+    let isHuman = typeof wName === 'string' && wName.length > 0 && !isBotPlayer(game.winner, game.playerProfiles?.[game.winner]);
+
+    // 2 Kişilik Anti-Bot Kuralı: İki oyuncu da gerçek insan ise el seviye puanına sayılır
+    const bothHumans = !isBotPlayer(game.players[0], game.playerProfiles?.[game.players[0]]) && !isBotPlayer(game.players[1], game.playerProfiles?.[game.players[1]]);
+    if (bothHumans) {
+        game.players.forEach(pid => {
+            let pName = game.playerProfiles?.[pid]?.name;
+            if (pName) dataManager.recordGamePlayed(pName, 'tavla', 1);
+        });
+    }
+    handleTableGameEndXP(io, null, 'tavla', game.players.map(pid => ({ socketId: pid, name: game.playerProfiles?.[pid]?.name, isBot: isBotPlayer(pid, game.playerProfiles?.[pid]) })), [game.winner]);
+
+    if (wName) {
+        if (isHuman) {
+            dataManager.persistentData.leaderboard.tavla[wName] = (dataManager.persistentData.leaderboard.tavla[wName] || 0) + 1;
+        }
+        game.players.forEach(pid => {
+            let pName = game.playerProfiles?.[pid]?.name;
+            if (pName && !isBotPlayer(pid, game.playerProfiles?.[pid])) {
+                dataManager.recordQuestProgress(pName, 'tavla_play', 1);
+            }
+        });
+        let winPrize = 20;
+        if (game.pot && game.pot > 0) {
+            winPrize += game.pot;
+            let potMsg = `💰 TEBRİKLER! ${wName} tavla masasındaki ${game.pot} TL'lik potu kazandı!`;
+            game.players.forEach(pid => {
+                if (!pid.startsWith('bot_')) io.to(pid).emit('systemMessage', potMsg);
+            });
+            if (game.spectators) game.spectators.forEach(sid => io.to(sid).emit('systemMessage', potMsg));
+            game.pot = 0;
+        }
+        if (isHuman && dataManager.persistentData.users[wName]) {
+            dataManager.persistentData.users[wName].money = (dataManager.persistentData.users[wName].money || 100) + winPrize;
+            io.to(game.winner).emit('moneyUpdate', dataManager.persistentData.users[wName].money);
+        }
+        dataManager.savePersistentData();
+    }
+}
+
 // --- TAVLA SİSTEMİ ---
 function sendTavlaUpdate(game, io) {
     if (!game || !game.players) return;
+    clearTavlaBotTimer(game.tableId);
+
     let stateObj = {
         tableId: game.tableId,
         players: game.players,
@@ -25,6 +89,10 @@ function sendTavlaUpdate(game, io) {
         remainingMoves: game.remainingMoves,
         hasRolled: game.hasRolled,
         noMoves: !!game.noMoves,
+        turnCompletePendingPass: !!game.turnCompletePendingPass,
+        lastMove: game.lastMove || null,
+        lastAction: game.lastAction || null,
+        actionSeq: game.actionSeq || 0,
         winner: game.winner,
         gameOver: game.gameOver,
         playerProfiles: game.playerProfiles,
@@ -32,6 +100,7 @@ function sendTavlaUpdate(game, io) {
     };
 
     game.players.forEach(pid => {
+        if (pid.startsWith('bot_') || (game.disconnectedPlayers && game.disconnectedPlayers[pid])) return;
         io.to(pid).emit('tavlaUpdate', { ...stateObj, isSpectator: false });
     });
 
@@ -41,27 +110,65 @@ function sendTavlaUpdate(game, io) {
         });
     }
 
-    if (!game.gameOver) {
-        // Eğer oyuncu zar attıysa fakat oynayacak hamlesi yoksa, 1.6 saniye sonra sırayı devret
-        if (game.noMoves) {
-            setTimeout(() => {
-                if (game.noMoves && !game.gameOver) {
-                    tavlaEngine.passTurn(game);
-                    sendTavlaUpdate(game, io);
-                }
-            }, 1600);
-            return;
-        }
+    if (game.gameOver) {
+        recordTavlaWinnerIfNeeded(game, io);
+        return;
+    }
 
-        let currentPid = game.players[game.turnIndex];
-        let isBot = currentPid && (currentPid.startsWith('bot_') || game.playerProfiles?.[currentPid]?.isBot);
-        if (isBot) {
-            setTimeout(() => {
-                if (game.players[game.turnIndex] === currentPid && !game.gameOver) {
-                    tavlaEngine.makeTavlaBotMove(game, currentPid);
+    // 1. Eğer oyuncu/bot zar attıysa fakat oynayacak hamlesi yoksa, zarları ve mesajı 1.7 sn gösterip sırayı devret
+    if (game.noMoves) {
+        let tid = game.tableId;
+        const timer = setTimeout(() => {
+            if (tid) delete tavlaBotTimers[tid];
+            if (game.noMoves && !game.gameOver) {
+                tavlaEngine.passTurn(game);
+                sendTavlaUpdate(game, io);
+            }
+        }, 1700);
+        if (tid) tavlaBotTimers[tid] = timer;
+        return;
+    }
+
+    // 2. Bot tüm zar hamlelerini tamamladıysa son hamlenin tahtada görülmesi için kısa bekleme sonrası sırayı devret
+    if (game.turnCompletePendingPass) {
+        let tid = game.tableId;
+        const timer = setTimeout(() => {
+            if (tid) delete tavlaBotTimers[tid];
+            if (game.turnCompletePendingPass && !game.gameOver) {
+                tavlaEngine.passTurn(game);
+                sendTavlaUpdate(game, io);
+            }
+        }, 850);
+        if (tid) tavlaBotTimers[tid] = timer;
+        return;
+    }
+
+    // 3. Sıra bottaysa önce zarları atsın (oyuncu zarları görsün), ardından hamleleri tek tek yapsın
+    let currentPid = game.players[game.turnIndex];
+    let isBot = currentPid && (currentPid.startsWith('bot_') || game.playerProfiles?.[currentPid]?.isBot);
+    if (isBot) {
+        let tid = game.tableId;
+        if (!game.hasRolled) {
+            const timer = setTimeout(() => {
+                if (tid) delete tavlaBotTimers[tid];
+                if (game.players[game.turnIndex] === currentPid && !game.gameOver && !game.hasRolled) {
+                    tavlaEngine.rollDice(game, currentPid);
                     sendTavlaUpdate(game, io);
                 }
-            }, 1200);
+            }, 850);
+            if (tid) tavlaBotTimers[tid] = timer;
+        } else if (game.remainingMoves && game.remainingMoves.length > 0) {
+            const timer = setTimeout(() => {
+                if (tid) delete tavlaBotTimers[tid];
+                if (game.players[game.turnIndex] === currentPid && !game.gameOver && game.hasRolled) {
+                    let moved = tavlaEngine.makeSingleTavlaBotMove(game, currentPid);
+                    if (!moved && !game.noMoves && !game.turnCompletePendingPass && !game.gameOver) {
+                        game.noMoves = true;
+                    }
+                    sendTavlaUpdate(game, io);
+                }
+            }, 1050);
+            if (tid) tavlaBotTimers[tid] = timer;
         }
     }
 }
@@ -102,7 +209,18 @@ function sendXoxUpdate(game, io) {
 
     if (game.gameOver && game.winner && !game.winnerRecorded) {
         game.winnerRecorded = true;
+
+        // 2 Kişilik Anti-Bot Kuralı: İki oyuncu da gerçek insan ise el seviye puanına sayılır
+        const bothHumans = !isBotPlayer(game.players[0], game.playerProfiles?.[game.players[0]]) && !isBotPlayer(game.players[1], game.playerProfiles?.[game.players[1]]);
+        if (bothHumans) {
+            game.players.forEach(pid => {
+                let pName = game.playerProfiles?.[pid]?.name;
+                if (pName) dataManager.recordGamePlayed(pName, 'xox', 1);
+            });
+        }
+        let winPid = game.players.find(p => game.playerSymbols[p] === game.winner);
         let isTie = game.winner === 'tie';
+        handleTableGameEndXP(io, null, 'xox', game.players.map(pid => ({ socketId: pid, name: game.playerProfiles?.[pid]?.name, isBot: isBotPlayer(pid, game.playerProfiles?.[pid]) })), isTie ? [] : [winPid]);
         if (isTie) {
             let tieMsg = `🤝 XOX Düellosu BERABERE bitti!`;
             game.players.forEach(pid => io.to(pid).emit('systemMessage', tieMsg));
@@ -111,7 +229,7 @@ function sendXoxUpdate(game, io) {
                 let refund = Math.floor(game.pot / 2);
                 game.players.forEach(pid => {
                     let pName = game.playerProfiles[pid]?.name;
-                    let isBot = pid.startsWith('bot_') || game.playerProfiles[pid]?.isBot;
+                    let isBot = isBotPlayer(pid, game.playerProfiles?.[pid]);
                     if (!isBot && pName && dataManager.persistentData.users[pName]) {
                         dataManager.persistentData.users[pName].money = (dataManager.persistentData.users[pName].money || 0) + refund;
                         io.to(pid).emit('moneyUpdate', dataManager.persistentData.users[pName].money);
@@ -123,7 +241,7 @@ function sendXoxUpdate(game, io) {
         } else {
             let winPid = game.players.find(p => game.playerSymbols[p] === game.winner);
             let wName = winPid ? game.playerProfiles[winPid]?.name : "Oyuncu";
-            let isHuman = winPid && !winPid.startsWith('bot_') && !game.playerProfiles[winPid]?.isBot;
+            let isHuman = winPid && !isBotPlayer(winPid, game.playerProfiles?.[winPid]);
             let winPrize = 15;
             if (game.pot && game.pot > 0) {
                 winPrize += game.pot;
@@ -298,14 +416,18 @@ function sendAmiralUpdate(game, io) {
     if (game.spectators && game.spectators.length > 0) {
         let p1 = game.players[0];
         let p2 = game.players[1];
+        let p1Name = game.playerProfiles?.[p1]?.name || "1. Oyuncu";
+        let p2Name = game.playerProfiles?.[p2]?.name || "2. Oyuncu";
         game.spectators.forEach(sid => {
             io.to(sid).emit('amiralUpdate', {
                 ...baseState,
                 isSpectator: true,
                 p1Shots: game.shots[p1] || [],
                 p2Shots: game.shots[p2] || [],
-                p1ShipsStatus: (game.ships[p1] || []).map(s => ({ id: s.id, name: s.name, size: s.size, sunk: !!s.sunk })),
-                p2ShipsStatus: (game.ships[p2] || []).map(s => ({ id: s.id, name: s.name, size: s.size, sunk: !!s.sunk })),
+                p1ShipsStatus: (game.ships[p1] || []).map(s => ({ id: s.id, name: s.name, size: s.size, sunk: !!s.sunk, color: s.color })),
+                p2ShipsStatus: (game.ships[p2] || []).map(s => ({ id: s.id, name: s.name, size: s.size, sunk: !!s.sunk, color: s.color })),
+                p1Name: p1Name,
+                p2Name: p2Name,
                 isMyTurn: false
             });
         });
@@ -313,8 +435,19 @@ function sendAmiralUpdate(game, io) {
 
     if (game.gameOver && game.winner && !game.winnerRecorded) {
         game.winnerRecorded = true;
+
+        // 2 Kişilik Anti-Bot Kuralı: İki oyuncu da gerçek insan ise el seviye puanına sayılır
+        const bothHumans = !isBotPlayer(game.players[0], game.playerProfiles?.[game.players[0]]) && !isBotPlayer(game.players[1], game.playerProfiles?.[game.players[1]]);
+        if (bothHumans) {
+            game.players.forEach(pid => {
+                let pName = game.playerProfiles?.[pid]?.name;
+                if (pName) dataManager.recordGamePlayed(pName, 'amiral', 1);
+            });
+        }
+        handleTableGameEndXP(io, null, 'amiral', game.players.map(pid => ({ socketId: pid, name: game.playerProfiles?.[pid]?.name, isBot: isBotPlayer(pid, game.playerProfiles?.[pid]) })), [game.winner]);
+
         let wName = game.playerProfiles[game.winner]?.name || "Oyuncu";
-        let isHuman = !game.winner.startsWith('bot_') && !game.playerProfiles[game.winner]?.isBot;
+        let isHuman = !isBotPlayer(game.winner, game.playerProfiles?.[game.winner]);
         let winPrize = 25;
         if (game.pot && game.pot > 0) {
             winPrize += game.pot;
@@ -437,6 +570,7 @@ function handleAmiralVoteRematch(game, pid, vote, io, players = {}) {
         game.winner = null;
         game.gameOver = false;
         game.winnerRecorded = false;
+        game.shotSeq = 0;
         game.lastShotResult = null;
         game.stats = fresh.stats;
         game.rematchVotes = {};
@@ -536,7 +670,18 @@ function sendChessUpdate(game, io) {
 
         if (!game.winnerRecorded) {
             game.winnerRecorded = true;
+
+            // 2 Kişilik Anti-Bot Kuralı: İki oyuncu da gerçek insan ise el seviye puanına sayılır
+            const bothHumans = !isBotPlayer(game.players[0], game.playerProfiles?.[game.players[0]]) && !isBotPlayer(game.players[1], game.playerProfiles?.[game.players[1]]);
+            if (bothHumans) {
+                game.players.forEach(pid => {
+                    let pName = game.playerProfiles?.[pid]?.name;
+                    if (pName) dataManager.recordGamePlayed(pName, 'chess', 1);
+                });
+            }
+
             let isDraw = game.winner === 'draw' || game.winner === 'tie';
+            handleTableGameEndXP(io, null, 'chess', game.players.map(pid => ({ socketId: pid, name: game.playerProfiles?.[pid]?.name, isBot: isBotPlayer(pid, game.playerProfiles?.[pid]) })), isDraw ? [] : [game.winner]);
 
             if (isDraw) {
                 let reasonTr = "Beraberlik";
@@ -553,7 +698,7 @@ function sendChessUpdate(game, io) {
                     let refund = Math.floor(game.pot / 2);
                     game.players.forEach(pid => {
                         let pName = game.playerProfiles[pid]?.name;
-                        let isBot = pid.startsWith('bot_') || game.playerProfiles[pid]?.isBot;
+                        let isBot = isBotPlayer(pid, game.playerProfiles?.[pid]);
                         if (!isBot && pName && dataManager.persistentData.users[pName]) {
                             dataManager.persistentData.users[pName].money = (dataManager.persistentData.users[pName].money || 0) + refund;
                             io.to(pid).emit('moneyUpdate', dataManager.persistentData.users[pName].money);
@@ -565,7 +710,7 @@ function sendChessUpdate(game, io) {
             } else {
                 let winPid = game.players.find(p => game.playerColors[p] === game.winner);
                 let wName = winPid ? (game.playerProfiles[winPid]?.name || "Oyuncu") : "Oyuncu";
-                let isHuman = winPid && !winPid.startsWith('bot_') && !game.playerProfiles[winPid]?.isBot;
+                let isHuman = winPid && !isBotPlayer(winPid, game.playerProfiles?.[winPid]);
                 let winPrize = 25; // Satranç galibiyet taban ödülü
 
                 let reasonText = "Şah & Mat";
@@ -800,6 +945,8 @@ module.exports = {
     xoxEngine,
     amiralEngine,
     chessEngine,
+    tavlaBotTimers,
+    clearTavlaBotTimer,
     xoxBotTimers,
     amiralBotTimers,
     chessBotTimers,

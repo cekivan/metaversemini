@@ -406,6 +406,13 @@ if (typeof socket !== 'undefined' && socket) {
         if (window.stopCasinoSound) window.stopCasinoSound('wheel');
         if (window.playSound) window.playSound('error');
     });
+
+    socket.on('roulette_broadcast_result', (data) => {
+        if (!data) return;
+        if (data.totalWin > 0 && typeof showFloatingToast === 'function') {
+            showFloatingToast(`🎲 ${data.username} Rulette ${data.winnerNumber} (${(data.color || '').toUpperCase()}) ile +${data.totalWin.toLocaleString()} TL kazandı!`);
+        }
+    });
 }
 
 function handleRouletteResult(data) {

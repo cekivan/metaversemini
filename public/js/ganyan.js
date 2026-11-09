@@ -1,5 +1,5 @@
 // public/js/ganyan.js - Altılı Ganyan Hipodrom Yarışı & Binek Atı İstemci Kontrolörü
-var socket = window.socket || (typeof io !== 'undefined' ? io() : null);
+var socket = window.socket || (typeof socket !== 'undefined' ? socket : null);
 
 window.ganyanState = {
     raceNumber: 1,
@@ -60,6 +60,15 @@ if (socket) {
 
     socket.on('ganyan_announcement', (data) => {
         showGanyanAnnouncement(data.title, data.subMessage, data.type);
+    });
+
+    socket.on('ganyan_new_bet_announced', (data) => {
+        if (!data) return;
+        if (typeof showGanyanToast === 'function') {
+            showGanyanToast(`🏇 ${data.username}, ${data.horseName} atına ${data.amount} TL yatırdı!`);
+        } else if (typeof showFloatingToast === 'function') {
+            showFloatingToast(`🏇 ${data.username}, ${data.horseName} atına ${data.amount} TL yatırdı!`);
+        }
     });
 
     socket.on('ganyan_bet_placed', (data) => {

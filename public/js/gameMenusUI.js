@@ -1,7 +1,7 @@
 // public/js/gameMenusUI.js - Liderlik Tablosu, Günlük Görevler ve Reconnect (Yeniden Bağlanma) Modülleri
 
 (function () {
-    const socket = window.socket || (typeof io !== 'undefined' ? io() : null);
+    const socket = window.socket || (typeof socket !== 'undefined' ? socket : null);
 
     // --- 1. LİDERLİK TABLOSU ---
     function openLeaderboard() {

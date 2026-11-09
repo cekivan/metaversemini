@@ -2,6 +2,7 @@
 const batakEngine = require('../engines/batak.js');
 const batak4Engine = require('../engines/batak4.js');
 const dataManager = require('../dataManager');
+const { handleTableGameEndXP } = require('../utils/levelSystem');
 const { activeGames } = require('./gameState');
 
 const batakAfkTimers = {};
@@ -116,14 +117,43 @@ function handleBatakCardPlayed(game, engine, result, io, players) {
                     totalScores: { ...game.scores }
                 });
 
-                // Görev ilerlemesi
-                game.players.forEach(pid => {
+                // Çok Oyunculu Anti-Bot Kuralı: Masada en az 2 gerçek oyuncu olmalıdır!
+                const isBotPlayer = (pid) => {
                     let pName = game.playerProfiles[pid]?.name;
-                    let isBot = pid.startsWith('bot_') || (pName && (pName.startsWith('🤖') || pName.includes('🤖'))) || game.playerProfiles[pid]?.isBot;
-                    if (pName && !isBot) {
-                        dataManager.recordQuestProgress(pName, 'batak_play', 1);
+                    return !pid || pid.startsWith('bot_') || (pName && (pName.startsWith('🤖') || pName.includes('🤖'))) || game.playerProfiles[pid]?.isBot;
+                };
+                const humanPids = game.players.filter(pid => !isBotPlayer(pid));
+
+                // Bu turun en yüksek puan alanını (kazananını) bul
+                let bestPid = null;
+                let bestScore = -Infinity;
+                game.players.forEach(pid => {
+                    let s = (handScores[pid] !== undefined) ? handScores[pid] : -Infinity;
+                    if (s > bestScore) {
+                        bestScore = s;
+                        bestPid = pid;
                     }
                 });
+
+                // Görev ilerlemesi ve rozet puanı (Tekilleştirme / Idempotency korumalı)
+                let roundRecordKey = `${game.tableId}_round_${game.roundNumber || 1}_${currentRoundInSet}`;
+                if (!game.recordedRoundBadges) game.recordedRoundBadges = {};
+                if (!game.recordedRoundBadges[roundRecordKey]) {
+                    game.recordedRoundBadges[roundRecordKey] = true;
+                    game.players.forEach(pid => {
+                        let pName = game.playerProfiles?.[pid]?.name;
+                        if (pName && !isBotPlayer(pid)) {
+                            dataManager.recordQuestProgress(pName, 'batak_play', 1);
+                            // En az 2 gerçek insan varsa rozet seviyesine işlenir
+                            if (humanPids.length >= 2) {
+                                const isWinner = (pid === bestPid);
+                                const multiplier = isWinner ? 2 : 1; // Kazanan Bonusu (2x Multiplier)
+                                dataManager.recordGamePlayed(pName, 'batak', multiplier);
+                            }
+                        }
+                    });
+                    handleTableGameEndXP(io, players, 'batak', game.players.map(pid => ({ socketId: pid, name: game.playerProfiles?.[pid]?.name, isBot: isBotPlayer(pid) })), [bestPid]);
+                }
 
                 // 2. Set Kontrolleri: 5. Tur ve Eşitlik Bozma (6. Tur) Mantığı
                 if (currentRoundInSet < 5) {

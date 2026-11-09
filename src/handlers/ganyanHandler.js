@@ -359,6 +359,9 @@ function registerGanyanHandlers(io, socket, players) {
         if (players[socket.id]) players[socket.id].money = newBalance;
         socket.emit('moneyUpdate', newBalance);
 
+        // Ganyan Şampiyonu rozeti için kupon kaydı & seviye ödülü kontrolü
+        dataManager.recordGamePlayed(username, 'ganyan', 1);
+
         ganyanState.bets[socket.id] = {
             username: username,
             horseId: horseId,

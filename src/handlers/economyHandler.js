@@ -1,8 +1,8 @@
 const config = require('../config');
 const dataManager = require('../dataManager');
 const petManager = require('../petManager');
-const fatherPetManager = require('../fatherPetManager');
 const { checkRateLimit } = require('../utils/securityUtils');
+const { registerMysteryBoxHandlers } = require('./mysteryBoxHandler');
 
 // Kuğu Bisikleti 5 Dakikalık Kiralama Zamanlayıcıları Havuzu
 const playerSwanTimers = {};
@@ -24,8 +24,8 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         if (!userData) return;
 
         let cat = data.category;
-        let normCat = (cat === 'watch' || cat === 'watches') ? 'watches' : (cat.endsWith('s') ? cat : (cat + 's'));
-        let singleCat = (cat === 'watches' || cat === 'watch') ? 'watch' : (cat.endsWith('s') ? cat.slice(0, -1) : cat);
+        let normCat = (cat === 'watch' || cat === 'watches') ? 'watches' : ((cat === 'hair' || cat === 'hairs') ? 'hair' : (cat.endsWith('s') ? cat : (cat + 's')));
+        let singleCat = (cat === 'watches' || cat === 'watch') ? 'watch' : ((cat === 'hair' || cat === 'hairs') ? 'hair' : (cat.endsWith('s') ? cat.slice(0, -1) : cat));
         let itemId = data.id;
 
         let itemKey = `${normCat}_${itemId}`;
@@ -36,10 +36,12 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         } else if (altKey && config.WARDROBE_ITEM_PRICES[altKey] !== undefined) {
             itemCost = config.WARDROBE_ITEM_PRICES[altKey];
             itemKey = altKey;
+        } else if (config.WARDROBE_ITEM_PRICES[`hats_${itemId}`] !== undefined) {
+            itemCost = config.WARDROBE_ITEM_PRICES[`hats_${itemId}`];
         } else if (config.WARDROBE_ITEM_PRICES[itemId] !== undefined) {
             itemCost = config.WARDROBE_ITEM_PRICES[itemId];
         }
-        let isFree = (itemCost === 0 || itemId === 'none' || itemId === 'watch_none' || itemId === '#facc15' || itemId === '#3b82f6' || itemId === 'pants_classic_jeans');
+        let isFree = (itemCost === 0 || itemId === 'none' || itemId === 'watch_none' || itemId === '#facc15' || itemId === '#3b82f6' || itemId === 'pants_classic_jeans' || ((singleCat === 'hair' || singleCat === 'hat') && itemId === 'none'));
 
         if (normCat === 'props' && itemId !== 'none') {
             if (userData.money < itemCost) {
@@ -47,6 +49,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
                 return;
             }
             userData.money -= itemCost;
+            if (players[socket.id]) players[socket.id].money = userData.money;
             if (!userData.propInventory) userData.propInventory = {};
             userData.propInventory[itemKey] = (userData.propInventory[itemKey] || 0) + 1;
 
@@ -74,7 +77,67 @@ function registerEconomyHandlers(io, socket, players, helpers) {
             return;
         }
 
-        let isAlreadyOwned = isFree || (userData.inventory && userData.inventory.includes(itemKey));
+        // Sanalika Stili Renk Eşleştirmesi ve Normalizasyonu
+        const COLOR_MAP = {
+            'original': 'original',
+            'red': '#dc2626',
+            'blonde': '#facc15',
+            'green': '#10b981',
+            'blue': '#0284c7',
+            'navy': '#1e3a8a',
+            'black': '#18181b',
+            'white': '#ffffff',
+            'pink': '#ec4899',
+            'purple': '#9333ea',
+            'brown': '#92400e',
+            '#dc2626': '#dc2626',
+            '#facc15': '#facc15',
+            '#10b981': '#10b981',
+            '#0284c7': '#0284c7',
+            '#1e3a8a': '#1e3a8a',
+            '#18181b': '#18181b',
+            '#ffffff': '#ffffff',
+            '#ec4899': '#ec4899',
+            '#9333ea': '#9333ea',
+            '#92400e': '#92400e'
+        };
+        const COLOR_TO_ID = {
+            'original': 'original',
+            'red': 'red',
+            '#dc2626': 'red',
+            'navy': 'navy',
+            '#1e3a8a': 'navy',
+            'blonde': 'blonde',
+            '#facc15': 'blonde',
+            'green': 'green',
+            '#10b981': 'green',
+            'blue': 'blue',
+            '#0284c7': 'blue',
+            'black': 'black',
+            '#18181b': 'black',
+            'white': 'white',
+            '#ffffff': 'white',
+            'pink': 'pink',
+            '#ec4899': 'pink',
+            'purple': 'purple',
+            '#9333ea': 'purple',
+            'brown': 'brown',
+            '#92400e': 'brown'
+        };
+
+        const rawColor = data.color || (singleCat === 'hat' ? data.hairColor : (singleCat === 'face' ? data.faceColor : null)) || 'original';
+        const colorId = COLOR_TO_ID[rawColor] || 'original';
+        const colorHex = COLOR_MAP[rawColor] || 'original';
+
+        // Renk varyantı destekleyen giyim kategorileri (props, skins ve kostümler hariç)
+        const supportsVariants = !['props', 'skins', 'costumes'].includes(normCat) && !itemId.startsWith('costume_');
+        const variantKey = (supportsVariants && colorId !== 'original') ? `${itemKey}__${colorId}` : itemKey;
+
+        let isAlreadyOwned = isFree || (userData.inventory && (
+            userData.inventory.includes(variantKey) ||
+            userData.inventory.includes(itemKey) ||
+            (colorId === 'original' && userData.inventory.includes(itemKey))
+        ));
 
         if (!isAlreadyOwned) {
             if (userData.money < itemCost) {
@@ -82,44 +145,86 @@ function registerEconomyHandlers(io, socket, players, helpers) {
                 return;
             }
             userData.money -= itemCost;
+            if (players[socket.id]) players[socket.id].money = userData.money;
             if (!userData.inventory) userData.inventory = [];
-            userData.inventory.push(itemKey);
+            const keyToPush = (supportsVariants && colorId !== 'original') ? variantKey : itemKey;
+            if (!userData.inventory.includes(keyToPush)) userData.inventory.push(keyToPush);
+            if (!userData.inventory.includes(itemKey)) userData.inventory.push(itemKey);
         }
 
         if (singleCat === 'hat') {
             userData.avatar.hat = itemId;
             players[socket.id].hat = itemId;
+            userData.avatar.hatColor = colorHex;
+            players[socket.id].hatColor = colorHex;
+        } else if (singleCat === 'hair') {
+            userData.avatar.hair = itemId;
+            players[socket.id].hair = itemId;
+            userData.avatar.hairColor = colorHex;
+            players[socket.id].hairColor = colorHex;
         } else if (singleCat === 'face') {
             userData.avatar.face = itemId;
             players[socket.id].face = itemId;
+            userData.avatar.faceColor = colorHex;
+            players[socket.id].faceColor = colorHex;
         } else if (singleCat === 'skin') {
             userData.avatar.skinColor = itemId;
             players[socket.id].skinColor = itemId;
         } else if (singleCat === 'outfit') {
             userData.avatar.outfit = itemId;
-            userData.avatar.shirtColor = itemId;
-            userData.avatar.color = itemId;
+            userData.avatar.outfitColor = colorHex;
+            userData.avatar.shirtColor = colorHex;
+            userData.avatar.color = colorHex;
+            userData.avatar.shirt = null; // Takım giyildiğinde ayrık tişört çıkar
+            userData.avatar.pants = null; // Takım giyildiğinde ayrık pantolon çıkar
             players[socket.id].outfit = itemId;
-            players[socket.id].color = itemId;
+            players[socket.id].outfitColor = colorHex;
+            players[socket.id].color = colorHex;
+            players[socket.id].shirt = null;
+            players[socket.id].pants = null;
         } else if (singleCat === 'tshirt' || singleCat === 'shirt') {
             userData.avatar.shirt = itemId;
-            userData.avatar.shirtColor = itemId;
-            userData.avatar.color = itemId;
-            userData.avatar.outfit = null;
+            userData.avatar.shirtColor = colorHex;
+            userData.avatar.color = colorHex;
+            userData.avatar.outfit = null; // Tişört giyildiğinde takım çıkar
+            if (!userData.avatar.pants) {
+                userData.avatar.pants = (userData.avatar.model === 'karakter_2' ? 'pants_k2_tactical_jogger' : 'pants_classic_jeans');
+            }
             players[socket.id].shirt = itemId;
-            players[socket.id].color = itemId;
+            players[socket.id].shirtColor = colorHex;
+            players[socket.id].color = colorHex;
             players[socket.id].outfit = null;
+            players[socket.id].pants = userData.avatar.pants;
         } else if (singleCat === 'pant') {
             userData.avatar.pants = itemId;
-            userData.avatar.outfit = null;
+            userData.avatar.pantsColor = colorHex;
+            userData.avatar.outfit = null; // Pantolon giyildiğinde takım çıkar
+            if (!userData.avatar.shirt) {
+                userData.avatar.shirt = (userData.avatar.model === 'karakter_2' ? 'k2_cyber_street' : '#3b82f6');
+                userData.avatar.shirtColor = userData.avatar.shirt;
+                userData.avatar.color = userData.avatar.shirt;
+            }
             players[socket.id].pants = itemId;
+            players[socket.id].pantsColor = colorHex;
             players[socket.id].outfit = null;
+            players[socket.id].shirt = userData.avatar.shirt;
+            players[socket.id].color = userData.avatar.color;
         } else if (singleCat === 'shoe') {
             userData.avatar.shoes = itemId;
+            userData.avatar.shoesColor = colorHex;
             players[socket.id].shoes = itemId;
+            players[socket.id].shoesColor = colorHex;
         } else if (singleCat === 'watch') {
             userData.avatar.watch = itemId;
             players[socket.id].watch = itemId;
+        } else if (singleCat === 'costume' || normCat === 'costumes' || (itemId && itemId.startsWith('costume_'))) {
+            if (itemId === 'costume_none' || itemId === 'none') {
+                userData.avatar.costume = null;
+                players[socket.id].costume = null;
+            } else {
+                userData.avatar.costume = itemId;
+                players[socket.id].costume = itemId;
+            }
         } else if (singleCat === 'prop' || normCat === 'props') {
             userData.avatar.heldItem = itemId;
             players[socket.id].heldItem = itemId;
@@ -134,7 +239,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
             }
         }
 
-        dataManager.savePersistentData();
+        dataManager.saveUserData(username);
 
         socket.emit('moneyUpdate', userData.money);
         socket.emit('wardrobeUpdate', { avatar: userData.avatar, inventory: userData.inventory });
@@ -150,6 +255,13 @@ function registerEconomyHandlers(io, socket, players, helpers) {
             hat: updatedAvatar.hat,
             face: updatedAvatar.face,
             skinColor: updatedAvatar.skinColor,
+            hairColor: updatedAvatar.hairColor,
+            hatColor: updatedAvatar.hatColor,
+            faceColor: updatedAvatar.faceColor,
+            outfitColor: updatedAvatar.outfitColor,
+            shirtColor: updatedAvatar.shirtColor,
+            pantsColor: updatedAvatar.pantsColor,
+            shoesColor: updatedAvatar.shoesColor,
             color: updatedAvatar.color,
             shirt: updatedAvatar.shirt,
             pants: updatedAvatar.pants,
@@ -157,7 +269,134 @@ function registerEconomyHandlers(io, socket, players, helpers) {
             heldItem: updatedAvatar.heldItem,
             shoes: updatedAvatar.shoes,
             watch: updatedAvatar.watch,
+            costume: updatedAvatar.costume,
             gender: updatedAvatar.gender
+        });
+    });
+
+    // 1.04 KIYAFETLERİM (SANALİKA DRESSING ROOM - SAHİP OLUNAN KIYAFETLERİ KAYDETME)
+    socket.on('saveDressingOutfit', (data) => {
+        if (!players[socket.id] || !data || !data.avatar) return;
+        let username = players[socket.id].name;
+        let uKey = (dataManager.findUserKey ? dataManager.findUserKey(username) : null) || username;
+        let userData = dataManager.persistentData.users[uKey];
+        if (!userData || !userData.avatar) return;
+
+        const newAv = data.avatar;
+        if (newAv.model !== undefined) {
+            let validModel = (newAv.model === 'karakter_2' || newAv.model === 'character_2') ? 'karakter_2' : 'classic_2';
+            userData.avatar.model = validModel;
+            players[socket.id].model = validModel;
+        }
+        if (newAv.hat !== undefined) userData.avatar.hat = newAv.hat;
+        if (newAv.hair !== undefined) {
+            userData.avatar.hair = newAv.hair;
+            players[socket.id].hair = newAv.hair;
+        }
+        if (newAv.face !== undefined) userData.avatar.face = newAv.face;
+        if (newAv.hairColor !== undefined) userData.avatar.hairColor = newAv.hairColor;
+        if (newAv.outfit !== undefined && newAv.outfit !== null && newAv.outfit !== 'none') {
+            userData.avatar.outfit = newAv.outfit;
+            userData.avatar.shirtColor = newAv.outfit;
+            userData.avatar.color = newAv.outfit;
+            userData.avatar.shirt = null; // Takım giyildiğinde tişört ve pantolon çıkar
+            userData.avatar.pants = null;
+            players[socket.id].shirt = null;
+            players[socket.id].pants = null;
+        } else {
+            userData.avatar.outfit = null;
+            players[socket.id].outfit = null;
+            if (newAv.shirt !== undefined) {
+                userData.avatar.shirt = newAv.shirt;
+                userData.avatar.shirtColor = newAv.shirt;
+                userData.avatar.color = newAv.shirt;
+            }
+            if (newAv.pants !== undefined) userData.avatar.pants = newAv.pants;
+        }
+        if (newAv.shoes !== undefined) userData.avatar.shoes = newAv.shoes;
+        if (newAv.skinColor !== undefined) userData.avatar.skinColor = newAv.skinColor;
+        if (newAv.watch !== undefined) userData.avatar.watch = newAv.watch;
+        if (newAv.hatColor !== undefined) userData.avatar.hatColor = newAv.hatColor;
+        if (newAv.faceColor !== undefined) userData.avatar.faceColor = newAv.faceColor;
+        if (newAv.outfitColor !== undefined) userData.avatar.outfitColor = newAv.outfitColor;
+        if (newAv.shirtColor !== undefined) userData.avatar.shirtColor = newAv.shirtColor;
+        if (newAv.pantsColor !== undefined) userData.avatar.pantsColor = newAv.pantsColor;
+        if (newAv.shoesColor !== undefined) userData.avatar.shoesColor = newAv.shoesColor;
+
+        if (newAv.costume !== undefined) {
+            userData.avatar.costume = newAv.costume;
+            players[socket.id].costume = newAv.costume;
+        } else if (newAv.outfit && newAv.outfit.startsWith('costume_') && newAv.outfit !== 'costume_invisibility') {
+            userData.avatar.costume = newAv.outfit;
+            players[socket.id].costume = newAv.outfit;
+        } else {
+            userData.avatar.costume = null;
+            players[socket.id].costume = null;
+        }
+
+        // Görünmezlik kostümü kontrolü: Eğer kostüm çıkarıldıysa görünmezlik anında kaldırılır!
+        if (newAv.outfit === 'costume_invisibility' || newAv.costume === 'costume_invisibility') {
+            userData.avatar.outfit = 'costume_invisibility';
+            players[socket.id].outfit = 'costume_invisibility';
+            if (!userData.invisibilityExpiresAt || userData.invisibilityExpiresAt <= Date.now()) {
+                userData.invisibilityExpiresAt = Date.now() + (5 * 60 * 60 * 1000);
+                players[socket.id].invisibilityExpiresAt = userData.invisibilityExpiresAt;
+            }
+        } else {
+            userData.invisibilityExpiresAt = 0;
+            players[socket.id].invisibilityExpiresAt = 0;
+        }
+
+        // Player nesnesini senkronize et
+        Object.assign(players[socket.id], userData.avatar);
+
+        dataManager.savePersistentData();
+
+        socket.emit('wardrobeUpdate', { avatar: userData.avatar, inventory: userData.inventory });
+        io.to(players[socket.id].room).emit('playerAvatarChange', {
+            id: socket.id,
+            avatar: userData.avatar,
+            model: userData.avatar.model || 'classic_2',
+            hat: userData.avatar.hat,
+            hair: userData.avatar.hair,
+            face: userData.avatar.face,
+            skinColor: userData.avatar.skinColor,
+            hairColor: userData.avatar.hairColor,
+            color: userData.avatar.color,
+            shirt: userData.avatar.shirt,
+            pants: userData.avatar.pants,
+            outfit: userData.avatar.outfit,
+            heldItem: userData.avatar.heldItem,
+            shoes: userData.avatar.shoes,
+            hatColor: userData.avatar.hatColor,
+            faceColor: userData.avatar.faceColor,
+            outfitColor: userData.avatar.outfitColor,
+            shirtColor: userData.avatar.shirtColor,
+            pantsColor: userData.avatar.pantsColor,
+            shoesColor: userData.avatar.shoesColor,
+            watch: userData.avatar.watch,
+            costume: userData.avatar.costume,
+            gender: userData.avatar.gender
+        });
+        socket.emit('systemMessage', "✨ Kıyafet kombinasyonunuz başarıyla kaydedildi!");
+    });
+
+    // 1.05 K2 SAÇ RENGİ AYARLAMA (SANALİKA RENK VARYASYONU SİSTEMİ)
+    socket.on('setAvatarHairColor', (data) => {
+        if (!players[socket.id] || !data || !data.hairColor) return;
+        let username = players[socket.id].name;
+        let uKey = (dataManager.findUserKey ? dataManager.findUserKey(username) : null) || username;
+        let userData = dataManager.persistentData.users[uKey];
+        if (!userData || !userData.avatar) return;
+
+        userData.avatar.hairColor = data.hairColor;
+        players[socket.id].hairColor = data.hairColor;
+        dataManager.savePersistentData();
+
+        io.to(players[socket.id].room).emit('playerAvatarChange', {
+            id: socket.id,
+            avatar: userData.avatar,
+            hairColor: data.hairColor
         });
     });
 
@@ -165,7 +404,8 @@ function registerEconomyHandlers(io, socket, players, helpers) {
     socket.on('setAvatarModel', (data) => {
         if (!players[socket.id]) return;
         let username = players[socket.id].name;
-        let userData = dataManager.persistentData.users[username];
+        let uKey = (dataManager.findUserKey ? dataManager.findUserKey(username) : null) || username;
+        let userData = dataManager.persistentData.users[uKey];
         if (!userData) return;
 
         let model = (data && (data.model === 'karakter_2' || data.model === 'character_2')) ? 'karakter_2' : 'classic_2';
@@ -192,7 +432,8 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         if (!players[socket.id]) return;
         if (!checkRateLimit(socket, 'rentSwanBoat', 2, 5000)) return;
         let username = players[socket.id].name;
-        let userData = dataManager.persistentData.users[username];
+        let uKey = (dataManager.findUserKey ? dataManager.findUserKey(username) : null) || username;
+        let userData = dataManager.persistentData.users[uKey];
         if (!userData) return;
 
         if (players[socket.id].hasSwanBoat) {
@@ -435,130 +676,6 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         io.to(room).emit('playerAvatarChange', { id: socket.id, avatar: userData.avatar, heldItem: players[socket.id].heldItem });
     });
 
-    // 3. SAHİL & SAHİL V2 BALIK TUTMA
-    socket.on('startFishing', () => {
-        if (!players[socket.id]) return;
-        let room = players[socket.id].room;
-        if (room !== 'sahil' && room !== 'sahilv2') return;
-        if (!checkRateLimit(socket, 'startFishing', 3, 4000)) return;
-        if (players[socket.id].isFishing) {
-            socket.emit('gameError', "Zaten oltan denizde! Balığın vurmasını bekle...");
-            return;
-        }
-
-        // Sahil v2 için su/iskele/kumsal konumu kontrolü
-        if (room === 'sahilv2') {
-            let px = players[socket.id].x;
-            let py = players[socket.id].y;
-            let hasSwan = !!players[socket.id].hasSwanBoat;
-            // İskele kontrolü (y ≈ 6 + 0.576 * x)
-            let onPier = (px >= 0 && px <= 675 && Math.abs(py - (6 + 0.576 * px)) <= 32);
-            // Kıyı şeridi
-            let shoreX = (py <= 120 ? 790 - (py/120)*35 : (py <= 240 ? 755 - ((py-120)/120)*115 : (py <= 360 ? 640 - ((py-240)/120)*155 : (py <= 480 ? 485 - ((py-360)/120)*170 : 315 - ((py-480)/145)*165))));
-            let nearWater = (px <= shoreX + 45);
-
-            if (!hasSwan && !onPier && !nearWater) {
-                socket.emit('gameError', "Oltanı suya atabilmek için deniz kenarına, iskeleye gitmeli veya kuğu bisikleti kiralamalısın!");
-                return;
-            }
-        }
-
-        players[socket.id].isFishing = true;
-        io.to(room).emit('playerFishingState', { id: socket.id, isFishing: true });
-        socket.emit('fishingStarted', { duration: 10 });
-
-        if (playerFishingTimers[socket.id]) clearTimeout(playerFishingTimers[socket.id]);
-
-        playerFishingTimers[socket.id] = setTimeout(() => {
-            if (!players[socket.id] || !players[socket.id].isFishing) return;
-            players[socket.id].isFishing = false;
-            delete playerFishingTimers[socket.id];
-
-            let currentLootTable = players[socket.id].hasSwanBoat 
-                ? config.SWAN_BOAT_LOOT_TABLE 
-                : config.FISH_LOOT_TABLE;
-
-            let totalWeight = currentLootTable.reduce((sum, item) => sum + item.weight, 0);
-            let rand = Math.random() * totalWeight;
-            let chosen = currentLootTable[0];
-            let acc = 0;
-            for (let item of currentLootTable) {
-                acc += item.weight;
-                if (rand <= acc) {
-                    chosen = item;
-                    break;
-                }
-            }
-
-            let uName = players[socket.id].name;
-
-            // Çok nadir "Denizden babam çıktı" deyimi kontrolü
-            if (chosen.id === 'baban') {
-                dataManager.recordQuestProgress(uName, 'go_fishing', 1);
-                io.to(room).emit('playerFishingState', { id: socket.id, isFishing: false });
-                players[socket.id].pendingFatherChoice = true;
-                socket.emit('fatherCaughtPrompt', {
-                    title: "Denizden Baban Çıktı!",
-                    proverb: "Denizden babam çıksa yerim...",
-                    description: "Oltana takılan şey bir balık değil... Baban! Ne yapmak istersin?",
-                    eatReward: 300,
-                    playerGender: players[socket.id].gender || 'male'
-                });
-                return;
-            }
-
-            let earned = chosen.value;
-            let activePet = (typeof petManager !== 'undefined') ? (petManager.getPetByUsername(uName) || petManager.getPetByOwnerId(socket.id)) : null;
-            let hasDogBonus = !!(activePet && activePet.petType === 'dog');
-            if (hasDogBonus && earned > 0) {
-                earned = Math.round(earned * 1.5);
-            }
-
-            let uData = dataManager.persistentData.users[uName];
-            if (uData) {
-                uData.money = (uData.money || 0) + earned;
-                players[socket.id].money = uData.money;
-                dataManager.savePersistentData();
-                dataManager.recordQuestProgress(uName, 'go_fishing', 1);
-                socket.emit('moneyUpdate', players[socket.id].money);
-            }
-
-            socket.emit('fishingResult', {
-                loot: chosen,
-                earned: earned,
-                dogBonus: hasDogBonus,
-                money: players[socket.id].money
-            });
-
-            io.to(room).emit('playerFishingState', { id: socket.id, isFishing: false });
-
-            if (['levrek', 'ahtapot', 'inci', 'mercan', 'hazine'].includes(chosen.id)) {
-                io.to(room).emit('systemMessage', `🎣 VAY CANINA! ${uName} denizden ${chosen.emoji} ${chosen.name} tuttu! (+${earned} TL${hasDogBonus ? ' 🐶 x1.5 Köpek Bonusu!' : ''})`);
-            }
-        }, 10000);
-    });
-
-    // "Denizden Baban Çıktı" Seçim Olayı
-    socket.on('fatherChoice', (data) => {
-        if (!players[socket.id]) return;
-        const choice = (data && data.choice) ? data.choice : 'spare';
-        fatherPetManager.handleFatherChoice(socket, choice);
-    });
-
-    socket.on('cancelFishing', () => {
-        if (players[socket.id] && players[socket.id].isFishing) {
-            players[socket.id].isFishing = false;
-            if (playerFishingTimers[socket.id]) {
-                clearTimeout(playerFishingTimers[socket.id]);
-                delete playerFishingTimers[socket.id];
-            }
-            let r = players[socket.id].room;
-            if (r) {
-                io.to(r).emit('playerFishingState', { id: socket.id, isFishing: false });
-            }
-        }
-    });
-
     // 4. LİDERLİK TABLOSU
     socket.on('getLeaderboard', () => {
         const isHuman = (name) => name && !name.startsWith('🤖') && !name.startsWith('bot_') && !name.includes('🤖') && !name.toLowerCase().includes('dayı') && !name.toLowerCase().includes('ismail') && !name.toLowerCase().includes('emmi');
@@ -638,6 +755,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         userData.skinSets[slot] = {
             model: currentAv.model || 'classic_2',
             hat: currentAv.hat || 'bere',
+            hair: currentAv.hair || 'none',
             face: currentAv.face || 'none',
             skinColor: currentAv.skinColor || '#facc15',
             color: currentAv.color || '#3b82f6',
@@ -675,6 +793,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
             ...userData.avatar,
             model: 'classic_2',
             hat: chosenSet.hat || 'bere',
+            hair: chosenSet.hair || 'none',
             face: chosenSet.face || 'none',
             skinColor: chosenSet.skinColor || '#facc15',
             color: chosenSet.color || '#3b82f6',
@@ -690,6 +809,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
             ...players[socket.id],
             model: userData.avatar.model,
             hat: userData.avatar.hat,
+            hair: userData.avatar.hair,
             face: userData.avatar.face,
             skinColor: userData.avatar.skinColor,
             color: userData.avatar.color,
@@ -697,6 +817,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
             pants: userData.avatar.pants,
             outfit: userData.avatar.outfit,
             watch: userData.avatar.watch,
+            costume: userData.avatar.costume,
             heldItem: userData.avatar.heldItem,
             shoes: userData.avatar.shoes
         };
@@ -722,6 +843,7 @@ function registerEconomyHandlers(io, socket, players, helpers) {
             pants: userData.avatar.pants,
             outfit: userData.avatar.outfit,
             watch: userData.avatar.watch,
+            costume: userData.avatar.costume,
             heldItem: userData.avatar.heldItem,
             shoes: userData.avatar.shoes
         });
@@ -729,313 +851,8 @@ function registerEconomyHandlers(io, socket, players, helpers) {
         socket.emit('systemMessage', `⚡ ${slot}. Skin Seti kuşandın: "${chosenSet.name || ('Set ' + slot)}"`);
     });
 
-    // 8. ŞANSLI KUTU (MYSTERY BOX) MEKANİĞİ & DİNAMİK FİYATA BAĞLI RNG ALGORİTMASI
-    const CLOTHES_POOL = [
-        // Şapkalar
-        { cat: 'hats', id: 'bere', name: 'Kırmızı Bere', icon: '🔴' },
-        { cat: 'hats', id: 'kasket', name: 'Kıraathane Kasketi', icon: '🧢' },
-        { cat: 'hats', id: 'fes', name: 'Osmanlı Fesi', icon: '🏮' },
-        { cat: 'hats', id: 'cowboy', name: 'Kovboy Şapkası', icon: '🤠' },
-        { cat: 'hats', id: 'korsan', name: 'Korsan Kaptanı', icon: '🏴‍☠️' },
-        { cat: 'hats', id: 'sihirbaz', name: 'Sihirbaz Silindiri', icon: '🎩' },
-        { cat: 'hats', id: 'kulaklik', name: 'DJ Kulaklığı', icon: '🎧' },
-        { cat: 'hats', id: 'hair_long', name: 'Uzun Düz Saç', icon: '👩' },
-        { cat: 'hats', id: 'hair_wavy', name: 'Dalgalı Saç', icon: '💇‍♀️' },
-        { cat: 'hats', id: 'hair_ponytail', name: 'At Kuyruğu', icon: '👱‍♀️' },
-        { cat: 'hats', id: 'hair_braids', name: 'Örgülü Saç', icon: '👧' },
-        { cat: 'hats', id: 'hair_bob', name: 'Küt Kesim Saç', icon: '👩‍🦰' },
-        { cat: 'hats', id: 'hair_hijab', name: 'Şık Başörtüsü', icon: '🧕' },
-        { cat: 'hats', id: 'beret_pink', name: 'Pembe Fransız Bere', icon: '🌸' },
-        { cat: 'hats', id: 'crown', name: 'Prenses Tacı', icon: '👑' },
-        { cat: 'hats', id: 'hair_blonde_curls', name: 'Altın Bukleli Saç', icon: '👱‍♀️' },
-        { cat: 'hats', id: 'hair_bun_chopsticks', name: 'Zarif Topuz & Toka', icon: '🌸' },
-        { cat: 'hats', id: 'hair_redhead_wavy', name: 'Kızıl Dalgalı Saç', icon: '👩‍🦰' },
-        { cat: 'hats', id: 'hair_pigtails_ribbon', name: 'Kurdeleli Saç', icon: '🎀' },
-        { cat: 'hats', id: 'hair_curly_brown', name: 'Kıvırcık Kahve Saç', icon: '👩‍🦱' },
-        // Yüz
-        { cat: 'faces', id: 'mustache', name: 'Pala Bıyık', icon: '🥸' },
-        { cat: 'faces', id: 'sunglasses', name: 'Havalı Gözlük', icon: '🕶️' },
-        { cat: 'faces', id: 'beard', name: 'Kirli Sakal', icon: '🧔' },
-        // Kıyafet Takımları
-        { cat: 'outfits', id: 'outfit_c2_gentleman', name: 'Beyefendi Yelekli Takım', icon: '🤵' },
-        { cat: 'outfits', id: 'outfit_c2_street_cool', name: 'Sokak Bomber & Jean', icon: '🧥' },
-        { cat: 'outfits', id: 'outfit_c2_casual_polo', name: 'Marin Polo & Chino', icon: '👕' },
-        { cat: 'outfits', id: 'outfit_c2_femme_chic', name: 'Pastel Blazer Takım', icon: '💃' },
-        { cat: 'outfits', id: 'dress_pink', name: 'Pembe Çiçekli Elbise', icon: '👗' },
-        { cat: 'outfits', id: 'dress_black', name: 'Zarif Siyah Gece Elbisesi', icon: '👗' },
-        { cat: 'outfits', id: 'dress_red', name: 'Kırmızı Kokteyl Elbisesi', icon: '💃' },
-        { cat: 'outfits', id: 'dress_emerald', name: 'Zümrüt Yeşil İpek Elbise', icon: '👗' },
-        { cat: 'outfits', id: 'dress_lavender', name: 'Lavanta Bahar Elbisesi', icon: '🌸' },
-        { cat: 'outfits', id: 'dress_bridal', name: 'Masalsı Beyaz Gelinlik', icon: '👰' },
-        { cat: 'outfits', id: 'outfit_goth', name: 'Gotik Elbise Kombini', icon: '🖤' },
-        { cat: 'outfits', id: 'outfit_business', name: 'Pudra Şık Kadın Takımı', icon: '🧥' },
-        { cat: 'outfits', id: 'outfit_boho', name: 'Bohem Şifon Elbise', icon: '🌻' },
-        { cat: 'outfits', id: 'outfit_sporty', name: 'Pastel Fitness Takımı', icon: '🎽' },
-        { cat: 'outfits', id: 'dress_vintage_polka', name: 'Vintage Puantiye Elbise', icon: '💃' },
-        { cat: 'outfits', id: 'dress_ocean_blue', name: 'Okyanus Mavisi Elbise', icon: '🌊' },
-        { cat: 'outfits', id: 'outfit_turtleneck_skirt', name: 'Krem Balıkçı & Ekose', icon: '🧣' },
-        // Tişörtler
-        { cat: 'tshirts', id: 'polo', name: 'Beyaz Polo Yaka', icon: '👔' },
-        { cat: 'tshirts', id: 'hoodie', name: 'Oversize Hoodie', icon: '🧥' },
-        { cat: 'tshirts', id: 'leather', name: 'Klasik Deri Ceket', icon: '🥼' },
-        { cat: 'tshirts', id: 'skirt_crop', name: 'Pembe Crop Üst', icon: '👚' },
-        { cat: 'tshirts', id: 'skirt_denim', name: 'Kot Ceket & Üst', icon: '🎽' },
-        // Pantolonlar
-        { cat: 'pants', id: 'pants_classic_black', name: 'Klasik Kumaş Siyah', icon: '👖' },
-        { cat: 'pants', id: 'pants_classic_beige', name: 'Klasik Bej Chino', icon: '👖' },
-        { cat: 'pants', id: 'pants_classic_cargo_olive', name: 'Zeytin Yeşili Kargo', icon: '👖' },
-        { cat: 'pants', id: 'pants_classic_white_skirt', name: 'Beyaz Pileli Etek', icon: '👗' },
-        // Ayakkabılar
-        { cat: 'shoes', id: 'classic', name: 'Kösele Klasik Ayakkabı', icon: '👞' },
-        { cat: 'shoes', id: 'boots', name: 'Kışlık Bot', icon: '🥾' },
-        { cat: 'shoes', id: 'heels', name: 'Topuklu Stiletto', icon: '👠' },
-        { cat: 'shoes', id: 'heels_gold', name: 'Altın Simli Stiletto', icon: '👠' },
-        { cat: 'shoes', id: 'boots_thigh_high', name: 'Diz Üstü Süet Çizme', icon: '👢' },
-        { cat: 'shoes', id: 'sandals_gladiator', name: 'Gladyatör Sandalet', icon: '👡' },
-        // Saatler
-        { cat: 'watches', id: 'watch_gold_rolex', name: 'Altın Prestij Saat', icon: '⌚' },
-        { cat: 'watches', id: 'watch_leather_classic', name: 'Deri Kordonlu Saat', icon: '⌚' },
-        { cat: 'watches', id: 'watch_cyber_sport', name: 'Neon Spor Saat', icon: '⏱️' }
-    ];
-
-    const PROPS_POOL = [
-        { cat: 'props', id: 'sigara', name: 'Tüten Sigara', icon: '🚬' }, // 10.000 TL Jackpot
-        { cat: 'props', id: 'nargile', name: 'Tüten Nargile', icon: '💨' },
-        { cat: 'props', id: 'tespih2', name: 'Çift Katmanlı Tespih', icon: '📿' },
-        { cat: 'props', id: 'tespih', name: 'Kehribar Tespih', icon: '📿' },
-        { cat: 'props', id: 'gitar', name: 'Akustik Gitar', icon: '🎸' },
-        { cat: 'props', id: 'oyuncak_araba', name: 'Küçük Oyuncak Araba', icon: '🚗' },
-        { cat: 'props', id: 'kupa', name: 'Şampiyonluk Kupası', icon: '🏆' },
-        { cat: 'props', id: 'asagold', name: 'Yıldızlı Büyü Asası', icon: '🪄' },
-        { cat: 'props', id: 'kilic', name: 'Orta Çağ Kılıcı', icon: '🗡️' },
-        { cat: 'props', id: 'baglama', name: 'Anadolu Bağlaması', icon: '🪕' },
-        { cat: 'props', id: 'sirtcantasi', name: 'Gezgin Sırt Çantası', icon: '🎒' },
-        { cat: 'props', id: 'olta', name: 'Balıkçı Oltası', icon: '🎣' },
-        { cat: 'props', id: 'gazoz', name: 'Nostaljik Gazoz', icon: '🍾' },
-        { cat: 'props', id: 'balon', name: 'Uçan Balon', icon: '🎈' },
-        { cat: 'props', id: 'kahve', name: 'Közde Türk Kahvesi', icon: '☕' },
-        { cat: 'props', id: 'cay', name: 'İnce Belli Çay', icon: '☕' },
-        { cat: 'props', id: 'oralet', name: 'Sıcak Kıraathane Oraleti', icon: '🍵' }
-    ];
-
-    function getDynamicPrice(category, id) {
-        let normCat = (category === 'watch' || category === 'watches') ? 'watches' : (category.endsWith('s') ? category : (category + 's'));
-        let itemKey = `${normCat}_${id}`;
-        let altKey = id.startsWith(normCat + '_') ? id : null;
-        if (config.WARDROBE_ITEM_PRICES[itemKey] !== undefined) return config.WARDROBE_ITEM_PRICES[itemKey];
-        if (altKey && config.WARDROBE_ITEM_PRICES[altKey] !== undefined) return config.WARDROBE_ITEM_PRICES[altKey];
-        if (config.WARDROBE_ITEM_PRICES[id] !== undefined) return config.WARDROBE_ITEM_PRICES[id];
-        return 150;
-    }
-
-    // Fiyatlara bağlı dinamik ters orantılı RNG algoritması
-    function rollWeightedDynamicItem(pool) {
-        let weighted = pool.map(item => {
-            let cost = getDynamicPrice(item.cat, item.id);
-            // Ürün fiyatı ne kadar yüksekse çıkma olasılığı o kadar düşük olur
-            // Gelecekte fiyatlar ne kadar değişirse değişsin anlık fiyat üzerinden dinamik hesaplanır
-            let weight = 1 / Math.pow(Math.max(cost, 50), 0.75);
-            // Sigaranın RNG'sini bi tık manuel arttır (3.5 kat ağırlık bonusu)
-            if (item.id === 'sigara') {
-                weight *= 3.5;
-            }
-            return { item, cost, weight };
-        });
-
-        let total = weighted.reduce((acc, curr) => acc + curr.weight, 0);
-        let rand = Math.random() * total;
-        let running = 0;
-
-        for (const w of weighted) {
-            running += w.weight;
-            if (rand <= running) {
-                return { ...w.item, cost: w.cost };
-            }
-        }
-        return { ...weighted[0].item, cost: weighted[0].cost };
-    }
-
-    function isPropOwned(userData, item) {
-        if (!userData) return false;
-        const itemKey = `props_${item.id}`;
-        const pInv = userData.propInventory || {};
-        const inv = userData.inventory || [];
-        if ((pInv[itemKey] && pInv[itemKey] > 0) || (pInv[item.id] && pInv[item.id] > 0)) return true;
-        if (inv.includes(itemKey) || inv.includes(item.id)) return true;
-        if (userData.heldItem === item.id || userData.heldItem === itemKey) return true;
-        return false;
-    }
-
-    function isClothesOwned(userData, item) {
-        if (!userData) return false;
-        const normCat = (item.cat === 'watch' || item.cat === 'watches') ? 'watches' : (item.cat.endsWith('s') ? item.cat : (item.cat + 's'));
-        const itemKey = `${normCat}_${item.id}`;
-        const altKey = item.id.startsWith(normCat + '_') ? item.id : null;
-        const inv = userData.inventory || [];
-        if (inv.includes(itemKey) || (altKey && inv.includes(altKey)) || inv.includes(item.id)) return true;
-        const singleCat = normCat.endsWith('s') ? normCat.slice(0, -1) : normCat;
-        if (userData.avatar && (userData.avatar[singleCat] === item.id || userData.avatar[normCat] === item.id)) return true;
-        return false;
-    }
-
-    socket.on('openMysteryBox', (data) => {
-        if (!players[socket.id] || !data) return;
-        if (!checkRateLimit(socket, 'openMysteryBox', 5, 2000)) return;
-        let username = players[socket.id].name;
-        let userData = dataManager.persistentData.users[username];
-        if (!userData) return;
-
-        let boxType = data.type; // 'clothes', 'props', 'pet'
-        const BOX_COSTS = config.MYSTERY_BOX_PRICES || { clothes: 500, props: 1500, pet: 1750 };
-        const boxCost = BOX_COSTS[boxType];
-
-        if (!boxCost) {
-            socket.emit('gameError', 'Geçersiz kutu tipi!');
-            return;
-        }
-
-        if (userData.money < boxCost) {
-            socket.emit('gameError', `Yetersiz bakiye! Bu kutu ${boxCost.toLocaleString()} TL. Mevcut bakiyeniz: ${userData.money.toLocaleString()} TL.`);
-            return;
-        }
-
-        // Parayı tahsil et
-        userData.money -= boxCost;
-        players[socket.id].money = userData.money;
-
-        if (boxType === 'pet') {
-            // 3. Pet Kutusu: 1750 TL, tüm petler eşit ihtimalle (%33.33)
-            const petOptions = [
-                { type: 'cat', name: 'Sevimli Kedi', emoji: '🐱', desc: '15 dakika boyunca yanından ayrılmaz' },
-                { type: 'dog', name: 'Sadık Köpek', emoji: '🐶', desc: '15 dakika boyunca yanından ayrılmaz' },
-                { type: 'mouse', name: 'Hızlı Fare', emoji: '🐭', desc: '15 dakika boyunca yanından ayrılmaz' }
-            ];
-            const chosenPet = petOptions[Math.floor(Math.random() * petOptions.length)];
-
-            // Pet'i 15 dakikalığına doğur
-            const newPet = petManager.spawnPet(socket.id, username, chosenPet.type);
-
-            dataManager.savePersistentData();
-            socket.emit('moneyUpdate', userData.money);
-            socket.emit('mysteryBoxReward', {
-                boxType: 'pet',
-                boxCost: boxCost,
-                reward: {
-                    type: chosenPet.type,
-                    name: chosenPet.name,
-                    icon: chosenPet.emoji,
-                    cost: 2500,
-                    isPet: true,
-                    durationMin: 15,
-                    rarity: 'Efsanevi Yoldaş'
-                }
-            });
-
-            socket.emit('systemMessage', `🎁 Şanslı Pet Kutusunu açtın! Tebrikler, 15 dakikalık ${chosenPet.name} (${chosenPet.emoji}) kazandın!`);
-            io.to(players[socket.id].room).emit('systemMessage', `✨ ${username} Şanslı Pet Kutusundan 15 dakikalık ${chosenPet.name} çıkardı! 🐾`);
-            return;
-        }
-
-        if (boxType === 'props') {
-            // 2. El Eşyaları Kutusu: 1500 TL (ZATEN SAHİP OLUNAN EŞYALAR ÇIKMAZ)
-            let unownedProps = PROPS_POOL.filter(p => !isPropOwned(userData, p));
-
-            if (unownedProps.length === 0) {
-                // Oyuncu tüm el eşyalarına zaten sahip! Parayı iade et
-                userData.money += boxCost;
-                players[socket.id].money = userData.money;
-                dataManager.savePersistentData();
-                socket.emit('moneyUpdate', userData.money);
-                socket.emit('gameError', 'Tebrikler! Oyundaki tüm el eşyalarına zaten sahipsiniz!');
-                return;
-            }
-
-            let chosen = rollWeightedDynamicItem(unownedProps);
-            let itemKey = `props_${chosen.id}`;
-
-            if (!userData.propInventory) userData.propInventory = {};
-            userData.propInventory[itemKey] = (userData.propInventory[itemKey] || 0) + 1;
-
-            if (!userData.inventory) userData.inventory = [];
-            if (!userData.inventory.includes(itemKey)) userData.inventory.push(itemKey);
-
-            dataManager.savePersistentData();
-            socket.emit('moneyUpdate', userData.money);
-            socket.emit('propInventoryUpdate', userData.propInventory);
-            socket.emit('wardrobeUpdate', { avatar: userData.avatar, inventory: userData.inventory });
-
-            let rarity = chosen.cost >= 5000 ? 'Efsanevi Jackpot' : (chosen.cost >= 400 ? 'Nadir' : 'Yaygın');
-
-            socket.emit('mysteryBoxReward', {
-                boxType: 'props',
-                boxCost: boxCost,
-                reward: {
-                    category: 'props',
-                    id: chosen.id,
-                    name: chosen.name,
-                    icon: chosen.icon,
-                    cost: chosen.cost,
-                    rarity: rarity,
-                    isJackpot: chosen.id === 'sigara',
-                    alreadyOwned: false
-                }
-            });
-
-            if (chosen.id === 'sigara') {
-                io.to(players[socket.id].room).emit('systemMessage', `🔥 JACKPOT! ${username} Şanslı Kutudan 10.000 TL değerinde TÜTEN SİGARA (🚬) çıkardı! 🎉`);
-            } else {
-                socket.emit('systemMessage', `🎁 Şanslı El Eşyası Kutusunu açtın! Kazandığın: ${chosen.name} (${chosen.icon}) - Değeri: ${chosen.cost.toLocaleString()} TL.`);
-            }
-            return;
-        }
-
-        if (boxType === 'clothes') {
-            // 1. Kıyafet Kutusu: 500 TL (ZATEN SAHİP OLUNAN KIYAFETLER ÇIKMAZ)
-            let unownedClothes = CLOTHES_POOL.filter(item => !isClothesOwned(userData, item));
-
-            if (unownedClothes.length === 0) {
-                // Oyuncu tüm kıyafet modellerine zaten sahip! Parayı iade et
-                userData.money += boxCost;
-                players[socket.id].money = userData.money;
-                dataManager.savePersistentData();
-                socket.emit('moneyUpdate', userData.money);
-                socket.emit('gameError', 'Tebrikler! Oyundaki tüm kıyafet modellerine zaten sahipsiniz!');
-                return;
-            }
-
-            let chosen = rollWeightedDynamicItem(unownedClothes);
-            let normCat = (chosen.cat === 'watch' || chosen.cat === 'watches') ? 'watches' : (chosen.cat.endsWith('s') ? chosen.cat : (chosen.cat + 's'));
-            let itemKey = `${normCat}_${chosen.id}`;
-
-            if (!userData.inventory) userData.inventory = [];
-            if (!userData.inventory.includes(itemKey)) {
-                userData.inventory.push(itemKey);
-            }
-
-            dataManager.savePersistentData();
-            socket.emit('moneyUpdate', userData.money);
-            socket.emit('wardrobeUpdate', { avatar: userData.avatar, inventory: userData.inventory });
-
-            let rarity = chosen.cost >= 400 ? 'Efsanevi' : (chosen.cost >= 250 ? 'Nadir' : 'Klasik');
-
-            socket.emit('mysteryBoxReward', {
-                boxType: 'clothes',
-                boxCost: boxCost,
-                reward: {
-                    category: chosen.cat,
-                    id: chosen.id,
-                    name: chosen.name,
-                    icon: chosen.icon,
-                    cost: chosen.cost,
-                    rarity: rarity,
-                    alreadyOwned: false
-                }
-            });
-
-            socket.emit('systemMessage', `🎁 Şanslı Kıyafet Kutusunu açtın! Kazandığın: ${chosen.name} (${chosen.icon}) - Değeri: ${chosen.cost.toLocaleString()} TL.`);
-            return;
-        }
-    });
+    // 8. ŞANSLI KUTU (MYSTERY BOX) MEKANİĞİ (Modüler src/handlers/mysteryBoxHandler.js)
+    registerMysteryBoxHandlers(io, socket, players, dataManager);
 
     socket.on('disconnect', () => {
         if (playerKiraathaneDrinkTimers[socket.id]) {

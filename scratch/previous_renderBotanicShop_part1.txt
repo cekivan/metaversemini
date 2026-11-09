@@ -1,0 +1,129 @@
+Created At: 2026-11-08T23:11:45+03:00
+Completed At: 2026-11-08T23:11:45+03:00
+Showing lines 120-245 of 559
+120:                 bctx.fill();
+121:             }
+122:         }
+123: 
+124:         // 6. SOL TEZGAH (Tedarikçi Defne - Ahşap Rustik Botanik Masası)
+125:         drawSupplierCounterBase(bctx, 220, 240);
+126: 
+127:         // 7. SAĞ TEZGAH (Çiçek Tüccarı Rasim - Ahşap Çiçek Sandıkları & Borsa Tahtası)
+128:         drawMerchantCounterBase(bctx, 660, 240);
+129: 
+130:         // 8. MERKEZ SÜS HAVUZU & BOTANİK BİTKİ ADASI
+131:         drawCenterBotanicalFountain(bctx, width / 2, 380);
+132: 
+133:         // 9. ÇIKIŞ KAPISI (Alt Merkez - Cadde 2'ye Çıkış)
+134:         drawBotanicExitDoor(bctx, width / 2 - 45, height - 55, 90, 50);
+135:     }
+136: 
+137:     /**
+138:      * Tedarikçi Masası Çizimi (Sol)
+139:      */
+140:     function drawSupplierCounterBase(ctx, x, y) {
+141:         // Ahşap Masif Tezgah
+142:         ctx.fillStyle = "#532e08";
+143:         ctx.beginPath();
+144:         ctx.roundRect(x - 10, y, 200, 55, 6);
+145:         ctx.fill();
+146:         ctx.strokeStyle = "#78350f";
+147:         ctx.lineWidth = 2;
+148:         ctx.stroke();
+149: 
+150:         // Tezgah Üstü Mermer Plaka
+151:         ctx.fillStyle = "#e2e8f0";
+152:         ctx.fillRect(x - 14, y - 6, 208, 10);
+153:         ctx.strokeStyle = "#94a3b8";
+154:         ctx.strokeRect(x - 14, y - 6, 208, 10);
+155: 
+156:         // Yeşil Çizgili Saçak Tente
+157:         ctx.fillStyle = "#15803d";
+158:         ctx.fillRect(x - 20, y - 75, 220, 16);
+159:         for (let i = 0; i < 7; i++) {
+160:             ctx.fillStyle = i % 2 === 0 ? "#16a34a" : "#f8fafc";
+161:             ctx.fillRect(x - 20 + i * 31.4, y - 75, 31.4, 16);
+162:         }
+163: 
+164:         // Tente Ahşap Taşıyıcı Dikmeleri
+165:         ctx.fillStyle = "#78350f";
+166:         ctx.fillRect(x - 18, y - 75, 5, 75);
+167:         ctx.fillRect(x + 193, y - 75, 5, 75);
+168: 
+169:         // Tabela: TEDARİK & TOHUM
+170:         ctx.fillStyle = "#facc15";
+171:         ctx.font = "bold 11px sans-serif";
+172:         ctx.textAlign = "center";
+173:         ctx.fillText("🌱 BOTANİKÇİ DEFNE (TEDARİK)", x + 90, y - 82);
+174: 
+175:         // Saksılar ve Fide Kasaları (Tezgahta)
+176:         let potCols = ['#dc2626', '#facc15', '#a855f7'];
+177:         for (let i = 0; i < 3; i++) {
+178:             ctx.fillStyle = "#78350f";
+179:             ctx.fillRect(x + 10 + i * 55, y - 22, 22, 16);
+180:             ctx.fillStyle = "#15803d";
+181:             ctx.beginPath();
+182:             ctx.arc(x + 21 + i * 55, y - 24, 10, 0, Math.PI * 2);
+183:             ctx.fill();
+184:             ctx.fillStyle = potCols[i];
+185:             ctx.beginPath();
+186:             ctx.arc(x + 21 + i * 55, y - 26, 3.5, 0, Math.PI * 2);
+187:             ctx.fill();
+188:         }
+189:     }
+190: 
+191:     /**
+192:      * Çiçek Tüccarı Masası & Borsa Tahtası Çizimi (Sağ)
+193:      */
+194:     function drawMerchantCounterBase(ctx, x, y) {
+195:         // Ahşap Sandıklar
+196:         ctx.fillStyle = "#78350f";
+197:         ctx.beginPath();
+198:         ctx.roundRect(x - 10, y, 200, 55, 6);
+199:         ctx.fill();
+200:         ctx.strokeStyle = "#92400e";
+201:         ctx.lineWidth = 2;
+202:         ctx.stroke();
+203: 
+204:         // Mermer Üst Tabaka
+205:         ctx.fillStyle = "#cbd5e1";
+206:         ctx.fillRect(x - 14, y - 6, 208, 10);
+207:         ctx.strokeStyle = "#64748b";
+208:         ctx.strokeRect(x - 14, y - 6, 208, 10);
+209: 
+210:         // Bordo-Altın Çizgili Tente
+211:         for (let i = 0; i < 7; i++) {
+212:             ctx.fillStyle = i % 2 === 0 ? "#991b1b" : "#fef08a";
+213:             ctx.fillRect(x - 20 + i * 31.4, y - 75, 31.4, 16);
+214:         }
+215:         ctx.fillStyle = "#78350f";
+216:         ctx.fillRect(x - 18, y - 75, 5, 75);
+217:         ctx.fillRect(x + 193, y - 75, 5, 75);
+218: 
+219:         // Tabela: ÇİÇEK BORSASI
+220:         ctx.fillStyle = "#facc15";
+221:         ctx.font = "bold 11px sans-serif";
+222:         ctx.textAlign = "center";
+223:         ctx.fillText("💐 ÇİÇEK TÜCCARI RASİM (BORSA)", x + 90, y - 82);
+224: 
+225:         // Ahşap Çiçek Kasaları
+226:         ctx.fillStyle = "#451a03";
+227:         ctx.fillRect(x + 15, y - 20, 48, 14);
+228:         ctx.fillStyle = "#ef4444";
+229:         for (let r = 0; r < 3; r++) {
+230:             ctx.beginPath();
+231:             ctx.arc(x + 23 + r * 14, y - 22, 4, 0, Math.PI * 2);
+232:             ctx.fill();
+233:         }
+234: 
+235:         // Terazi (Pirinç Kefe)
+236:         ctx.fillStyle = "#facc15";
+237:         ctx.fillRect(x + 120, y - 24, 4, 18);
+238:         ctx.fillRect(x + 105, y - 24, 34, 2);
+239:         ctx.beginPath(); ctx.arc(x + 109, y - 18, 5, 0, Math.PI); ctx.fill();
+240:         ctx.beginPath(); ctx.arc(x + 135, y - 18, 5, 0, Math.PI); ctx.fill();
+241:     }
+242: 
+243:     /**
+244:      * Merkez Süs Havuzu ve Egzotik Bitki Adası
+245:      */

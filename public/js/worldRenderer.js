@@ -41,10 +41,15 @@ const bgCache = {
     }
 };
 window.invalidateBgCache = () => bgCache.invalidate();
+window.bgCache = bgCache;
 
 function renderStaticRoomTo(bctx, room, width, height) {
     if (room === 'kafe') {
-        renderStaticCafeTo(bctx, width, height);
+        if (typeof renderStaticOyunSalonuTo === 'function') {
+            renderStaticOyunSalonuTo(bctx, width, height);
+        } else {
+            renderStaticCafeTo(bctx, width, height);
+        }
     } else if (room === 'sokak') {
         renderStaticStreetTo(bctx, width, height);
     } else if (room === 'sahil') {
@@ -80,6 +85,62 @@ function renderStaticRoomTo(bctx, room, width, height) {
     } else if (room === 'sahilv2') {
         if (typeof renderStaticSahilV2To === 'function') {
             renderStaticSahilV2To(bctx, width, height);
+        }
+    } else if (room === 'sahil_yolu') {
+        if (typeof renderStaticSahilYoluTo === 'function') {
+            renderStaticSahilYoluTo(bctx, width, height);
+        }
+    } else if (room === 'cadde2') {
+        if (typeof renderStaticCadde2To === 'function') {
+            renderStaticCadde2To(bctx, width, height);
+        }
+    } else if (room === 'botanic_shop') {
+        if (typeof renderStaticBotanicShopTo === 'function') {
+            renderStaticBotanicShopTo(bctx, width, height);
+        }
+    } else if (room === 'pet_shop') {
+        if (typeof renderStaticPetShopTo === 'function') {
+            renderStaticPetShopTo(bctx, width, height);
+        }
+    } else if (room === 'vip_club') {
+        if (typeof renderStaticVipClubTo === 'function') {
+            renderStaticVipClubTo(bctx, width, height);
+        }
+    } else if (room === 'mine_cave') {
+        if (typeof renderStaticMineCaveTo === 'function') {
+            renderStaticMineCaveTo(bctx, width, height);
+        }
+    } else if (room === 'optik' || room === 'optika') {
+        if (typeof renderStaticOptikaTo === 'function') {
+            renderStaticOptikaTo(bctx, width, height);
+        }
+    } else if (room === 'kultur_merkezi_lobi') {
+        if (typeof renderStaticKulturLobiTo === 'function') {
+            renderStaticKulturLobiTo(bctx, width, height);
+        }
+    } else if (room === 'kultur_merkezi_sahne') {
+        if (typeof renderStaticKulturSahneTo === 'function') {
+            renderStaticKulturSahneTo(bctx, width, height);
+        }
+    } else if (room === 'kultur_merkezi_kulis') {
+        if (typeof renderStaticKulturKulisTo === 'function') {
+            renderStaticKulturKulisTo(bctx, width, height);
+        }
+    } else if (room === 'kultur_merkezi_sinema') {
+        if (typeof renderStaticKulturSinemaTo === 'function') {
+            renderStaticKulturSinemaTo(bctx, width, height);
+        }
+    } else if (room === 'avm_kat1') {
+        if (typeof renderStaticAvmKat1To === 'function') {
+            renderStaticAvmKat1To(bctx, width, height);
+        }
+    } else if (room === 'avm_kat2') {
+        if (typeof renderStaticAvmKat2To === 'function') {
+            renderStaticAvmKat2To(bctx, width, height);
+        }
+    } else if (room.startsWith('avm_magaza_')) {
+        if (typeof renderStaticShopInteriorTo === 'function') {
+            renderStaticShopInteriorTo(bctx, room, width, height);
         }
     } else if (room.startsWith('house_')) {
         let type = room.replace('house_', '');
@@ -362,6 +423,10 @@ function renderStaticCafeTo(bctx, width, height) {
 
 // A) KAFE ÇİZİMİ
 function drawCafeEnvironment() {
+    if (typeof drawOyunSalonuEnvironment === 'function') {
+        drawOyunSalonuEnvironment();
+        return;
+    }
     let bg = bgCache.getCanvas('kafe', canvas.width, canvas.height);
     ctx.drawImage(bg, 0, 0);
 
@@ -384,10 +449,8 @@ function drawCafeEnvironment() {
 
     // Sokak Çıkış Kapısı Hover Kontrolü
     let isExitDoorHover = (canvasMouseX >= canvas.width / 2 - 45 && canvasMouseX <= canvas.width / 2 + 45 && canvasMouseY >= canvas.height - 75 && canvasMouseY <= canvas.height - 5);
-    if (isExitDoorHover) {
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(canvas.width / 2 - 37, canvas.height - 67, 74, 64);
+    if (isExitDoorHover && typeof setGameCursor === 'function') {
+        setGameCursor('pointer');
     }
 
     // Semaverden yükselen sıcak buhar animasyonu
@@ -431,825 +494,12 @@ function drawCafeEnvironment() {
     setGameCursor((hoveredTableId || isExitDoorHover) ? 'pointer' : 'default');
 }
 
-// BİLARDO MASASI ÇİZİMİ
-function drawBilliardTableObj(x, y, w, h, isHover) {
-    ctx.save();
-    // Masa gölgesi
-    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-    ctx.beginPath();
-    ctx.roundRect(x + 6, y + 8, w, h, 14);
-    ctx.fill();
+// ============================================================================
+// MASA OYUNLARI ÇİZİM MOTORU (TABLE DRAWERS)
+// Bilardo, Tavla, XOX, Amiral Battı, Satranç, Batak, 101 Okey fonksiyonları
+// public/js/renderers/tableDrawers.js modülüne taşınmıştır.
+// ============================================================================
 
-    // Hover parlaması (Performans dostu vektörel dış aura)
-    if (isHover) {
-        ctx.strokeStyle = "rgba(250, 204, 21, 0.45)";
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.roundRect(x - 2, y - 2, w + 4, h + 4, 14);
-        ctx.stroke();
-    }
-
-    // Ahşap Çerçeve
-    ctx.fillStyle = "#451a03";
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 12);
-    ctx.fill();
-    ctx.strokeStyle = isHover ? "#facc15" : "#78350f";
-    ctx.lineWidth = isHover ? 3 : 2;
-    ctx.stroke();
-
-    // Yeşil Çuha
-    ctx.fillStyle = "#047857";
-    ctx.beginPath();
-    ctx.roundRect(x + 12, y + 12, w - 24, h - 24, 6);
-    ctx.fill();
-
-    // 6 Adet Delik
-    ctx.fillStyle = "#0f172a";
-    let pockets = [
-        { px: x + 14, py: y + 14 }, { px: x + w / 2, py: y + 12 }, { px: x + w - 14, py: y + 14 },
-        { px: x + 14, py: y + h - 14 }, { px: x + w / 2, py: y + h - 12 }, { px: x + w - 14, py: y + h - 14 }
-    ];
-    pockets.forEach(p => {
-        ctx.beginPath(); ctx.arc(p.px, p.py, 5.5, 0, Math.PI * 2); ctx.fill();
-    });
-
-    // Beyaz Top
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.arc(x + Math.round(w * 0.26), y + h / 2, 4.5, 0, Math.PI * 2); ctx.fill();
-
-    // Üçgen Dizili Mini Toplar
-    let rackX = x + Math.round(w * 0.78), rackY = y + h / 2;
-    ctx.fillStyle = "#dc2626"; // Kırmızı
-    ctx.beginPath(); ctx.arc(rackX, rackY, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#000000"; // 8 numara
-    ctx.beginPath(); ctx.arc(rackX + 7, rackY - 4, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#f59e0b"; // Sarı
-    ctx.beginPath(); ctx.arc(rackX + 7, rackY + 4, 4, 0, Math.PI * 2); ctx.fill();
-
-    // Çapraz Durmuş Istaka
-    ctx.strokeStyle = "#d97706";
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(x + 18, y + h - 16);
-    ctx.lineTo(x + w - 25, y + 18);
-    ctx.stroke();
-
-    // Masa Üstü Lamba
-    ctx.fillStyle = "rgba(254, 240, 138, 0.15)";
-    ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h / 2, w / 2.2, h / 2.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Başlık Rozeti
-    ctx.fillStyle = isHover ? "#facc15" : "#ffffff";
-    ctx.font = "bold 12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("🎱 8-Ball Bilardo", x + w / 2, y + h + 18);
-    if (isHover) {
-        ctx.fillStyle = "#38bdf8";
-        ctx.font = "10px sans-serif";
-        ctx.fillText("(Tıkla ve Katıl / İzle)", x + w / 2, y + h + 30);
-    }
-    ctx.restore();
-}
-
-// TAVLA MASASI ÇİZİMİ
-function drawTavlaTableObj(x, y, w, h, isHover) {
-    ctx.save();
-    // Masa gölgesi
-    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-    ctx.beginPath();
-    ctx.roundRect(x + 6, y + 8, w, h, 14);
-    ctx.fill();
-
-    // Hover parlaması (Performans dostu vektörel dış aura)
-    if (isHover) {
-        ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.roundRect(x - 2, y - 2, w + 4, h + 4, 12);
-        ctx.stroke();
-    }
-
-    // Ahşap Çerçeve (Koyu Maun)
-    ctx.fillStyle = "#451a03";
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 10);
-    ctx.fill();
-    ctx.strokeStyle = isHover ? "#f59e0b" : "#78350f";
-    ctx.lineWidth = isHover ? 3 : 2;
-    ctx.stroke();
-
-    // Tavla Ahşap İçi (Ceviz rengi zemin)
-    ctx.fillStyle = "#b45309";
-    ctx.beginPath();
-    ctx.roundRect(x + 10, y + 10, w - 20, h - 20, 6);
-    ctx.fill();
-
-    // Orta ahşap bölme (Bar)
-    ctx.fillStyle = "#78350f";
-    ctx.fillRect(x + w / 2 - 4, y + 10, 8, h - 20);
-    // Pirinç Menteşeler
-    ctx.fillStyle = "#facc15";
-    ctx.fillRect(x + w / 2 - 2, y + 18, 4, 8);
-    ctx.fillRect(x + w / 2 - 2, y + h - 26, 4, 8);
-
-    // Tavla Haneleri (Üçgenler)
-    let leftW = (w - 28) / 2;
-    let pointW = leftW / 6;
-
-    // Sol taraf üst haneler
-    for (let i = 0; i < 6; i++) {
-        let pX = x + 10 + i * pointW;
-        ctx.fillStyle = i % 2 === 0 ? "#7f1d1d" : "#fef08a";
-        ctx.beginPath();
-        ctx.moveTo(pX, y + 10);
-        ctx.lineTo(pX + pointW / 2, y + 36);
-        ctx.lineTo(pX + pointW, y + 10);
-        ctx.closePath();
-        ctx.fill();
-    }
-    // Sağ taraf üst haneler
-    for (let i = 0; i < 6; i++) {
-        let pX = x + w / 2 + 4 + i * pointW;
-        ctx.fillStyle = i % 2 === 0 ? "#fef08a" : "#7f1d1d";
-        ctx.beginPath();
-        ctx.moveTo(pX, y + 10);
-        ctx.lineTo(pX + pointW / 2, y + 36);
-        ctx.lineTo(pX + pointW, y + 10);
-        ctx.closePath();
-        ctx.fill();
-    }
-
-    // Minik pullar masada
-    ctx.fillStyle = "#f8fafc";
-    ctx.beginPath(); ctx.arc(x + 22, y + 18, 4.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x + 22, y + 27, 4.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#0f172a";
-    ctx.beginPath(); ctx.arc(x + w - 22, y + h - 18, 4.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x + w - 22, y + h - 27, 4.5, 0, Math.PI * 2); ctx.fill();
-
-    // 2 Adet 3D Zar masanın üstünde
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.roundRect(x + w / 2 - 18, y + h / 2 - 7, 13, 13, 2); ctx.fill();
-    ctx.beginPath(); ctx.roundRect(x + w / 2 + 5, y + h / 2 - 5, 13, 13, 2); ctx.fill();
-    ctx.fillStyle = "#ef4444";
-    ctx.beginPath(); ctx.arc(x + w / 2 - 12, y + h / 2 - 1, 2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#0f172a";
-    ctx.beginPath(); ctx.arc(x + w / 2 + 9, y + h / 2 - 1, 1.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x + w / 2 + 14, y + h / 2 + 3, 1.5, 0, Math.PI * 2); ctx.fill();
-
-    // Sandalyeler (üst ve alt)
-    [y - 12, y + h + 4].forEach(sy => {
-        ctx.fillStyle = "#78350f";
-        ctx.beginPath(); ctx.roundRect(x + w / 2 - 20, sy, 40, 10, 4); ctx.fill();
-    });
-
-    // Başlık Rozeti
-    ctx.fillStyle = isHover ? "#f59e0b" : "#ffffff";
-    ctx.font = "bold 12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("🎲 Geleneksel Tavla", x + w / 2, y + h + 18);
-    if (isHover) {
-        ctx.fillStyle = "#38bdf8";
-        ctx.font = "10px sans-serif";
-        ctx.fillText("(Tıkla ve Katıl / İzle)", x + w / 2, y + h + 30);
-    }
-    ctx.restore();
-}
-
-// XOX MASASI ÇİZİMİ (Neon 3x3 Cam & Ahşap Bistro Masası)
-function drawXoxTableObj(x, y, w, h, isHover) {
-    ctx.save();
-    let cx = x + w / 2;
-    let cy = y + h / 2;
-
-    // 1. Sandalyeler (Kuzey & Güney Sandalyeleri)
-    [cy - 38, cy + 38].forEach((sy, idx) => {
-        // Sandalye gölgesi
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
-        ctx.beginPath();
-        ctx.roundRect(cx - 16, sy + 3, 32, 16, 6);
-        ctx.fill();
-
-        // Sandalye Ahşap İskeleti
-        ctx.fillStyle = "#3d1a0c";
-        ctx.beginPath();
-        ctx.roundRect(cx - 17, sy, 34, 18, 6);
-        ctx.fill();
-
-        // Sandalye Kadife Minderi
-        ctx.fillStyle = (idx === 0) ? "#0284c7" : "#e11d48";
-        ctx.beginPath();
-        ctx.roundRect(cx - 14, sy + 2, 28, 14, 4);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.2)";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-    });
-
-    // 2. Masa Taban Gölgesi
-    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-    ctx.beginPath();
-    ctx.ellipse(cx + 4, cy + 6, w * 0.46, h * 0.38, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 3. Hover Dış Vektörel Parlama Halkası
-    if (isHover) {
-        ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, w * 0.48, h * 0.4, 0, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-
-    // 4. Masanın Ahşap Gövdesi (Ceviz & Pirinç Çerçeve)
-    ctx.fillStyle = "#2d1606";
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, w * 0.46, h * 0.38, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = isHover ? "#38bdf8" : "#ca8a04";
-    ctx.lineWidth = isHover ? 2.5 : 1.8;
-    ctx.stroke();
-
-    // 5. Masanın İç Cam Tablası (Koyu Grafit / Neon Çuha)
-    ctx.fillStyle = "#090d16";
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, w * 0.38, h * 0.30, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // 6. Masadaki 3x3 Neon XOX Izgarası
-    let gridW = 34, gridH = 26;
-    let gx = cx - gridW / 2;
-    let gy = cy - gridH / 2;
-    ctx.strokeStyle = "rgba(56, 189, 248, 0.65)";
-    ctx.lineWidth = 1.2;
-
-    // Dikey çizgiler
-    ctx.beginPath();
-    ctx.moveTo(gx + gridW / 3, gy);
-    ctx.lineTo(gx + gridW / 3, gy + gridH);
-    ctx.moveTo(gx + 2 * gridW / 3, gy);
-    ctx.lineTo(gx + 2 * gridW / 3, gy + gridH);
-    // Yatay çizgiler
-    ctx.moveTo(gx, gy + gridH / 3);
-    ctx.lineTo(gx + gridW, gy + gridH / 3);
-    ctx.moveTo(gx, gy + 2 * gridH / 3);
-    ctx.lineTo(gx + gridW, gy + 2 * gridH / 3);
-    ctx.stroke();
-
-    // Masa Üstündeki Parıldayan X ve O Taşları
-    // Sol üstte X
-    ctx.strokeStyle = "#38bdf8";
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.moveTo(gx + 3, gy + 2); ctx.lineTo(gx + 8, gy + 7);
-    ctx.moveTo(gx + 8, gy + 2); ctx.lineTo(gx + 3, gy + 7);
-    ctx.stroke();
-
-    // Ortada O
-    ctx.strokeStyle = "#f43f5e";
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, 3.5, 3, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Sağ altta ikinci X
-    ctx.strokeStyle = "#38bdf8";
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.moveTo(gx + 25, gy + 19); ctx.lineTo(gx + 30, gy + 24);
-    ctx.moveTo(gx + 30, gy + 19); ctx.lineTo(gx + 25, gy + 24);
-    ctx.stroke();
-
-    // Mini Türk Kahvesi Fincanı ve Buhar
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.arc(cx + 28, cy - 6, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#451a03";
-    ctx.beginPath(); ctx.arc(cx + 28, cy - 6, 2, 0, Math.PI * 2); ctx.fill();
-    let sY = cy - 8 - ((Date.now() / 90) % 6);
-    ctx.strokeStyle = "rgba(255,255,255,0.6)";
-    ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.moveTo(cx + 28, sY); ctx.lineTo(cx + 29, sY - 3); ctx.stroke();
-
-    // 7. Masa Başlığı ve Rozet
-    ctx.fillStyle = isHover ? "#38bdf8" : "#ffffff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("❌ XOX Düellosu ⭕", cx, y + h + 15);
-
-    if (isHover) {
-        let bounce = Math.sin(Date.now() / 180) * 3;
-        ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.roundRect(cx - 70, y - 28 + bounce, 140, 22, 6);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = "#38bdf8";
-        ctx.font = "bold 10px sans-serif";
-        ctx.fillText("❌ XOX Oyna (Tıkla)", cx, y - 13 + bounce);
-    }
-    ctx.restore();
-}
-
-// AMİRAL BATTI MASASI ÇİZİMİ (Taktiksel Harita Masası & Döner Radar)
-function drawAmiralBattiTableObj(x, y, w, h, isHover) {
-    ctx.save();
-    let cx = x + w / 2;
-    let cy = y + h / 2;
-
-    // 1. Kaptan Sandalyeleri (Kuzey & Güney)
-    [cy - 38, cy + 38].forEach((sy) => {
-        // Sandalye gölgesi
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
-        ctx.beginPath();
-        ctx.roundRect(cx - 18, sy + 3, 36, 16, 5);
-        ctx.fill();
-
-        // Koyu deri kaptan koltuğu
-        ctx.fillStyle = "#0f172a";
-        ctx.beginPath();
-        ctx.roundRect(cx - 19, sy, 38, 17, 5);
-        ctx.fill();
-        ctx.strokeStyle = "#ca8a04";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Pirinç perçinler
-        ctx.fillStyle = "#ca8a04";
-        [-14, -7, 0, 7, 14].forEach(px => {
-            ctx.fillRect(cx + px - 1, sy + 3, 2, 2);
-        });
-    });
-
-    // 2. Masa Taban Gölgesi
-    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-    ctx.beginPath();
-    ctx.roundRect(x + 5, y + 8, w - 10, h - 16, 12);
-    ctx.fill();
-
-    // 3. Hover Parlama Halkası (Deniz Mavisi & Zümrüt)
-    if (isHover) {
-        ctx.strokeStyle = "rgba(34, 197, 94, 0.5)";
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.roundRect(x - 2, y + 2, w + 4, h - 4, 12);
-        ctx.stroke();
-    }
-
-    // 4. Masanın Ahşap Gövdesi (Koyu Maun & Pirinç Köşebentler)
-    ctx.fillStyle = "#1e130a";
-    ctx.beginPath();
-    ctx.roundRect(x, y + 4, w, h - 8, 10);
-    ctx.fill();
-    ctx.strokeStyle = isHover ? "#22c55e" : "#b45309";
-    ctx.lineWidth = isHover ? 2.5 : 1.8;
-    ctx.stroke();
-
-    // Pirinç Köşe Braketleri
-    ctx.fillStyle = "#ca8a04";
-    ctx.fillRect(x + 2, y + 6, 6, 6);
-    ctx.fillRect(x + w - 8, y + 6, 6, 6);
-    ctx.fillRect(x + 2, y + h - 16, 6, 6);
-    ctx.fillRect(x + w - 8, y + h - 16, 6, 6);
-
-    // 5. Masanın Taktik Deniz Mavisi Çuhası / Harita Zemini
-    ctx.fillStyle = "#0c2340";
-    ctx.beginPath();
-    ctx.roundRect(x + 8, y + 12, w - 16, h - 24, 6);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(56, 189, 248, 0.3)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // İnce Deniz Haritası Izgara Çizgileri
-    ctx.strokeStyle = "rgba(56, 189, 248, 0.15)";
-    ctx.lineWidth = 0.8;
-    for (let lx = x + 18; lx < x + w - 10; lx += 14) {
-        ctx.beginPath(); ctx.moveTo(lx, y + 12); ctx.lineTo(lx, y + h - 12); ctx.stroke();
-    }
-    for (let ly = y + 20; ly < y + h - 12; ly += 12) {
-        ctx.beginPath(); ctx.moveTo(x + 8, ly); ctx.lineTo(x + w - 8, ly); ctx.stroke();
-    }
-
-    // 6. Masa Üstündeki 3D Minyatür Savaş Gemisi ve Denizaltı
-    // Savaş Gemisi (Sol Taraf)
-    let shipX = x + 16, shipY = cy - 8;
-    ctx.fillStyle = "#64748b";
-    ctx.beginPath();
-    ctx.moveTo(shipX, shipY);
-    ctx.lineTo(shipX + 22, shipY);
-    ctx.lineTo(shipX + 26, shipY + 4);
-    ctx.lineTo(shipX + 22, shipY + 8);
-    ctx.lineTo(shipX, shipY + 8);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = "#94a3b8";
-    ctx.fillRect(shipX + 6, shipY + 2, 8, 4); // Kule
-    ctx.fillStyle = "#ef4444";
-    ctx.fillRect(shipX + 15, shipY + 3, 2, 2); // Namlu
-
-    // Denizaltı (Sağ Taraf)
-    let subX = x + w - 38, subY = cy + 4;
-    ctx.fillStyle = "#334155";
-    ctx.beginPath();
-    ctx.ellipse(subX + 10, subY, 10, 3.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillRect(subX + 8, subY - 4, 3, 4); // Periskop
-
-    // 7. Masanın Merkezindeki Canlı Dönen Radar Dairesi
-    let radR = 14;
-    ctx.fillStyle = "rgba(6, 78, 59, 0.75)";
-    ctx.beginPath();
-    ctx.arc(cx, cy, radR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#22c55e";
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    // Radar Mesafe Halkaları
-    ctx.strokeStyle = "rgba(34, 197, 94, 0.4)";
-    ctx.lineWidth = 0.8;
-    ctx.beginPath(); ctx.arc(cx, cy, radR * 0.5, 0, Math.PI * 2); ctx.stroke();
-
-    // Dönen Radar Işığı (Sonar Sweep)
-    let sweepAngle = (Date.now() / 450) % (Math.PI * 2);
-    ctx.strokeStyle = "#4ade80";
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(sweepAngle) * radR, cy + Math.sin(sweepAngle) * radR);
-    ctx.stroke();
-
-    // Yanıp sönen radar hedef noktası (Ping Blip)
-    let blipAlpha = 0.5 + Math.sin(Date.now() / 200) * 0.4;
-    ctx.fillStyle = `rgba(239, 68, 68, ${blipAlpha})`;
-    ctx.beginPath();
-    ctx.arc(cx + 6, cy - 5, 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 8. Masa Başlığı ve Rozet
-    ctx.fillStyle = isHover ? "#22c55e" : "#ffffff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("⚓ Amiral Battı 🎯", cx, y + h + 15);
-
-    if (isHover) {
-        let bounce = Math.sin(Date.now() / 180) * 3;
-        ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-        ctx.strokeStyle = "#22c55e";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.roundRect(cx - 75, y - 28 + bounce, 150, 22, 6);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = "#4ade80";
-        ctx.font = "bold 10px sans-serif";
-        ctx.fillText("⚓ Amiral Battı Oyna (Tıkla)", cx, y - 13 + bounce);
-    }
-    ctx.restore();
-}
-
-// SATRANÇ MASASI ÇİZİMİ (Klasik Ahşap Masa, Kakma 8x8 Tahta & Çift LCD Satranç Saati)
-function drawChessTableObj(x, y, w, h, isHover) {
-    ctx.save();
-    let cx = x + w / 2;
-    let cy = y + h / 2;
-
-    // 1. Koltuklar / Sandalyeler (Kuzey & Güney Sandalyeleri)
-    [y - 12, y + h + 4].forEach((sy, idx) => {
-        // Sandalye gölgesi
-        ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-        ctx.beginPath();
-        ctx.roundRect(cx - 18, sy + 3, 36, 12, 4);
-        ctx.fill();
-
-        // Sandalye ahşap gövde
-        ctx.fillStyle = "#2d1606";
-        ctx.beginPath();
-        ctx.roundRect(cx - 19, sy, 38, 12, 4);
-        ctx.fill();
-        ctx.strokeStyle = "#ca8a04";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Deri / Kumaş minder (Üst koltuk siyah, alt koltuk beyaz/krem)
-        ctx.fillStyle = (idx === 0) ? "#1e293b" : "#f1f5f9";
-        ctx.beginPath();
-        ctx.roundRect(cx - 15, sy + 2, 30, 8, 3);
-        ctx.fill();
-    });
-
-    // 2. Masa Taban Gölgesi
-    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-    ctx.beginPath();
-    ctx.roundRect(x + 5, y + 8, w - 10, h - 8, 12);
-    ctx.fill();
-
-    // 3. Hover Parlama Aurası (Zengin Altın Sarısı)
-    if (isHover) {
-        ctx.strokeStyle = "rgba(250, 204, 21, 0.55)";
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.roundRect(x - 2, y - 2, w + 4, h + 4, 12);
-        ctx.stroke();
-    }
-
-    // 4. Masanın Ahşap Gövdesi (Koyu Maun & Cilalı Ceviz)
-    ctx.fillStyle = "#351a08";
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 10);
-    ctx.fill();
-    ctx.strokeStyle = isHover ? "#facc15" : "#854d0e";
-    ctx.lineWidth = isHover ? 2.5 : 1.8;
-    ctx.stroke();
-
-    // Masanın Ahşap Kenar Detayı (Pirinç İşlemeler)
-    ctx.fillStyle = "#ca8a04";
-    ctx.fillRect(x + 3, y + 3, 5, 5);
-    ctx.fillRect(x + w - 8, y + 3, 5, 5);
-    ctx.fillRect(x + 3, y + h - 8, 5, 5);
-    ctx.fillRect(x + w - 8, y + h - 8, 5, 5);
-
-    // 5. Kakma 8x8 Satranç Tahtası (Doğal Akçaağaç & Ceviz Ahşap Dokusu)
-    let bSize = 56;
-    let bx = cx - bSize / 2 + 5; // Saate yer bırakmak için hafif sağa ofset
-    let by = cy - bSize / 2;
-    let sqSize = bSize / 8; // 7px kare boyutu
-
-    // Tahta ahşap çerçevesi
-    ctx.fillStyle = "#1e1005";
-    ctx.beginPath();
-    ctx.roundRect(bx - 2, by - 2, bSize + 4, bSize + 4, 3);
-    ctx.fill();
-
-    // 8x8 Damalı Kareler (Ahşap Kakma Dokusu: Açık Akçaağaç & Koyu Ceviz)
-    for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-            let isLight = (r + c) % 2 === 0;
-            ctx.fillStyle = isLight ? "#eedcb6" : "#9a6339";
-            ctx.fillRect(bx + c * sqSize, by + r * sqSize, sqSize, sqSize);
-        }
-    }
-
-    // 6. Minyatür 3D Satranç Taşları
-    // Siyah taşlar (Üst sıra r=0, r=1)
-    for (let c = 0; c < 8; c++) {
-        ctx.fillStyle = "#1e293b";
-        ctx.beginPath();
-        ctx.arc(bx + c * sqSize + sqSize / 2, by + 1.5 * sqSize, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#0f172a";
-        ctx.fillRect(bx + c * sqSize + 1.5, by + 0.3 * sqSize, sqSize - 3, sqSize - 2);
-    }
-    // Beyaz taşlar (Alt sıra r=6, r=7)
-    for (let c = 0; c < 8; c++) {
-        ctx.fillStyle = "#f8fafc";
-        ctx.beginPath();
-        ctx.arc(bx + c * sqSize + sqSize / 2, by + 6.5 * sqSize, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#e2e8f0";
-        ctx.fillRect(bx + c * sqSize + 1.5, by + 7.3 * sqSize, sqSize - 3, sqSize - 2);
-    }
-
-    // 7. Dijital Satranç Saati (Masada sol tarafta)
-    let clkX = x + 7;
-    let clkY = cy - 14;
-    let clkW = 11;
-    let clkH = 28;
-
-    // Saat kutusu
-    ctx.fillStyle = "#0f172a";
-    ctx.beginPath();
-    ctx.roundRect(clkX, clkY, clkW, clkH, 2);
-    ctx.fill();
-    ctx.strokeStyle = "#475569";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Üst butonlar (klasik eğik satranç saati butonları)
-    ctx.fillStyle = "#ef4444";
-    ctx.fillRect(clkX + 2, clkY - 2, 3, 2);
-    ctx.fillStyle = "#22c55e";
-    ctx.fillRect(clkX + 6, clkY - 3, 3, 3);
-
-    // İki dijital LCD ekran
-    ctx.fillStyle = "#022c22";
-    ctx.fillRect(clkX + 2, clkY + 3, 7, 9);
-    ctx.fillStyle = "#10b981";
-    ctx.fillRect(clkX + 3, clkY + 6, 5, 3);
-
-    ctx.fillStyle = "#022c22";
-    ctx.fillRect(clkX + 2, clkY + 15, 7, 9);
-    ctx.fillStyle = "#10b981";
-    ctx.fillRect(clkX + 3, clkY + 18, 5, 3);
-
-    // 8. Masa Başlığı ve Hover Rozeti
-    ctx.fillStyle = isHover ? "#facc15" : "#ffffff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("♟️ Satranç Masası ⏱️", cx, y + h + 15);
-
-    if (isHover) {
-        let bounce = Math.sin(Date.now() / 180) * 3;
-        ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
-        ctx.strokeStyle = "#facc15";
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.roundRect(cx - 75, y - 28 + bounce, 150, 22, 6);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = "#facc15";
-        ctx.font = "bold 10px sans-serif";
-        ctx.fillText("♟️ Satranç Oyna (Tıkla)", cx, y - 13 + bounce);
-    }
-    ctx.restore();
-}
-
-// BATAK MASASI ÇİZİMİ (3 ve 4 Kişilik Sandalyeli)
-function drawBatakTableObj(cx, cy, radius, chairCount, title, isHover) {
-    ctx.save();
-
-    // Sandalyeleri Çiz (Masanın etrafında)
-    for (let i = 0; i < chairCount; i++) {
-        let angle = (i * 2 * Math.PI / chairCount) - Math.PI / 2;
-        let chairDist = radius + 15;
-        let chX = cx + Math.cos(angle) * chairDist;
-        let chY = cy + Math.sin(angle) * chairDist;
-
-        // Sandalye gölgesi
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
-        ctx.beginPath(); ctx.arc(chX + 2, chY + 3, 11, 0, Math.PI * 2); ctx.fill();
-
-        // Sandalye sırtı & minderi
-        ctx.fillStyle = "#78350f";
-        ctx.beginPath(); ctx.arc(chX, chY, 11, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#dc2626"; // Kırmızı kadife minder
-        ctx.beginPath(); ctx.arc(chX, chY, 8, 0, Math.PI * 2); ctx.fill();
-    }
-
-    // Masa gölgesi
-    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-    ctx.beginPath();
-    ctx.arc(cx + 4, cy + 6, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Hover parlaması (Performans dostu vektörel dış aura)
-    if (isHover) {
-        ctx.strokeStyle = "rgba(250, 204, 21, 0.45)";
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius + 2, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-
-    // Ahşap Masa Gövdesi
-    ctx.fillStyle = "#451a03";
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = isHover ? "#facc15" : "#92400e";
-    ctx.lineWidth = isHover ? 3 : 2;
-    ctx.stroke();
-
-    // Yeşil Keçe Kaplama
-    ctx.fillStyle = chairCount === 3 ? "#065f46" : "#047857";
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius - 8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Masadaki İskambil Kartları
-    ctx.fillStyle = "#ffffff";
-    ctx.strokeStyle = "#cbd5e1";
-    ctx.lineWidth = 1;
-
-    if (chairCount === 3) {
-        // 3 Kartlık Yelpaze
-        [-12, 0, 12].forEach((rot, idx) => {
-            ctx.save();
-            ctx.translate(cx + (idx - 1) * 7, cy);
-            ctx.rotate(rot * Math.PI / 180);
-            ctx.fillRect(-7, -10, 14, 20);
-            ctx.strokeRect(-7, -10, 14, 20);
-            ctx.fillStyle = idx === 1 ? "#dc2626" : "#1e293b";
-            ctx.font = "8px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(idx === 1 ? "♥" : "♠", 0, 3);
-            ctx.restore();
-        });
-    } else {
-        // 4 Kartlık Haç Formu
-        [[0, -6, "♠", "#1e293b"], [7, 0, "♥", "#dc2626"], [0, 6, "♦", "#dc2626"], [-7, 0, "♣", "#1e293b"]].forEach(c => {
-            ctx.save();
-            ctx.translate(cx + c[0], cy + c[1]);
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(-6, -9, 12, 18);
-            ctx.strokeRect(-6, -9, 12, 18);
-            ctx.fillStyle = c[3];
-            ctx.font = "8px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillText(c[2], 0, 3);
-            ctx.restore();
-        });
-    }
-
-    // Masa Başlığı
-    ctx.fillStyle = isHover ? "#facc15" : "#ffffff";
-    ctx.font = "bold 12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`🃏 ${title}`, cx, cy + radius + 18);
-    if (isHover) {
-        ctx.fillStyle = "#38bdf8";
-        ctx.font = "10px sans-serif";
-        ctx.fillText("(Tıkla ve Katıl / İzle)", cx, cy + radius + 30);
-    }
-    ctx.restore();
-}
-
-// 101 OKEY MASASI ÇİZİMİ
-function drawOkey101TableObj(x, y, w, h, isHover) {
-    ctx.save();
-    // Masa gölgesi
-    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-    ctx.beginPath();
-    ctx.roundRect(x + 5, y + 6, w, h, 14);
-    ctx.fill();
-
-    // Hover parlaması (Performans dostu vektörel dış aura)
-    if (isHover) {
-        ctx.strokeStyle = "rgba(56, 189, 248, 0.45)";
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.roundRect(x - 2, y - 2, w + 4, h + 4, 14);
-        ctx.stroke();
-    }
-
-    // Ahşap Çerçeve & Gövde
-    ctx.fillStyle = "#451a03";
-    ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 12);
-    ctx.fill();
-    ctx.strokeStyle = isHover ? "#38bdf8" : "#92400e";
-    ctx.lineWidth = isHover ? 3 : 2;
-    ctx.stroke();
-
-    // Yeşil Çuha
-    ctx.fillStyle = "#064e3b";
-    ctx.beginPath();
-    ctx.roundRect(x + 10, y + 10, w - 20, h - 20, 8);
-    ctx.fill();
-
-    // 4 Adet Istaka (Üst, Alt, Sol, Sağ)
-    ctx.fillStyle = "#b45309";
-    ctx.fillRect(x + 22, y + 13, w - 44, 9); // Üst
-    ctx.fillRect(x + 22, y + h - 22, w - 44, 9); // Alt
-    ctx.fillRect(x + 13, y + 24, 9, h - 48); // Sol
-    ctx.fillRect(x + w - 22, y + 24, 9, h - 48); // Sağ
-
-    // Istakalar üzerindeki minik taşlar
-    ctx.fillStyle = "#fef08a";
-    for (let i = 0; i < 5; i++) {
-        ctx.fillRect(x + 26 + i * 15, y + 14, 9, 7);
-        ctx.fillRect(x + 26 + i * 15, y + h - 21, 9, 7);
-    }
-
-    // Ortadaki kapalı taş destesi
-    ctx.fillStyle = "#fef08a";
-    ctx.fillRect(x + w / 2 - 13, y + h / 2 - 8, 12, 16);
-    ctx.fillStyle = "#dc2626";
-    ctx.font = "bold 9px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("🀄", x + w / 2 - 7, y + h / 2 + 4);
-
-    // Açık gösterge taşı
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(x + w / 2 + 2, y + h / 2 - 8, 12, 16);
-    ctx.strokeRect(x + w / 2 + 2, y + h / 2 - 8, 12, 16);
-    ctx.fillStyle = "#2563eb";
-    ctx.font = "bold 9px sans-serif";
-    ctx.fillText("7", x + w / 2 + 8, y + h / 2 + 4);
-
-    // Masa Başlığı
-    ctx.fillStyle = isHover ? "#38bdf8" : "#ffffff";
-    ctx.font = "bold 12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("🀄 101 Okey (4 Kişi)", x + w / 2, y + h + 18);
-    if (isHover) {
-        ctx.fillStyle = "#facc15";
-        ctx.font = "10px sans-serif";
-        ctx.fillText("(Tıkla ve Katıl / İzle)", x + w / 2, y + h + 30);
-    }
-    ctx.restore();
-}
 
 /**
  * Türkiye Karayolları / Şehir İçi Yön Tabelası Çizici
@@ -2140,34 +1390,154 @@ if (currentRoom === "sanalika_cadde") {
         }
         return false;
     }
+    if (currentRoom === "sahil_yolu") {
+        if (typeof checkSahilYoluCollision === 'function') {
+            return checkSahilYoluCollision(x, y);
+        }
+        return false;
+    }
+    if (currentRoom === "avm_kat1") {
+        if (typeof checkAvmKat1Collision === 'function') {
+            return checkAvmKat1Collision(x, y);
+        }
+        return false;
+    }
+    if (currentRoom === "avm_kat2") {
+        if (typeof checkAvmKat2Collision === 'function') {
+            return checkAvmKat2Collision(x, y);
+        }
+        return false;
+    }
+    if (currentRoom && currentRoom.startsWith("avm_magaza_")) {
+        if (typeof checkAvmShopCollision === 'function') {
+            return checkAvmShopCollision(currentRoom, x, y);
+        }
+        return false;
+    }
     if (currentRoom === "sokak") {
         // Sol koridor (sahile geçiş) ve sağ koridor (caddeye geçiş) açık!
         if (x < 14 && !(y >= 180 && y <= 330)) return true;
         if (x > canvas.width - 14 && !(y >= 140 && y <= 330)) return true;
     } else if (currentRoom === "cadde") {
-        // Sol koridor (sokağa geçiş) açık!
+        // Sol koridor (sokağa geçiş) ve sağ koridor (cadde 2'ye geçiş) açık!
         if (x < 14 && !(y >= 140 && y <= 330)) return true;
-        if (x > canvas.width - 18) return true;
+        if (x > canvas.width - 14 && !(y >= 140 && y <= 330)) return true;
+    } else if (currentRoom === "cadde2") {
+        // Sola (Cadde 1) geçiş açık, Sağa geçiş şimdilik durduruldu
+        if (x < 14 && !(y >= 140 && y <= 330)) return true;
+        if (x > canvas.width - 25) return true; // Sağa geçiş durduruldu (sağ sınır katı)
+        if (y > canvas.height - 20) return true;
+        // Kuzey Bulvarı Barikatı: Barikat x: 405..595, y <= 155 arası geçişi engeller
+        if (x >= 405 && x <= 595) {
+            if (y <= 155) return true;
+        } else {
+            // Bina cepheleri (Sol VIP Club: 15..185, Botanik: 185..405, Kültür Merkezi: 605..995)
+            const isVipDoor = (x >= 65 && x <= 130 && y >= 100);
+            const isBotanicDoor = (x >= 260 && x <= 335 && y >= 100);
+            const isKmDoor = (x >= 760 && x <= 850 && y >= 95);
+            if (y < 110 && !isVipDoor && !isBotanicDoor && !isKmDoor) return true;
+        }
+    } else if (currentRoom === "pet_shop") {
+        // Oda Sınırları (1000x625)
+        if (x < 20 || x > canvas.width - 20) return true;
+        if (y < 215) return true; // Üst duvar süpürgeliği
+        // Alt çıkış kapısı paspası (x: 360..640, y >= 570) serbest, diğer alt duvarlar katı
+        if (y > canvas.height - 20 && !(x >= 360 && x <= 640)) return true;
+
+        // 1. Dev Tropikal Mercan Akvaryumu (Sol Duvar: x: 30..245, y: 120..330)
+        if (x >= 30 && x <= 245 && y >= 120 && y <= 330) return true;
+
+        // 2. Dr. Selim Hekimoğlu & Veteriner Klinik Bankosu (Sağ Üst Duvar)
+        if (x >= 715 && x <= 960 && y >= 205 && y <= 310) return true; // Banko
+        if (x >= 645 && x <= 685 && y >= 250 && y <= 280) return true; // Dr. Selim ayak tabanı
+
+        // 3. Yavru Oyun Bahçesi (Merkez Zemin 2.5D: cx: 405, cy: 315, rx: 112, ry: 52)
+        if (Math.hypot((x - 405) / 114, (y - 315) / 54) <= 1.0) return true;
+
+        // 4. Butik Hayvan Kostüm Standı (Sol Alt: x: 45..250, y: 370..495)
+        if (x >= 45 && x <= 250 && y >= 370 && y <= 495) return true;
+
+        // 5. Müşteri Bekleme Koltukları (Merkez Alt: x: 275..535, y: 410..458 - oturmuyorsa katıdır)
+        const isSittingInPetShop = (typeof players !== 'undefined' && typeof myId !== 'undefined' && players[myId] && (players[myId].action === 'sitting' || players[myId].action === 'sit_floor'));
+        if (!isSittingInPetShop && x >= 275 && x <= 535 && y >= 410 && y <= 458) return true;
+
+        // 6. Monstera Saksısı & Dijital Evcil Hayvan Tartısı (Sağ Alt Köşe: x: 855..950, y: 450..500)
+        if (x >= 855 && x <= 950 && y >= 450 && y <= 500) return true;
+    } else if (currentRoom === "botanic_shop") {
+        if (x < 35 || x > canvas.width - 35) return true;
+        if (y < 210) return true;
+        if (y > canvas.height - 20 && !(x >= canvas.width / 2 - 50 && x <= canvas.width / 2 + 50)) return true;
+        // Tedarikçi Defne Tezgahı
+        if (x >= 200 && x <= 430 && y >= 210 && y <= 295) return true;
+        // Çiçek Tüccarı Rasim Tezgahı
+        if (x >= 640 && x <= 870 && y >= 210 && y <= 295) return true;
+        // Merkez Havuz
+        if (Math.hypot(x - canvas.width / 2, y - 380) < 65) return true;
+    } else if (currentRoom === "mine_cave") {
+        // 2.5D İzometrik Maden Mağarası Duvar & Çıkış Sınırları
+        const isNearExit = (x <= 150 && y >= 450 && y <= 590);
+        if (x < 35 && !isNearExit) return true;
+        if (x > canvas.width - 35) return true;
+        if (y < 135) return true; // Tavan sarkıtları ve üst bazalt kaya kütlesi
+        if (y > canvas.height - 25 && !isNearExit) return true;
+        // Maden Tüccarı Cabbar ve tezgahı (x: 135..225, y: 405..465)
+        if (x >= 135 && x <= 225 && y >= 405 && y <= 465) return true;
+        return false;
+    } else if (currentRoom === "vip_club") {
+        if (typeof checkVipClubCollision === 'function') {
+            return checkVipClubCollision(x, y);
+        }
+        if (x < 45 || x > canvas.width - 45) return true;
+        if (y < 195) return true;
+        const isNearExit = (x >= 430 && x <= 570 && y >= canvas.height - 65);
+        if (y > canvas.height - 25 && !isNearExit) return true;
+        return false;
+    } else if (currentRoom === "optik" || currentRoom === "optika") {
+        if (typeof checkOptikaCollision === 'function') {
+            return checkOptikaCollision(x, y);
+        }
+        return false;
+    } else if (currentRoom === "kultur_merkezi_lobi") {
+        if (x < 25 || x > canvas.width - 25) return true;
+        // Arka kapılar: Kulis (145..275), Sahne (425..575), Sinema (725..855)
+        const isNearDoor = (x >= 145 && x <= 275) || (x >= 425 && x <= 575) || (x >= 725 && x <= 855);
+        if (y < 135 && !isNearDoor) return true;
+        if (y > canvas.height - 20 && !(x >= canvas.width / 2 - 55 && x <= canvas.width / 2 + 55)) return true;
+        // Resepsiyon masası
+        if (x >= 80 && x <= 240 && y >= 250 && y <= 330) return true;
+        // Gişe kulübesi
+        if (x >= 760 && x <= 920 && y >= 250 && y <= 330) return true;
+        // Büfe tezgahı
+        if (x >= 80 && x <= 250 && y >= 440 && y <= 525) return true;
+    } else if (currentRoom === "kultur_merkezi_sahne") {
+        if (x < 25 && !(y >= 185 && y <= 280)) return true; // Sol kulis kapısı açık
+        if (x > canvas.width - 25) return true;
+        if (y < 105) return true;
+        if (y > canvas.height - 20 && !(x >= canvas.width / 2 - 55 && x <= canvas.width / 2 + 55)) return true;
+        // Mikrofon standı minik engel
+        if (x >= 495 && x <= 505 && y >= 220 && y <= 235) return true;
+    } else if (currentRoom === "kultur_merkezi_kulis") {
+        if (x < 25) return true;
+        if (x > canvas.width - 25 && !(y >= 185 && y <= 295)) return true; // Sağ sahne kapısı açık
+        if (y < 135) return true;
+        if (y > canvas.height - 20 && !(x >= canvas.width / 2 - 55 && x <= canvas.width / 2 + 55)) return true;
+        // Deri kanepe ve sehpa engeli
+        if (x >= 350 && x <= 650 && y >= 260 && y <= 335) return true;
+    } else if (currentRoom === "kultur_merkezi_sinema") {
+        if (x < 25 || x > canvas.width - 25) return true;
+        if (y < 235) return true; // Projeksiyon perdesi önü
+        if (y > canvas.height - 20 && !(x >= canvas.width / 2 - 55 && x <= canvas.width / 2 + 55)) return true;
     } else if (currentRoom === "sahil") {
         // Sağ koridor (sokağa geçiş) açık!
         if (x > canvas.width - 14 && !(y >= 180 && y <= 360)) return true;
         if (x < 18) return true;
-    } else {
-        if (x < 18 || x > canvas.width - 18) return true;
-    }
-    if (y < 38 || y > canvas.height - 20) {
-        // Kapı geçişine izin ver (kafe, nargile_cafe, ganyan, dedenin_yeri, emlakci, market, dostlar_kiraathanesi ortadaki çıkış kapısı)
-        if (y > canvas.height - 20 && (currentRoom === "kafe" || currentRoom === "nargile_cafe" || currentRoom === "ganyan" || currentRoom === "dedenin_yeri" || currentRoom === "emlakci" || currentRoom === "market" || currentRoom === "dostlar_kiraathanesi")) {
-            if (x >= canvas.width / 2 - 40 && x <= canvas.width / 2 + 40 && y <= canvas.height - 5) {
-                return false;
-            }
+    } else if (currentRoom.startsWith("house_")) {
+        // 2. EV İÇİ ÇARPIŞMALARI (HOUSE ENVIRONMENTS)
+        let isGardenRoom = (typeof isCurrentlyInGardenHouse === 'function' && isCurrentlyInGardenHouse()) || currentRoom.endsWith('_garden') || currentRoom.includes('_garden') || currentRoom === 'house_ornek_garden';
+        if (isGardenRoom && typeof isGardenHouseCollision === 'function') {
+            return isGardenHouseCollision(x, y);
         }
-        return true;
-    }
-
-    // 2. EV İÇİ ÇARPIŞMALARI (HOUSE ENVIRONMENTS)
-    if (currentRoom.startsWith("house_")) {
-        // Üst arka duvar sınırı
+        // Standart ev içi duvar sınırları
         if (y < 145) return true;
         // Sol ve sağ duvarlar
         if (x < 32) {
@@ -2203,6 +1573,17 @@ if (currentRoom === "sanalika_cadde") {
             }
         }
         return false;
+    } else {
+        if (x < 18 || x > canvas.width - 18) return true;
+    }
+    if (y < 38 || y > canvas.height - 20) {
+        // Kapı geçişine izin ver (kafe, nargile_cafe, ganyan, dedenin_yeri, emlakci, market, dostlar_kiraathanesi, vip_club, kultur merkezleri ortadaki çıkış kapısı)
+        if (y > canvas.height - 20 && (currentRoom === "kafe" || currentRoom === "nargile_cafe" || currentRoom === "ganyan" || currentRoom === "dedenin_yeri" || currentRoom === "emlakci" || currentRoom === "market" || currentRoom === "dostlar_kiraathanesi" || currentRoom === "vip_club" || currentRoom === "botanic_shop" || currentRoom === "kultur_merkezi_lobi" || currentRoom === "kultur_merkezi_sahne" || currentRoom === "kultur_merkezi_kulis" || currentRoom === "kultur_merkezi_sinema" || currentRoom === "pet_shop")) {
+            if (x >= canvas.width / 2 - 50 && x <= canvas.width / 2 + 50 && y <= canvas.height - 5) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // 3. MOBİLYA MARKETSİ SHOWROOM (MARKET)
@@ -2236,18 +1617,23 @@ if (currentRoom === "sanalika_cadde") {
         return false;
     }
 
-    // 4. KAFE & OYUN SALONU (KAFE)
+    // 4. KAFE & OYUN SALONU (KAFE - 1000x625 VIP OYUN KULÜBÜ)
     if (currentRoom === "kafe") {
-        // Çay Ocağı Tezgahı (Sol Üst: bar tabureleri y:64'te rahat oturulabilmesi için y<=58)
-        if (x >= 15 && x <= 225 && y >= 10 && y <= 58) return true;
+        // Çay & Kahve Barı Tezgahı (Sol Üst: x: 35..270, tabureler y:86'da rahat oturulabilmesi için y<=74 katıdır)
+        if (x >= 30 && x <= 275 && y >= 10 && y <= 74) return true;
 
-        // Üst Arka Duvar (x > 220 bölgesinde arka duvara tırmanışı engeller)
-        if (y < 74 && x > 220) return true;
+        // Üst Arka Duvar (x > 270 bölgesinde arka lambri duvara tırmanışı engeller)
+        if (y < 95 && x > 270) return true;
 
-        // VIP Dekoratif Salon Bitkileri (Girişin sağ ve solundaki saksılar)
-        if (Math.hypot(x - 215, y - 435) < 12 || Math.hypot(x - 585, y - 435) < 12) return true;
+        // Dekoratif Salon Bitkileri (Girişin sağ ve solundaki palmiyeler)
+        if (Math.hypot(x - 380, y - 550) < 16 || Math.hypot(x - 620, y - 550) < 16) return true;
 
-        // Kafe Masaları (Batak masaları altındaki kilim geçirgendir, masalar katıdır)
+        // Sağ Alt Chesterfield Seyirci Koltuğu ve Ön Sehpası (Sırtlık ve kolçaklar katı, oturma alanı ergonomik)
+        if (x >= 745 && x <= 935 && y >= 385 && y <= 415) return true;
+        if ((x <= 765 || x >= 915) && x >= 745 && x <= 935 && y >= 415 && y <= 450) return true;
+        if (x >= 785 && x <= 890 && y >= 465 && y <= 495) return true;
+
+        // Oyun Masaları (Bilardo, Tavla, XOX, Amiral, Satranç)
         if (typeof cafeTables !== 'undefined') {
             for (let i = 0; i < cafeTables.length; i++) {
                 let t = cafeTables[i];
@@ -2448,95 +1834,7 @@ if (currentRoom === "sanalika_cadde") {
 
 
 
-// ============================================================================
-// 8.8 CANLI BLACKJACK 21 MASASI ÇİZİMİ (Masa Objeleri Arasında Tutulur)
-// ============================================================================
-function drawBlackjackTableObj(x, y, w, h, isHover) {
-    ctx.save();
-    // Masa taban gölgesi
-    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-    ctx.beginPath();
-    ctx.ellipse(x + w / 2 + 4, y + h / 2 + 6, w / 2, h / 2.3, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Hover parlaması (Altın Işıma)
-    if (isHover) {
-        ctx.strokeStyle = "rgba(250, 204, 21, 0.7)";
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.ellipse(x + w / 2, y + h / 2, w / 2 + 4, h / 2.3 + 4, 0, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-
-    // Ahşap / Deri Kenarlık (Armrest)
-    ctx.fillStyle = isHover ? "#78350f" : "#451a03";
-    ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = isHover ? "#facc15" : "#b45309";
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    // Yeşil Çuha Masası (Casino Felt)
-    ctx.fillStyle = "#047857";
-    ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h / 2, w / 2 - 12, h / 2.4 - 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#10b981";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Masa Damgası (Felt Text)
-    ctx.fillStyle = "rgba(254, 240, 138, 0.85)";
-    ctx.font = "bold 9px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("BLACKJACK 3:2", x + w / 2, y + h / 2 - 10);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-    ctx.font = "8px sans-serif";
-    ctx.fillText("Kasa 17'de Durur", x + w / 2, y + h / 2 + 2);
-
-    // Kasa / Krupiye Çip Tepsisi (Chip Rack)
-    ctx.fillStyle = "#1e293b";
-    ctx.beginPath();
-    ctx.roundRect(x + w / 2 - 20, y + 14, 40, 10, 3);
-    ctx.fill();
-    const chipColors = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981'];
-    chipColors.forEach((cc, ci) => {
-        ctx.fillStyle = cc;
-        ctx.beginPath();
-        ctx.arc(x + w / 2 - 12 + ci * 8, y + 19, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-    });
-
-    // 3 Oyuncu Koltuğu / Bahis Halkaları
-    const seatOffsets = [-36, 0, 36];
-    seatOffsets.forEach(so => {
-        ctx.strokeStyle = "rgba(250, 204, 21, 0.75)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(x + w / 2 + so, y + h / 2 + 24, 9, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Koltuk Taburesi
-        ctx.fillStyle = "#78350f";
-        ctx.beginPath();
-        ctx.arc(x + w / 2 + so, y + h / 2 + 48, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#d97706";
-        ctx.beginPath();
-        ctx.arc(x + w / 2 + so, y + h / 2 + 47, 6, 0, Math.PI * 2);
-        ctx.fill();
-    });
-
-    // Hover Tooltip
-    if (isHover) {
-        ctx.fillStyle = "#facc15";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("🃏 Canlı Blackjack 21 Masası - Tıkla ve Masaya Otur", x + w / 2, y - 6);
-    }
-    ctx.restore();
-}
+// 8.8 CANLI BLACKJACK 21 MASASI: public/js/renderers/tableDrawers.js modülüne taşınmıştır.
 
 // ==========================================
 // 8.9 GANYAN BAYİİ & CANLI HİPODROM PİSTİ ÇİZİMİ

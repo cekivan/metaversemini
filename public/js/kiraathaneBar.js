@@ -150,7 +150,7 @@ function closeKiraathaneBarModal() {
 window.closeKiraathaneBarModal = closeKiraathaneBarModal;
 
 function orderKiraathaneDrink(drinkId) {
-    let sock = window.socket || (typeof io !== 'undefined' ? io() : null);
+    let sock = window.socket || (typeof socket !== 'undefined' ? socket : null);
     if (sock) {
         sock.emit('buyKiraathaneDrink', { id: drinkId });
     }
@@ -170,6 +170,14 @@ function attachKiraathaneSocketListener() {
                 showSocialNotificationToast(item.icon, 'Afiyet Olsun!', `${item.name} satın aldınız! (-${item.price} TL)`);
             } else if (typeof showFloatingToast === 'function') {
                 showFloatingToast(`${item.icon} ${item.name} satın alındı! (-${item.price} TL)`);
+            }
+        });
+        sock.on('kiraathaneDrinkExpired', (item) => {
+            const name = (item && item.name) ? item.name : 'İçeceğiniz';
+            if (typeof showFloatingToast === 'function') {
+                showFloatingToast(`☕ ${name} bitti, masada bırakıldı.`);
+            } else if (typeof showSocialNotificationToast === 'function') {
+                showSocialNotificationToast('☕', 'İçecek Süresi Doldu', `${name} bitti, masada bırakıldı.`);
             }
         });
     }

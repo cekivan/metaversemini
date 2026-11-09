@@ -1,0 +1,667 @@
+/* ==========================================================================
+   MINI METAVERSE - UI & MODALS
+   Pencereler, modallar, sürüklenebilir başlıklar, toast bildirimleri, dock, confetti
+   ========================================================================== */
+
+/* 3. MODALLAR VE PENCERELER */
+#gameModal {
+    display: none; 
+    position: fixed; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    width: 96vw; 
+    max-width: 1020px; 
+    max-height: 96vh;
+    background: rgba(15, 23, 42, 0.97); 
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.15); 
+    padding: 6px 12px 10px 12px; 
+    text-align: center; 
+    border: 2px solid #38bdf8; 
+    z-index: 2000;
+    color: white;
+    overflow-y: auto;
+    overflow-x: hidden !important;
+    backdrop-filter: blur(16px);
+    box-sizing: border-box;
+    flex-direction: column;
+    contain: layout style;
+}
+
+#gameModal[style*="display: flex"],
+#gameModal[style*="display: block"] {
+    animation: modalPopIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#settingsModal > div,
+#wardrobeModal > div,
+#voidHandVoteModal > div,
+#leaderboardModal > div,
+#dailyQuestsModal > div,
+#reconnectPromptModal > div,
+#xoxModalContent,
+#amiralBattiModalContent,
+#chessModalContent {
+    animation: overlayFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+}
+
+/* En Üstte Bütünleşik Taşıma & Kontrol Başlığı */
+#modalHeader, .modal-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 8px;
+    padding: 4px 10px;
+    margin: -2px -6px 6px -6px;
+    cursor: move;
+    user-select: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+    min-height: 28px;
+    box-sizing: border-box;
+}
+
+.modal-header-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-title-text {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #38bdf8;
+    text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+    white-space: nowrap;
+}
+
+.modal-header-separator {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 10px;
+}
+
+#modalStatus, .modal-status-text { 
+    font-size: 11px; 
+    font-weight: 700; 
+    color: #facc15; 
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+.modal-header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.3px;
+    cursor: move;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.modal-header-center .drag-icon {
+    font-size: 13px;
+    color: #38bdf8;
+}
+
+.modal-header-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* 4'te 1 Dikey Boyutta Kompakt Kapat / Ayrıl Butonu */
+.modal-compact-close-btn {
+    padding: 2px 12px;
+    height: 24px;
+    line-height: 20px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-compact-close-btn:hover {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    transform: scale(1.04);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+.modal-compact-close-btn:active {
+    transform: scale(0.97);
+}
+
+/* Standard Game Window Control Buttons (Minimize '-' and Leave Red 'X') */
+.game-window-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 6px;
+}
+
+.game-win-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    box-sizing: border-box;
+    padding: 0;
+    line-height: 1;
+}
+
+.game-win-min-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #cbd5e1;
+}
+
+.game-win-min-btn:hover {
+    background: rgba(56, 189, 248, 0.3);
+    border-color: #38bdf8;
+    color: #ffffff;
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+}
+
+.game-win-min-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
+.game-win-leave-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-color: #f87171;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.game-win-leave-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    border-color: #ef4444;
+    color: #ffffff;
+    transform: translateY(-1px) scale(1.08);
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.65);
+}
+
+.game-win-leave-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
+/* Floating Minimized Game Dock (Ekranın sağ altında gezerken oyun widget'ı) */
+#minimizedGameDock {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 29999;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid #38bdf8;
+    border-radius: 999px;
+    padding: 8px 16px 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.25);
+    cursor: pointer;
+    animation: dockPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    user-select: none;
+}
+
+#minimizedGameDock:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(56, 189, 248, 0.4);
+    border-color: #7dd3fc;
+}
+
+.min-dock-pulse {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px #22c55e, 0 0 16px #4ade80;
+    animation: pulseDot 1.5s infinite;
+    flex-shrink: 0;
+}
+
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.min-dock-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.min-dock-badge {
+    font-size: 9px;
+    font-weight: 800;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.min-dock-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #ffffff;
+    max-width: 170px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.min-dock-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.min-dock-restore-btn {
+    background: linear-gradient(135deg, #38bdf8, #0284c7);
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
+}
+
+.min-dock-restore-btn:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #7dd3fc, #0284c7);
+}
+
+.min-dock-leave-btn {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #f87171;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.min-dock-leave-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+    transform: scale(1.1);
+}
+
+@keyframes dockPopIn {
+    0% { transform: translateY(20px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+#errorToast { 
+    color: white; 
+    background: linear-gradient(135deg, #ef4444, #dc2626); 
+    font-weight: 700; 
+    padding: 8px 16px; 
+    border-radius: 8px; 
+    display: none; 
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+/* Acil Süre Sayacı Nabız Uyarısı */
+.timer-urgent-pulse {
+    animation: timerUrgentPulse 0.5s infinite alternate ease-in-out !important;
+}
+
+@keyframes timerUrgentPulse {
+    from { opacity: 0.8; filter: drop-shadow(0 0 2px #ef4444); }
+    to { opacity: 1; filter: drop-shadow(0 0 12px #ef4444) drop-shadow(0 0 20px #f87171); }
+}
+
+/* Gösterge Bildirim Afişi (Toast) */
+.gosterge-reveal-banner {
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-25px);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.96), rgba(217, 119, 6, 0.96));
+    color: white;
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 25px rgba(245, 158, 11, 0.8);
+    border: 2px solid #fde047;
+    z-index: 3500;
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.gosterge-reveal-banner.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Zafer Konfeti Tuvali */
+#victoryConfettiCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 3000;
+    display: none;
+}
+
+/* Zafer Kutlama Modalı */
+.victory-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3200;
+    animation: fadeInVictory 0.4s ease;
+}
+
+@keyframes fadeInVictory {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.victory-card {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border: 3px solid #facc15;
+    box-shadow: 0 0 50px rgba(250, 204, 21, 0.5), 0 20px 40px rgba(0,0,0,0.8);
+    border-radius: 20px;
+    padding: 24px 32px;
+    text-align: center;
+    max-width: 480px;
+    width: 90%;
+    animation: zoomInVictory 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    color: white;
+}
+
+@keyframes zoomInVictory {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+
+/* ==========================================================
+   🟢 ÇEVRİMİÇİ OYUNCULAR (ONLINE PLAYERS) MODAL & BUTON STİLLERİ
+   ========================================================== */
+@keyframes onlineDotPulse {
+    0% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 4px #22c55e; }
+    50% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 12px #22c55e; }
+    100% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 4px #22c55e; }
+}
+
+.online-filter-chip {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    user-select: none;
+}
+
+.online-filter-chip:hover {
+    background: rgba(14, 165, 233, 0.3) !important;
+    border-color: #38bdf8 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+.online-player-card {
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.online-player-card:hover {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 15px rgba(14, 165, 233, 0.15);
+}
+
+
+/* ========================================================
+   AYARLAR MODALI SEKME BUTONLARI
+   ======================================================== */
+.settings-tab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.settings-tab-btn:hover {
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.06);
+}
+.settings-tab-btn.active {
+    background: linear-gradient(135deg, #38bdf8, #0284c7) !important;
+    color: #ffffff !important;
+    border: 1px solid #7dd3fc !important;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4) !important;
+}
+
+/* ========================================================
+   İSG GÜVENLİK & MADENCİ CANLI DENEME KABİNİ (SEMİHUS AYDINUS)
+   ======================================================== */
+#isgSafetyShopModal .isg-modal-card {
+    background: linear-gradient(155deg, #1e293b 0%, #0f172a 50%, #020617 100%);
+    border: 2px solid #f59e0b;
+    border-radius: 24px;
+    width: 96%;
+    max-width: 900px;
+    max-height: 94vh;
+    padding: 20px 24px;
+    box-shadow: 0 25px 75px rgba(0, 0, 0, 0.85), 0 0 35px rgba(245, 158, 11, 0.25);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.isg-modal-body {
+    display: flex;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.isg-preview-col {
+    width: 270px;
+    flex-shrink: 0;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1.5px solid rgba(245, 158, 11, 0.35);
+    border-radius: 18px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.4);
+}
+
+.isg-stage-wrapper {
+    position: relative;
+    width: 100%;
+    border: 2px solid rgba(245, 158, 11, 0.5);
+    border-radius: 16px;
+    background: radial-gradient(circle at 50% 65%, rgba(245, 158, 11, 0.16) 0%, rgba(15, 23, 42, 0.95) 85%);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 4px 15px rgba(245, 158, 11, 0.15);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+#isgPreviewCanvas {
+    display: block;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+
+#isgPreviewCanvas:active {
+    cursor: grabbing;
+}
+
+.isg-rotate-btn {
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 8px;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.3));
+    color: #fde047;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.isg-rotate-btn:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.4), rgba(217, 119, 6, 0.5));
+    border-color: #f59e0b;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.3);
+}
+
+.isg-facing-badge {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #cbd5e1;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 4px 10px;
+    border-radius: 6px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.isg-semihus-bubble {
+    width: 100%;
+    background: rgba(30, 41, 59, 0.85);
+    border: 1.5px solid rgba(245, 158, 11, 0.4);
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #fef08a;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.isg-catalog-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.isg-item-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+}
+
+.isg-item-card:hover {
+    border-color: rgba(245, 158, 11, 0.6);
+    background: rgba(30, 41, 59, 0.85);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 12px rgba(245, 158, 11, 0.2);
+}
+
+.isg-item-card.previewing {
+    border-color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.14) !important;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.35) !important;
+}
+
+@media (max-width: 768px) {
+    #isgSafetyShopModal .isg-modal-card {
+        padding: 14px;
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+    .isg-modal-body {
+        flex-direction: column;
+        overflow: visible;
+    }
+    .isg-preview-col {
+        width: 100%;
+    }
+}

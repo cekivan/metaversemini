@@ -1,35 +1,46 @@
 const fs = require('fs');
 const path = require('path');
 
-function getJsFiles(dir) {
-    let results = [];
-    for (const f of fs.readdirSync(dir)) {
-        if (f === 'node_modules' || f === '.git' || f === 'scratch') continue;
-        const full = path.join(dir, f);
-        const stat = fs.statSync(full);
-        if (stat.isDirectory()) results = results.concat(getJsFiles(full));
-        else if (f.endsWith('.js')) results.push(full);
+console.log("🔍 Checking for unsafe chained calls on document.getElementById...");
+
+const jsFiles = [];
+function findJs(dir) {
+    const files = fs.readdirSync(dir);
+    for (const f of files) {
+        const fp = path.join(dir, f);
+        const stat = fs.statSync(fp);
+        if (stat.isDirectory()) {
+            findJs(fp);
+        } else if (f.endsWith('.js')) {
+            jsFiles.push(fp);
+        }
     }
-    return results;
 }
+findJs('public/js');
 
-const files = getJsFiles('.');
-console.log('Total JS files:', files.length);
+const unsafeChainedRegex = /document\.getElementById\(\s*['"`]([^'"`]+)['"`]\s*\)\.([a-zA-Z0-9_$]+)/g;
 
-// Check 1: find patterns like `players[sid].` or `players[id].` without prior null check
-const unsafeAccessPatterns = [];
-for (const file of files) {
-    const lines = fs.readFileSync(file, 'utf8').split('\n');
-    lines.forEach((line, idx) => {
-        // match players[sid].something or players[id].something where sid or id is accessed directly
-        if (/players\[(sid|id|targetSocketId|winPid|p)\]\.[a-zA-Z]/.test(line)) {
-            // Check if there is an && before or optional chaining ?.
-            if (!line.includes('?.') && !line.includes('&& players[')) {
-                unsafeAccessPatterns.push({ file, line: idx + 1, content: line.trim() });
-            }
+const findings = [];
+
+for (const f of jsFiles) {
+    const code = fs.readFileSync(f, 'utf8');
+    const lines = code.split('\n');
+    lines.forEach((line, lineIdx) => {
+        let match;
+        while ((match = unsafeChainedRegex.exec(line)) !== null) {
+            findings.push({
+                file: path.relative('.', f),
+                line: lineIdx + 1,
+                id: match[1],
+                prop: match[2],
+                code: line.trim()
+            });
         }
     });
 }
 
-console.log('Unsafe players[...] accesses found:', unsafeAccessPatterns.length);
-unsafeAccessPatterns.slice(0, 30).forEach(u => console.log(`${u.file}:${u.line} -> ${u.content}`));
+console.log(`Found ${findings.length} unsafe chained document.getElementById calls:`);
+findings.forEach(f => {
+    console.log(`${f.file}:${f.line} -> document.getElementById('${f.id}').${f.prop}`);
+});
+

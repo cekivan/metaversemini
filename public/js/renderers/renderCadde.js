@@ -204,9 +204,6 @@ function drawCaddeEnvironment() {
         setGameCursor('pointer');
     } else if (isPetShopHover) {
         hoveredTableId = 'cadde_petshop';
-        ctx.strokeStyle = "#fb923c";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(15, 335, 210, 135);
         ctx.fillStyle = "#fef08a";
         ctx.font = "bold 11px sans-serif";
         ctx.textAlign = "center";
@@ -214,9 +211,6 @@ function drawCaddeEnvironment() {
         setGameCursor('pointer');
     } else if (isKiraathaneHover) {
         hoveredTableId = 'cadde_dostlar_kiraathanesi';
-        ctx.strokeStyle = "#f59e0b";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(520, 335, 260, 135);
         ctx.fillStyle = "#fde047";
         ctx.font = "bold 11.5px sans-serif";
         ctx.textAlign = "center";
@@ -224,9 +218,6 @@ function drawCaddeEnvironment() {
         setGameCursor('pointer');
     } else if (isGanyanHover) {
         hoveredTableId = 'cadde_ganyan';
-        ctx.strokeStyle = "#facc15";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(90, 12, 300, 105);
         ctx.fillStyle = "#facc15";
         ctx.font = "bold 11px sans-serif";
         ctx.textAlign = "center";
@@ -234,9 +225,6 @@ function drawCaddeEnvironment() {
         setGameCursor('pointer');
     } else if (isCasinoHover) {
         hoveredTableId = 'cadde_casino';
-        ctx.strokeStyle = "#22d3ee";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(440, 12, 300, 105);
         ctx.fillStyle = "#fde047";
         ctx.font = "bold 11px sans-serif";
         ctx.textAlign = "center";
@@ -244,9 +232,6 @@ function drawCaddeEnvironment() {
         setGameCursor('pointer');
     } else if (isExitStreetHover) {
         hoveredTableId = 'cadde_to_street';
-        ctx.strokeStyle = "#34d399";
-        ctx.lineWidth = 2.5;
-        ctx.strokeRect(4, 180, 64, 60);
         setGameCursor('pointer');
     } else {
         if (hoveredTableId === 'cadde_ganyan' || hoveredTableId === 'cadde_casino' || hoveredTableId === 'cadde_to_street' || hoveredTableId === 'billboard_cadde' || hoveredTableId === 'cadde_petshop' || hoveredTableId === 'cadde_dostlar_kiraathanesi') {

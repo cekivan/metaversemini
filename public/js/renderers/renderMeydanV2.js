@@ -100,7 +100,7 @@
         bctx.fillStyle = isNight ? "#38bdf8" : "#fef08a";
         bctx.font = "bold 13px sans-serif";
         bctx.textAlign = "center";
-        bctx.fillText("🏖️ SAHİL & İSKELE ⬇", 500, height - 18);
+        bctx.fillText("🌴 SAHİL YOLU & AVM ⬇", 500, height - 18);
 
         // Caddeye yönlendirici ok
         bctx.save();
@@ -465,7 +465,7 @@
         ctx.fillStyle = "#fed7aa";
         ctx.font = "bold 12px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("🏢 SANALİKA REZİDANS & KONUTLAR", x + w / 2, y + 25);
+        ctx.fillText("🏢 METAVERSE REZİDANS & KONUTLAR", x + w / 2, y + 25);
 
         // 3 Sıra Kat Balkonları & Işıklı Daire Pencereleri
         for (let row = 0; row < 2; row++) {
@@ -917,9 +917,9 @@
         // 8. Sahil Çıkış Geçidi
         if (clickX >= 430 && clickX <= 570 && clickY >= 565 && clickY <= 625) {
             if (typeof navigatePlayerToDoor === 'function') {
-                navigatePlayerToDoor(500, 615, 'sahil');
+                navigatePlayerToDoor(500, 615, 'sahil_yolu');
             } else if (typeof changeRoom === 'function') {
-                changeRoom('sahil');
+                changeRoom('sahil_yolu');
             }
             return true;
         }
@@ -977,7 +977,7 @@
 
         // Sahil çıkış yakınında
         if (p.x >= 410 && p.x <= 590 && p.y >= 540) {
-            if (typeof changeRoom === 'function') changeRoom('sahil');
+            if (typeof changeRoom === 'function') changeRoom('sahil_yolu');
             return true;
         }
 

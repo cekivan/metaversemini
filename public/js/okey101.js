@@ -282,7 +282,8 @@ function renderDeckAndDiscards(data) {
     renderSlotTile('okey101LeftTileContainer', leftP?.lastDiscard, true);
     const takeDiscardBtn = document.getElementById('okey101TakeDiscardBtn');
     if (takeDiscardBtn) {
-        takeDiscardBtn.style.display = (data.canTakeDiscard && data.myTurn) ? 'block' : 'none';
+        let canShowTakeBtn = data.canTakeDiscard && data.myTurn && !data.gameOver && (data.drawPileCount > 0);
+        takeDiscardBtn.style.display = canShowTakeBtn ? 'block' : 'none';
         takeDiscardBtn.innerHTML = "🖐️ Taşı Al";
     }
 
@@ -339,17 +340,25 @@ function renderTableOpenedPers(data) {
 
         persList.forEach(({ per, originalIndex }) => {
             let hasOkeyInPer = false;
-            let perSum = 0;
+            let seriInfo = (per.type !== 'cift') ? resolveSeries(per.tiles, data.okeyDef) : null;
+            let displayTiles = (per.type === 'cift')
+                ? sortPairTiles(per.tiles, data.okeyDef, data.gosterge)
+                : (seriInfo ? seriInfo.sortedTiles : sortPerTiles(per.tiles, per.type, data.okeyDef));
 
-            let tilesHtml = per.tiles.map(t => {
-                let isOkey = (data.okeyDef && !t.isFakeOkey && t.color === data.okeyDef.color && t.value === data.okeyDef.value);
+            let perSum = (per.type === 'cift')
+                ? getPairScore(displayTiles, data.okeyDef)
+                : getPerScore(displayTiles, data.okeyDef);
+
+            let tilesHtml = displayTiles.map((t, tIdx) => {
+                let isOkey = isRealOkey(t, data.okeyDef);
                 if (isOkey) hasOkeyInPer = true;
-                let val = t.isFakeOkey ? (data.okeyDef ? data.okeyDef.value : 10) : t.value;
-                perSum += val;
                 let colorCls = t.isFakeOkey ? 'sahte' : t.color;
                 let okeyCls = isOkey ? 'gold-border' : '';
                 let text = t.isFakeOkey ? '⭐' : (isOkey ? `👑${t.value}` : t.value);
-                return `<div class="okey-tile mini ${colorCls} ${okeyCls}"><span>${text}</span></div>`;
+                let slotValHint = (isOkey && seriInfo && seriInfo.req && seriInfo.req[tIdx])
+                    ? ` title="Okey (${seriInfo.req[tIdx]} yerine işliyor)"`
+                    : '';
+                return `<div class="okey-tile mini ${colorCls} ${okeyCls}"${slotValHint}><span>${text}</span></div>`;
             }).join('');
 
             totalZoneScore += perSum;
@@ -383,7 +392,7 @@ function renderTableOpenedPers(data) {
             container.innerHTML += `
                 <div id="openPer_${originalIndex}" 
                      class="okey-open-per-group" 
-                     style="padding: 4px 6px; margin-right: 4px; margin-bottom: 4px; cursor: pointer;"
+                     style="padding: 3px 5px; margin-right: 4px; margin-bottom: 4px; cursor: pointer;"
                      ondragover="okey101PerDragOver(event, ${originalIndex})"
                      ondragleave="okey101PerDragLeave(event, ${originalIndex})"
                      ondrop="okey101PerDrop(event, ${originalIndex})"
@@ -392,7 +401,7 @@ function renderTableOpenedPers(data) {
                     <div style="display:flex; align-items:center; margin-right:3px;">
                         ${perTypeBadge}
                     </div>
-                    <div style="display:flex; gap:2px; align-items:center;">${tilesHtml}</div>
+                    <div style="display:flex; gap:1px; align-items:center;">${tilesHtml}</div>
                     ${actionButtons}
                 </div>
             `;
@@ -472,11 +481,51 @@ let okey101DraggedId = null;
 let okey101DraggedSlotIdx = null;
 
 function okey101DragStart(e, tileId, slotIdx) {
+    if (e.stopPropagation) e.stopPropagation();
     okey101DraggedId = tileId;
     okey101DraggedSlotIdx = slotIdx;
+
+    const tileEl = e.currentTarget || (e.target && e.target.closest ? e.target.closest('.okey-tile') : e.target);
     if (e.dataTransfer) {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', tileId);
+
+        if (tileEl && e.dataTransfer.setDragImage) {
+            // Tamamen izole sadece bu taşı temsil eden temiz bir klon oluşturuyoruz (tüm ıstaka kutusunun sürüklenmesini önler)
+            const ghost = tileEl.cloneNode(true);
+            ghost.id = 'okey_drag_ghost_clone';
+            ghost.style.position = 'fixed';
+            ghost.style.top = '-9999px';
+            ghost.style.left = '-9999px';
+            ghost.style.zIndex = '999999';
+            ghost.style.pointerEvents = 'none';
+            ghost.style.transform = 'none';
+            ghost.style.transition = 'none';
+            ghost.style.margin = '0';
+            ghost.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+            ghost.style.opacity = '0.95';
+            document.body.appendChild(ghost);
+
+            const rect = tileEl.getBoundingClientRect();
+            const offsetX = (rect.width ? rect.width / 2 : 20);
+            const offsetY = (rect.height ? rect.height / 2 : 26);
+
+            try {
+                e.dataTransfer.setDragImage(ghost, offsetX, offsetY);
+            } catch (err) {
+                console.warn('setDragImage error:', err);
+            }
+
+            setTimeout(() => {
+                if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
+            }, 0);
+        }
+    }
+
+    if (tileEl) {
+        setTimeout(() => {
+            if (okey101DraggedId) tileEl.style.opacity = '0.35';
+        }, 0);
     }
 }
 window.okey101DragStart = okey101DragStart;
@@ -643,15 +692,153 @@ function okey101PerClick(e, perIndex) {
 }
 window.okey101PerClick = okey101PerClick;
 
+function _cleanupOkeyTouchGhost() {
+    if (!_okeyTouchDrag) return;
+    if (_okeyTouchDrag.sourceEl) _okeyTouchDrag.sourceEl.style.opacity = '';
+    if (_okeyTouchDrag.ghostEl && _okeyTouchDrag.ghostEl.parentNode) {
+        _okeyTouchDrag.ghostEl.parentNode.removeChild(_okeyTouchDrag.ghostEl);
+    }
+    _okeyTouchDrag = null;
+}
+
 function okey101DragEnd(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    _cleanupOkeyTouchGhost();
     okey101DraggedId = null;
     okey101DraggedSlotIdx = null;
+    document.querySelectorAll('.okey-rack-slot .okey-tile').forEach(el => {
+        el.style.opacity = '';
+    });
     document.querySelectorAll('.per-drag-over').forEach(el => el.classList.remove('per-drag-over'));
     document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
     document.querySelectorAll('.discard-drag-over').forEach(el => el.classList.remove('discard-drag-over'));
     document.querySelectorAll('.discard-btn-drag-over').forEach(el => el.classList.remove('discard-btn-drag-over'));
+
+    const clone = document.getElementById('okey_drag_ghost_clone');
+    if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
 }
 window.okey101DragEnd = okey101DragEnd;
+
+// 📱 MOBİL DOKUNMATİK TAŞ SÜRÜKLEME & BIRAKMA MOTORU (iOS & Android Uyumlu)
+let _okeyTouchDrag = null;
+window._okeySuppressClickUntil = 0;
+
+function okey101TileTouchStart(e, tileId, slotIdx) {
+    _cleanupOkeyTouchGhost();
+    if (!e.touches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    _okeyTouchDrag = {
+        tileId: tileId,
+        slotIdx: slotIdx,
+        startX: t.clientX,
+        startY: t.clientY,
+        dragging: false,
+        sourceEl: e.currentTarget,
+        ghostEl: null
+    };
+}
+window.okey101TileTouchStart = okey101TileTouchStart;
+
+window.addEventListener('touchmove', (e) => {
+    if (!_okeyTouchDrag || !e.touches || !e.touches[0]) return;
+    const t = e.touches[0];
+    const dist = Math.hypot(t.clientX - _okeyTouchDrag.startX, t.clientY - _okeyTouchDrag.startY);
+
+    if (!_okeyTouchDrag.dragging && dist > 8) {
+        _okeyTouchDrag.dragging = true;
+        okey101DraggedId = _okeyTouchDrag.tileId;
+        okey101DraggedSlotIdx = _okeyTouchDrag.slotIdx;
+
+        if (_okeyTouchDrag.sourceEl) {
+            const ghost = _okeyTouchDrag.sourceEl.cloneNode(true);
+            ghost.style.position = 'fixed';
+            ghost.style.zIndex = '999999';
+            ghost.style.pointerEvents = 'none';
+            ghost.style.opacity = '0.94';
+            ghost.style.margin = '0';
+            ghost.style.transform = 'translate(-50%, -85%) scale(1.12)';
+            ghost.style.boxShadow = '0 12px 26px rgba(0,0,0,0.65)';
+            ghost.style.transition = 'none';
+            document.body.appendChild(ghost);
+            _okeyTouchDrag.ghostEl = ghost;
+            _okeyTouchDrag.sourceEl.style.opacity = '0.35';
+        }
+    }
+
+    if (_okeyTouchDrag.dragging) {
+        if (e.cancelable) e.preventDefault();
+        if (_okeyTouchDrag.ghostEl) {
+            _okeyTouchDrag.ghostEl.style.left = t.clientX + 'px';
+            _okeyTouchDrag.ghostEl.style.top = t.clientY + 'px';
+        }
+
+        document.querySelectorAll('.per-drag-over').forEach(el => el.classList.remove('per-drag-over'));
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        document.querySelectorAll('.discard-drag-over').forEach(el => el.classList.remove('discard-drag-over'));
+        document.querySelectorAll('.discard-btn-drag-over').forEach(el => el.classList.remove('discard-btn-drag-over'));
+
+        const under = document.elementFromPoint(t.clientX, t.clientY);
+        if (under) {
+            const slotEl = under.closest('.okey-rack-slot');
+            const perEl = under.closest('[id^="openPer_"]');
+            const discSlotEl = under.closest('#okey101RightDiscardSlot');
+            const discBtnEl = under.closest('#okey101DiscardBtn');
+            if (slotEl) slotEl.classList.add('drag-over');
+            else if (perEl) perEl.classList.add('per-drag-over');
+            else if (discSlotEl || discBtnEl) {
+                const ds = document.getElementById('okey101RightDiscardSlot');
+                const db = document.getElementById('okey101DiscardBtn');
+                if (ds) ds.classList.add('discard-drag-over');
+                if (db) db.classList.add('discard-btn-drag-over');
+            }
+        }
+    }
+}, { passive: false });
+
+function _finishOkeyTouchDrag(e, isCancel) {
+    if (!_okeyTouchDrag) return;
+    const state = _okeyTouchDrag;
+    _okeyTouchDrag = null;
+
+    if (state.sourceEl) state.sourceEl.style.opacity = '';
+    if (state.ghostEl && state.ghostEl.parentNode) {
+        state.ghostEl.parentNode.removeChild(state.ghostEl);
+    }
+
+    if (state.dragging && !isCancel) {
+        window._okeySuppressClickUntil = Date.now() + 360;
+        const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+        if (t) {
+            const under = document.elementFromPoint(t.clientX, t.clientY);
+            if (under) {
+                const slotEl = under.closest('.okey-rack-slot');
+                const perEl = under.closest('[id^="openPer_"]');
+                const discEl = under.closest('#okey101RightDiscardSlot') || under.closest('#okey101DiscardBtn');
+
+                if (slotEl && slotEl.id && slotEl.id.startsWith('okeySlot_')) {
+                    const targetIdx = parseInt(slotEl.id.replace('okeySlot_', ''), 10);
+                    if (!isNaN(targetIdx)) {
+                        okey101SlotDrop({ preventDefault: function () {} }, targetIdx);
+                    }
+                } else if (perEl && perEl.id && perEl.id.startsWith('openPer_')) {
+                    const perIdx = parseInt(perEl.id.replace('openPer_', ''), 10);
+                    if (!isNaN(perIdx)) {
+                        okey101PerDrop({ preventDefault: function () {}, clientX: t.clientX }, perIdx);
+                    }
+                } else if (discEl) {
+                    okey101DiscardDrop({ preventDefault: function () {} });
+                }
+            }
+        }
+    }
+
+    if (state.dragging) {
+        okey101DragEnd();
+    }
+}
+
+window.addEventListener('touchend', (e) => _finishOkeyTouchDrag(e, false));
+window.addEventListener('touchcancel', (e) => _finishOkeyTouchDrag(e, true));
 
 // 🗑️ TAŞ ATMA FONKSİYONU (Hem buton hem sürükle-bırak için ortak)
 function okey101DiscardTile(tileId) {
@@ -670,6 +857,9 @@ function okey101DiscardTile(tileId) {
         let hasOpened = okey101Data.playerInfos && okey101Data.playerInfos[socket.id]?.hasOpened;
         if (!hasOpened) {
             alert("⚠️ Yandan taş aldığınızda elinizi açmak (en az 101 puan veya 5 çift) ve bu taşı perlerinizde kullanmak zorundasınız!\n\nEl açmadan taş atamazsınız. Eğer elinizi açamıyorsanız 'Taşı Geri Bırak' butonuna basarak desteden çekebilirsiniz.");
+            return;
+        } else {
+            alert("⚠️ Yandan aldığınız taşı masadaki bir pere işlemek veya per/çift olarak indirmek zorundasınız!\n\nMasaya işlemeden taş atamazsınız. Eğer işleyemiyorsanız 'Taşı Geri Bırak' butonuna basarak desteden çekebilirsiniz.");
             return;
         }
     }
@@ -709,7 +899,6 @@ function okey101DiscardDrop(e) {
     if (el) el.classList.remove('discard-drag-over');
     const btn = document.getElementById('okey101DiscardBtn');
     if (btn) btn.classList.remove('discard-btn-drag-over');
-
     let tileId = okey101DraggedId || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
     okey101DraggedId = null;
     okey101DraggedSlotIdx = null;
@@ -866,39 +1055,55 @@ function getEffectiveTile(tile, okeyDef) {
     };
 }
 
-// Sıralı Per Kontrolü (Aynı Renk, Ardışık: 4-5-6 veya 11-12-13-1, Okey Joker Olarak Kullanılır)
-function isValidSeries(tiles, okeyDef) {
-    if (!tiles || tiles.length < 3 || tiles.length > 13) return false;
+const OKEY101_COLORS = ['kirmizi', 'siyah', 'mavi', 'sari'];
 
-    let nonOkey = tiles.filter(t => !isRealOkey(t, okeyDef));
-    if (nonOkey.length === 0) return true;
+// Sıralı Per Çözümleyici: Istakada karışık dizilmiş olsa bile en yüksek puanlı geçerli seriyi bulur ve taşları sıralar
+function resolveSeries(tiles, okeyDef) {
+    if (!tiles || tiles.length < 3 || tiles.length > 13) return null;
 
-    let baseColor = nonOkey[0].isFakeOkey ? (okeyDef ? okeyDef.color : nonOkey[0].color) : nonOkey[0].color;
-    for (let t of nonOkey) {
-        let effColor = t.isFakeOkey ? (okeyDef ? okeyDef.color : t.color) : t.color;
-        if (effColor !== baseColor) return false;
+    let nonOkeys = [];
+    let okeys = [];
+    for (let t of tiles) {
+        if (!t) return null;
+        if (isRealOkey(t, okeyDef)) okeys.push(t);
+        else nonOkeys.push(t);
     }
 
-    let nonOkeyVals = nonOkey.map(t => t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value);
-    let okeyCount = tiles.length - nonOkey.length;
     let n = tiles.length;
-
-    for (let startVal = 1; startVal <= 13; startVal++) {
+    if (nonOkeys.length === 0) {
         let req = [];
-        let possible = true;
+        let start = Math.max(1, 14 - n);
+        for (let i = 0; i < n; i++) req.push(start + i);
+        return {
+            sortedTiles: [...tiles],
+            req: req,
+            score: req.reduce((a, b) => a + b, 0)
+        };
+    }
+
+    let baseColor = nonOkeys[0].isFakeOkey ? (okeyDef ? okeyDef.color : nonOkeys[0].color) : nonOkeys[0].color;
+    let nonOkeyVals = [];
+    let seenVals = new Set();
+
+    for (let t of nonOkeys) {
+        let effColor = t.isFakeOkey ? (okeyDef ? okeyDef.color : t.color) : t.color;
+        if (effColor !== baseColor) return null;
+        let effVal = t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value;
+        if (seenVals.has(effVal)) return null;
+        seenVals.add(effVal);
+        nonOkeyVals.push(effVal);
+    }
+
+    let okeyCount = okeys.length;
+    let bestReq = null;
+    let bestScore = -1;
+
+    // 101 Okey'de 12-13-1 peri YOKTUR! Seriler en fazla 13'e kadar uzayabilir (örn: 10-11-12-13).
+    for (let startVal = 1; startVal <= 13 - n + 1; startVal++) {
+        let req = [];
         for (let i = 0; i < n; i++) {
-            let v = startVal + i;
-            if (v > 13) {
-                if (v === 14 && i === n - 1) {
-                    v = 1; // 12-13-1 kuralı
-                } else {
-                    possible = false;
-                    break;
-                }
-            }
-            req.push(v);
+            req.push(startVal + i);
         }
-        if (!possible) continue;
 
         let tempReq = [...req];
         let matched = true;
@@ -911,11 +1116,44 @@ function isValidSeries(tiles, okeyDef) {
             tempReq.splice(idx, 1);
         }
         if (matched && tempReq.length === okeyCount) {
-            return true;
+            let sum = req.reduce((a, b) => a + b, 0);
+            if (sum > bestScore) {
+                bestScore = sum;
+                bestReq = req;
+            }
         }
     }
 
-    return false;
+    if (!bestReq) return null;
+
+    let sortedTiles = [];
+    let nonOkeyPool = [...nonOkeys];
+    let okeyPool = [...okeys];
+
+    for (let v of bestReq) {
+        let foundIdx = nonOkeyPool.findIndex(t => {
+            let val = t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value;
+            return val === v;
+        });
+        if (foundIdx !== -1) {
+            sortedTiles.push(nonOkeyPool.splice(foundIdx, 1)[0]);
+        } else if (okeyPool.length > 0) {
+            sortedTiles.push(okeyPool.shift());
+        }
+    }
+    if (nonOkeyPool.length > 0) sortedTiles.push(...nonOkeyPool);
+    if (okeyPool.length > 0) sortedTiles.push(...okeyPool);
+
+    return {
+        sortedTiles: sortedTiles,
+        req: bestReq,
+        score: bestScore
+    };
+}
+
+// Sıralı Per Kontrolü (Aynı Renk, Ardışık: 4-5-6 veya 10-11-12-13 (101 de 12-13-1 yoktur), Okey Joker Olarak Kullanılır)
+function isValidSeries(tiles, okeyDef) {
+    return resolveSeries(tiles, okeyDef) !== null;
 }
 
 // Grup Per Kontrolü (Aynı Sayı, Farklı Renkler: 7-7-7 gibi 3 veya 4 taş)
@@ -939,6 +1177,93 @@ function isValidGroup(tiles, okeyDef) {
     return true;
 }
 
+function sortGroupTiles(tiles, okeyDef) {
+    if (!tiles || tiles.length === 0) return [];
+    let nonOkeys = [];
+    let okeys = [];
+    for (let t of tiles) {
+        if (isRealOkey(t, okeyDef)) okeys.push(t);
+        else nonOkeys.push(t);
+    }
+    nonOkeys.sort((a, b) => {
+        let colA = a.isFakeOkey ? (okeyDef ? okeyDef.color : a.color) : a.color;
+        let colB = b.isFakeOkey ? (okeyDef ? okeyDef.color : b.color) : b.color;
+        return OKEY101_COLORS.indexOf(colA) - OKEY101_COLORS.indexOf(colB);
+    });
+    return [...nonOkeys, ...okeys];
+}
+
+function sortPairTiles(tiles, okeyDef, gostergeTile = null) {
+    if (!tiles || tiles.length <= 1) return tiles ? [...tiles] : [];
+    let [t1, t2] = tiles;
+    let o1 = isRealOkey(t1, okeyDef);
+    let o2 = isRealOkey(t2, okeyDef);
+    if (o1 && !o2) return [t2, t1];
+    if (!o1 && o2) return [t1, t2];
+    if (gostergeTile) {
+        let g1 = !t1.isFakeOkey && t1.color === gostergeTile.color && t1.value === gostergeTile.value;
+        let g2 = !t2.isFakeOkey && t2.color === gostergeTile.color && t2.value === gostergeTile.value;
+        if (g1 && !g2) return [t2, t1];
+    }
+    return [t1, t2];
+}
+
+function getPairScore(tiles, okeyDef) {
+    if (!tiles || tiles.length === 0) return 0;
+    if (tiles.length === 1) {
+        let eff = getEffectiveTile(tiles[0], okeyDef);
+        return (eff ? eff.value : 0) * 2;
+    }
+    let nonOkey = tiles.find(t => !isRealOkey(t, okeyDef));
+    if (nonOkey) {
+        let eff = getEffectiveTile(nonOkey, okeyDef);
+        return (eff ? eff.value : 0) * 2;
+    }
+    return (okeyDef ? okeyDef.value : 10) * 2;
+}
+
+function classifyAndSortPer(tiles, okeyDef) {
+    if (!tiles || tiles.length < 3) return null;
+    let seriRes = resolveSeries(tiles, okeyDef);
+    let grupValid = isValidGroup(tiles, okeyDef);
+    if (!seriRes && !grupValid) return null;
+
+    let grupScore = -1;
+    if (grupValid) {
+        let nonOkey = tiles.find(t => !isRealOkey(t, okeyDef));
+        let val = nonOkey ? (nonOkey.isFakeOkey ? (okeyDef ? okeyDef.value : 10) : nonOkey.value) : 13;
+        grupScore = val * tiles.length;
+    }
+
+    if (seriRes && (!grupValid || seriRes.score >= grupScore)) {
+        return {
+            type: 'seri',
+            sortedTiles: seriRes.sortedTiles,
+            req: seriRes.req,
+            score: seriRes.score
+        };
+    }
+    return {
+        type: 'grup',
+        sortedTiles: sortGroupTiles(tiles, okeyDef),
+        score: grupScore
+    };
+}
+
+function sortPerTiles(tiles, type, okeyDef) {
+    if (!tiles || tiles.length === 0) return [];
+    if (type === 'cift') return sortPairTiles(tiles, okeyDef);
+    if (type === 'seri') {
+        let res = resolveSeries(tiles, okeyDef);
+        if (res) return res.sortedTiles;
+    }
+    if (type === 'grup' && isValidGroup(tiles, okeyDef)) {
+        return sortGroupTiles(tiles, okeyDef);
+    }
+    let classified = classifyAndSortPer(tiles, okeyDef);
+    return classified ? classified.sortedTiles : [...tiles];
+}
+
 // Çift Kontrolü (Aynı Renk ve Sayı 2 Taş)
 function isValidPair(tileA, tileB, okeyDef, gostergeTile = null) {
     if (!tileA || !tileB) return false;
@@ -959,46 +1284,147 @@ function isValidPair(tileA, tileB, okeyDef, gostergeTile = null) {
 
 // Per Puanı Hesaplama
 function getPerScore(tiles, okeyDef) {
-    if (isValidSeries(tiles, okeyDef)) {
-        let nonOkey = tiles.filter(t => !isRealOkey(t, okeyDef));
-        let nonOkeyVals = nonOkey.map(t => t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value);
-        let okeyCount = tiles.length - nonOkey.length;
-        let n = tiles.length;
+    let classified = classifyAndSortPer(tiles, okeyDef);
+    if (classified) return classified.score;
 
-        for (let startVal = 1; startVal <= 13; startVal++) {
-            let req = [];
-            let possible = true;
-            for (let i = 0; i < n; i++) {
-                let v = startVal + i;
-                if (v > 13) {
-                    if (v === 14 && i === n - 1) v = 1;
-                    else { possible = false; break; }
-                }
-                req.push(v);
-            }
-            if (!possible) continue;
-            let tempReq = [...req];
-            let matched = true;
-            for (let val of nonOkeyVals) {
-                let idx = tempReq.indexOf(val);
-                if (idx === -1) { matched = false; break; }
-                tempReq.splice(idx, 1);
-            }
-            if (matched && tempReq.length === okeyCount) {
-                return req.reduce((a, b) => a + b, 0);
-            }
-        }
-    } else if (isValidGroup(tiles, okeyDef)) {
-        let nonOkey = tiles.find(t => !isRealOkey(t, okeyDef));
-        let val = nonOkey ? (nonOkey.isFakeOkey ? (okeyDef ? okeyDef.value : 10) : nonOkey.value) : 10;
-        return val * tiles.length;
-    }
     let score = 0;
-    tiles.forEach(t => {
+    (tiles || []).forEach(t => {
         let eff = getEffectiveTile(t, okeyDef);
         score += eff ? eff.value : 0;
     });
     return score;
+}
+
+// Karışık Seçilmiş Çoklu Per Çözümleyici (En Yüksek Puanlı Ayrıştırma)
+function findValidPartitionClient(tiles, okeyDef) {
+    if (!tiles || tiles.length < 3) return null;
+
+    function getCombinations(arr, k) {
+        if (k === 0) return [[]];
+        if (arr.length < k) return [];
+        let result = [];
+        function helper(start, combo) {
+            if (combo.length === k) {
+                result.push([...combo]);
+                return;
+            }
+            for (let i = start; i <= arr.length - (k - combo.length); i++) {
+                combo.push(arr[i]);
+                helper(i + 1, combo);
+                combo.pop();
+            }
+        }
+        helper(0, []);
+        return result;
+    }
+
+    let orderedInput = [...tiles].sort((a, b) => {
+        let oa = isRealOkey(a, okeyDef) ? 1 : 0;
+        let ob = isRealOkey(b, okeyDef) ? 1 : 0;
+        return oa - ob;
+    });
+
+    let memo = new Map();
+
+    function search(remaining) {
+        if (remaining.length === 0) return { pers: [], score: 0 };
+        if (remaining.length < 3) return null;
+
+        let key = remaining.map(t => t.id).sort().join(',');
+        if (memo.has(key)) return memo.get(key);
+
+        let head = remaining[0];
+        let tail = remaining.slice(1);
+        if (isRealOkey(head, okeyDef)) {
+            let classified = classifyAndSortPer(remaining, okeyDef);
+            let bestOkey = classified ? { pers: [classified], score: classified.score } : null;
+            memo.set(key, bestOkey);
+            return bestOkey;
+        }
+
+        let headColor = head.isFakeOkey ? (okeyDef ? okeyDef.color : head.color) : head.color;
+        let headVal = head.isFakeOkey ? (okeyDef ? okeyDef.value : head.value) : head.value;
+        let best = null;
+
+        let seriPool = tail.filter(t => {
+            if (isRealOkey(t, okeyDef)) return true;
+            let c = t.isFakeOkey ? (okeyDef ? okeyDef.color : t.color) : t.color;
+            return c === headColor;
+        });
+
+        let maxSeriSize = Math.min(13, 1 + seriPool.length);
+        for (let size = maxSeriSize; size >= 3; size--) {
+            let combs = getCombinations(seriPool, size - 1);
+            for (let c of combs) {
+                let cand = [head, ...c];
+                let seriRes = resolveSeries(cand, okeyDef);
+                if (seriRes) {
+                    let usedSet = new Set(cand.map(t => t.id));
+                    let rest = tail.filter(t => !usedSet.has(t.id));
+                    let sub = search(rest);
+                    if (sub !== null) {
+                        let total = seriRes.score + sub.score;
+                        if (!best || total > best.score) {
+                            best = {
+                                pers: [{ type: 'seri', sortedTiles: seriRes.sortedTiles, score: seriRes.score }, ...sub.pers],
+                                score: total
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        let grupPool = tail.filter(t => {
+            if (isRealOkey(t, okeyDef)) return true;
+            let v = t.isFakeOkey ? (okeyDef ? okeyDef.value : t.value) : t.value;
+            return v === headVal;
+        });
+
+        let maxGrupSize = Math.min(4, 1 + grupPool.length);
+        for (let size = 3; size <= maxGrupSize; size++) {
+            let combs = getCombinations(grupPool, size - 1);
+            for (let c of combs) {
+                let cand = [head, ...c];
+                if (isValidGroup(cand, okeyDef)) {
+                    let gScore = headVal * cand.length;
+                    let usedSet = new Set(cand.map(t => t.id));
+                    let rest = tail.filter(t => !usedSet.has(t.id));
+                    let sub = search(rest);
+                    if (sub !== null) {
+                        let total = gScore + sub.score;
+                        if (!best || total > best.score) {
+                            best = {
+                                pers: [{ type: 'grup', sortedTiles: sortGroupTiles(cand, okeyDef), score: gScore }, ...sub.pers],
+                                score: total
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        memo.set(key, best);
+        return best;
+    }
+
+    return search(orderedInput);
+}
+
+// Elle Seçilen Taşların Geçerli Per(ler) Oluşturup Oluşturmadığını Çözümle
+function evaluateSelectedPers(selectedTiles, okeyDef) {
+    if (!selectedTiles || selectedTiles.length < 3) return { valid: false, pers: [], score: 0 };
+    let single = classifyAndSortPer(selectedTiles, okeyDef);
+    if (single) {
+        return { valid: true, pers: [single], score: single.score };
+    }
+    if (selectedTiles.length >= 6) {
+        let part = findValidPartitionClient(selectedTiles, okeyDef);
+        if (part && part.pers.length >= 2) {
+            return { valid: true, pers: part.pers, score: part.score };
+        }
+    }
+    return { valid: false, pers: [], score: 0 };
 }
 
 // Raf Üzerindeki Bitişik Yuvaları Ayrıştırma
@@ -1023,54 +1449,114 @@ function getContiguousRuns(startIdx, endIdx, currentHandMap) {
     return runs;
 }
 
-// Bitişik Bir Taş Kümesindeki Geçerli Perleri Bul (Sıralı veya Grup)
+// Bitişik Bir Taş Kümesindeki Geçerli Perleri Bul (Karışık sıra & iç içe aynı renk seriler dahil!)
 function findPersInRun(run, okeyDef) {
     let tiles = run.map(x => x.tile);
     let n = tiles.length;
     if (n < 3) return [];
 
-    let memo = {};
+    function runSliceDP(items) {
+        let lenN = items.length;
+        let memo = {};
+        function parse(startIndex) {
+            if (startIndex >= lenN - 2) return { pers: [], score: 0 };
+            if (memo[startIndex]) return memo[startIndex];
 
-    function parse(startIndex) {
-        if (startIndex >= n - 2) return { pers: [], score: 0 };
-        if (memo[startIndex]) return memo[startIndex];
+            let bestResult = { pers: [], score: 0 };
 
-        let bestResult = { pers: [], score: 0 };
+            let skipResult = parse(startIndex + 1);
+            if (skipResult.score > bestResult.score) {
+                bestResult = skipResult;
+            }
 
-        // 1. Durum: Bu taşı atlayıp bir sonrakinden başla (arada bağlantısız taş varsa)
-        let skipResult = parse(startIndex + 1);
-        if (skipResult.score > bestResult.score) {
-            bestResult = skipResult;
+            for (let len = 3; len <= lenN - startIndex; len++) {
+                let subItems = items.slice(startIndex, startIndex + len);
+                let sliceTiles = subItems.map(x => x.tile);
+                let classified = classifyAndSortPer(sliceTiles, okeyDef);
+                if (classified) {
+                    let subResult = parse(startIndex + len);
+                    let totalScore = classified.score + subResult.score;
+                    if (totalScore > bestResult.score) {
+                        bestResult = {
+                            pers: [
+                                {
+                                    type: classified.type,
+                                    tiles: classified.sortedTiles,
+                                    slotIndices: subItems.map(x => x.slotIdx),
+                                    score: classified.score
+                                },
+                                ...subResult.pers
+                            ],
+                            score: totalScore
+                        };
+                    }
+                }
+            }
+
+            memo[startIndex] = bestResult;
+            return bestResult;
         }
+        return parse(0);
+    }
 
-        // 2. Durum: startIndex'ten başlayarak uzunluğu 3, 4, ... olan per dene
-        for (let len = 3; len <= n - startIndex; len++) {
-            let slice = tiles.slice(startIndex, startIndex + len);
-            if (isValidSeries(slice, okeyDef) || isValidGroup(slice, okeyDef)) {
-                let pScore = getPerScore(slice, okeyDef);
-                let subResult = parse(startIndex + len);
-                let totalScore = pScore + subResult.score;
-                if (totalScore > bestResult.score) {
-                    bestResult = {
-                        pers: [
-                            {
-                                tiles: slice,
-                                slotIndices: run.slice(startIndex, startIndex + len).map(x => x.slotIdx),
-                                score: pScore
-                            },
-                            ...subResult.pers
-                        ],
-                        score: totalScore
-                    };
+    let bestResult = runSliceDP(run);
+    let usedCount = bestResult.pers.reduce((acc, p) => acc + p.tiles.length, 0);
+
+    // 2. Durum: Kümedeki TÜM taşlar birden fazla pere eksiksiz bölünebiliyorsa (örn. karışık iki per yan yana: [8,9,9,10,10,11])
+    if (usedCount < n && n >= 6 && n <= 14) {
+        let slotMap = {};
+        run.forEach(item => { slotMap[item.tile.id] = item.slotIdx; });
+        let fullPart = findValidPartitionClient(tiles, okeyDef);
+        if (fullPart && fullPart.score > bestResult.score) {
+            bestResult = {
+                pers: fullPart.pers.map(p => ({
+                    type: p.type,
+                    tiles: p.sortedTiles,
+                    slotIndices: p.sortedTiles.map(t => slotMap[t.id]),
+                    score: p.score
+                })),
+                score: fullPart.score
+            };
+            usedCount = n;
+        }
+    }
+
+    // 3. Durum: Aynı renk taşlar bir arada karışık veya çift kopyalı dizildiyse (örn. [9, 8, 9, 10])
+    if (usedCount < n && n >= 4 && n <= 13) {
+        let nonOkeyItems = run.filter(x => !isRealOkey(x.tile, okeyDef));
+        if (nonOkeyItems.length > 0) {
+            let baseCol = nonOkeyItems[0].tile.isFakeOkey
+                ? (okeyDef ? okeyDef.color : nonOkeyItems[0].tile.color)
+                : nonOkeyItems[0].tile.color;
+            let allSameColor = nonOkeyItems.every(x => {
+                let c = x.tile.isFakeOkey ? (okeyDef ? okeyDef.color : x.tile.color) : x.tile.color;
+                return c === baseCol;
+            });
+            if (allSameColor) {
+                let seenVals = new Set();
+                let dedupItems = [];
+                let okeyItems = run.filter(x => isRealOkey(x.tile, okeyDef));
+                let sortedNonOkey = [...nonOkeyItems].sort((a, b) => {
+                    let va = a.tile.isFakeOkey ? (okeyDef ? okeyDef.value : a.tile.value) : a.tile.value;
+                    let vb = b.tile.isFakeOkey ? (okeyDef ? okeyDef.value : b.tile.value) : b.tile.value;
+                    return va - vb;
+                });
+                for (let item of sortedNonOkey) {
+                    let v = item.tile.isFakeOkey ? (okeyDef ? okeyDef.value : item.tile.value) : item.tile.value;
+                    if (!seenVals.has(v)) {
+                        seenVals.add(v);
+                        dedupItems.push(item);
+                    }
+                }
+                let candRes = runSliceDP([...dedupItems, ...okeyItems]);
+                if (candRes.score > bestResult.score) {
+                    bestResult = candRes;
                 }
             }
         }
-
-        memo[startIndex] = bestResult;
-        return bestResult;
     }
 
-    return parse(0).pers;
+    return bestResult.pers;
 }
 
 // Bitişik Bir Taş Kümesindeki Geçerli Çiftleri Bul
@@ -1295,6 +1781,7 @@ function renderPlayerHand(data) {
                              draggable="true"
                              ondragstart="okey101DragStart(event, '${tile.id}', ${idx})"
                              ondragend="okey101DragEnd(event)"
+                             ontouchstart="okey101TileTouchStart(event, '${tile.id}', ${idx})"
                              onclick="okey101ToggleSelect('${tile.id}')"
                              ondblclick="okey101QuickMoveTile('${tile.id}', ${idx})"
                              oncontextmenu="event.preventDefault(); okey101QuickMoveTile('${tile.id}', ${idx});"
@@ -1344,7 +1831,7 @@ function renderPlayerHand(data) {
         let hasAnyCiftOnTable = Object.values(data.playerInfos || {}).some(p => p.openedType === 'cift');
         if (!isAlreadyOpened) {
             openPairsBtn.style.display = 'inline-block';
-            openPairsBtn.innerText = "👥 5 Çift Aç";
+            openPairsBtn.innerText = "👥 Çift Aç";
         } else if (openedType === 'cift') {
             openPairsBtn.style.display = 'inline-block';
             openPairsBtn.innerText = "👥 Çift İndir";
@@ -1378,6 +1865,7 @@ function renderPlayerHand(data) {
 
 // Taş Seçme / Kaldırma
 function okey101ToggleSelect(tileId) {
+    if (window._okeySuppressClickUntil && Date.now() < window._okeySuppressClickUntil) return;
     if (okey101SelectedIds.includes(tileId)) {
         okey101SelectedIds = okey101SelectedIds.filter(id => id !== tileId);
     } else {
@@ -1402,30 +1890,34 @@ function updateSelectedScore() {
 
     // 1. Durum: Kullanıcı elle taş seçmişse (okey101SelectedIds > 0)
     if (okey101SelectedIds.length > 0) {
-        let selectedTiles = hand.filter(t => okey101SelectedIds.includes(t.id));
-        let sum = 0;
+        let selectedTiles = okey101SelectedIds.map(id => hand.find(t => t.id === id)).filter(Boolean);
+        let evalRes = evaluateSelectedPers(selectedTiles, okey101Data.okeyDef);
+        let rawSum = 0;
         selectedTiles.forEach(t => {
-            let val = t.isFakeOkey ? (okey101Data.okeyDef ? okey101Data.okeyDef.value : 10) : t.value;
-            sum += val;
+            let eff = getEffectiveTile(t, okey101Data.okeyDef);
+            rawSum += eff ? eff.value : 0;
         });
+        let sum = evalRes.valid ? evalRes.score : rawSum;
 
         let clearBtnHtml = `<button onclick="event.stopPropagation(); okey101ClearSelection()" style="background:#ef4444; color:white; border:none; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer; margin-left:6px;" title="Tüm seçili taşları kaldır">✖ Temizle</button>`;
 
         if (isAlreadyOpened) {
+            scoreDisp.className = evalRes.valid ? "score-pill-valid" : "score-pill-normal";
+            let perNote = evalRes.valid ? ` (${evalRes.pers.length} Geçerli Per ✓)` : ` (${selectedTiles.length} Taş)`;
+            scoreDisp.innerHTML = `👉 Seçilen: <b>${sum} Puan</b>${perNote} | 🀄 Istaka: <b>${detected.totalScore} P</b>${clearBtnHtml}`;
+        } else if (evalRes.valid && sum >= 180) {
             scoreDisp.className = "score-pill-valid";
-            scoreDisp.innerHTML = `👉 Seçilen: <b>${sum} Puan</b> (${selectedTiles.length} Taş) | 🀄 Istaka: <b>${detected.totalScore} P</b>${clearBtnHtml}`;
-        } else if (sum >= 180) {
+            scoreDisp.innerHTML = `👑 Seçilen: <b>${sum} Puan</b> (${evalRes.pers.length} Per - 180+ Sağlandı! 2 Siler! ⭐⭐)${clearBtnHtml}`;
+        } else if (evalRes.valid && sum >= 150) {
             scoreDisp.className = "score-pill-valid";
-            scoreDisp.innerHTML = `👑 Seçilen: <b>${sum} Puan</b> (180+ Sağlandı! 2 Siler! ⭐⭐)${clearBtnHtml}`;
-        } else if (sum >= 150) {
+            scoreDisp.innerHTML = `🌟 Seçilen: <b>${sum} Puan</b> (${evalRes.pers.length} Per - 150+ Sağlandı! 1 Siler! ⭐)${clearBtnHtml}`;
+        } else if (evalRes.valid && sum >= 101) {
             scoreDisp.className = "score-pill-valid";
-            scoreDisp.innerHTML = `🌟 Seçilen: <b>${sum} Puan</b> (150+ Sağlandı! 1 Siler! ⭐)${clearBtnHtml}`;
-        } else if (sum >= 101) {
-            scoreDisp.className = "score-pill-valid";
-            scoreDisp.innerHTML = `✨ Seçilen: <b>${sum} Puan</b> (101 Sağlandı! Açılabilir)${clearBtnHtml}`;
+            scoreDisp.innerHTML = `✨ Seçilen: <b>${sum} Puan</b> (${evalRes.pers.length} Per - 101 Sağlandı! Açılabilir)${clearBtnHtml}`;
         } else {
             scoreDisp.className = "score-pill-normal";
-            scoreDisp.innerHTML = `👉 Seçilen: <b>${sum} / 101 Puan</b> (${selectedTiles.length} Taş) | 🀄 Istaka: <b>${detected.totalScore} P</b>${clearBtnHtml}`;
+            let statusNote = evalRes.valid ? `${evalRes.pers.length} Geçerli Per` : `${selectedTiles.length} Taş`;
+            scoreDisp.innerHTML = `👉 Seçilen: <b>${sum} / 101 Puan</b> (${statusNote}) | 🀄 Istaka: <b>${detected.totalScore} P</b>${clearBtnHtml}`;
         }
     } else {
         // 2. Durum: Kullanıcı elle taş seçmemişse OTOMATİK ISTAKA PER PUANINI GÖSTER
@@ -1452,7 +1944,7 @@ function updateSelectedScore() {
             scoreDisp.innerHTML = `✨ Istaka Perleri: <b>${sum} Puan</b> (${perCount} Per - 101 Sağlandı! 🟢 Tek tıkla el aç!)`;
         } else if (pairCount >= 5) {
             scoreDisp.className = "score-pill-valid";
-            scoreDisp.innerHTML = `👥 Istaka Çiftleri: <b>${pairCount} Çift</b> (5 Çift Sağlandı! 🟢 Tek tıkla el aç!)`;
+            scoreDisp.innerHTML = `👥 Istaka Çiftleri: <b>${pairCount} Çift</b> (Çift Açmaya Hazır! 🟢 Tek tıkla el aç!)`;
         } else if (sum > 0) {
             scoreDisp.className = "score-pill-normal";
             scoreDisp.innerHTML = `🀄 Istaka Perleri: <b>${sum} / 101 Puan</b> (${101 - sum} puan eksik • ${perCount} Per)`;
@@ -1500,6 +1992,10 @@ function okey101DrawFromDeck() {
 
 function okey101TakeDiscard() {
     if (!okey101Data || !okey101Data.myTurn) return;
+    if (okey101Data.drawPileCount <= 0) {
+        alert("Destedeki taşlar bittiği için yandan taş alınamaz!");
+        return;
+    }
     if (window.playSound) window.playSound('okeyTile');
     socket.emit('okey101TakeDiscard');
 }
@@ -1536,11 +2032,29 @@ function okey101SubmitOpenHand() {
 
     let persToOpen = [];
 
-    // Durum 1: Kullanıcı manuel olarak taş seçtiyse
+    // Durum 1: Kullanıcı manuel olarak taş seçtiyse (Karışık seçilse bile perlere ayır ve sıralı indir!)
     if (okey101SelectedIds.length >= 3) {
-        persToOpen = [{
-            tileIds: [...okey101SelectedIds]
-        }];
+        let hand = okey101Data.hand || [];
+        let selectedTiles = okey101SelectedIds.map(id => hand.find(t => t.id === id)).filter(Boolean);
+        let evalRes = evaluateSelectedPers(selectedTiles, okey101Data.okeyDef);
+        if (!evalRes.valid) {
+            alert("Seçtiğiniz taşlar geçerli bir seri veya grup per oluşturmuyor!\n\nLütfen aynı renkten ardışık sayıları (örn: 8-9-10) veya farklı renklerden aynı sayıları (örn: 13-13-13) seçin ya da seçimi temizleyip ıstaka perlerini tek tıkla açın.");
+            return;
+        }
+        if (!isAlreadyOpened && evalRes.score < 101) {
+            alert(`Seçtiğiniz perlerin toplamı ${evalRes.score} puan.\n\nİlk el açılışı için en az 101 puan gereklidir! (${101 - evalRes.score} puan daha gerekli)`);
+            return;
+        }
+        if (okey101Data.lastDiscardTaken && okey101Data.takenDiscardTileId) {
+            let hasTakenTile = selectedTiles.some(t => t.id === okey101Data.takenDiscardTileId);
+            if (!hasTakenTile) {
+                alert("⚠️ Yandan aldığınız taşı açacağınız perlerin içine dahil etmek zorundasınız!");
+                return;
+            }
+        }
+        persToOpen = evalRes.pers.map(p => ({
+            tileIds: p.sortedTiles.map(t => t.id)
+        }));
     }
     // Durum 2: Kullanıcı tek tek seçmedi, ıstakada tespit edilen perleri tek tıkla aç!
     else {
@@ -1577,7 +2091,7 @@ function okey101SubmitOpenHand() {
     socket.emit('okey101OpenHand', payload);
 }
 
-// 👥 5 Çift Aç / Çift İndir - Tek Tıkla Otomatik Açma Desteği
+// 👥 Çift Aç / Çift İndir - Tek Tıkla Otomatik Açma Desteği
 function okey101SubmitOpenPairs() {
     if (!okey101Data || !okey101Data.myTurn) return;
     let myInfo = okey101Data.playerInfos && okey101Data.playerInfos[socket.id];
@@ -1586,19 +2100,29 @@ function okey101SubmitOpenPairs() {
 
     let pairs = [];
 
-    // Durum 1: Elle seçim yapıldıysa
-    if (okey101SelectedIds.length >= 2) {
-        let minTiles = isAlreadyOpened ? 2 : 10;
-        if (okey101SelectedIds.length < minTiles || okey101SelectedIds.length % 2 !== 0) {
-            if (!isAlreadyOpened) {
-                alert("İlk çift açılışı için en az 5 çift (10 taş) seçmelisiniz!");
-            } else {
-                alert("Masaya çift indirmek için çiftler halinde (en az 2 taş) seçmelisiniz!");
-            }
+    // Durum 1: Elle seçim yapıldıysa (Gösterilmiş gösterge tek taş çift sayılır)
+    if (okey101SelectedIds.length >= 1) {
+        let selected = [...okey101SelectedIds];
+        let revealedGostergeId = okey101Data.myRevealedGostergeTileId;
+        let hasGostergeInSelection = revealedGostergeId && selected.includes(revealedGostergeId);
+
+        let normalTileIds = hasGostergeInSelection ? selected.filter(id => id !== revealedGostergeId) : selected;
+        let totalPairsCount = (hasGostergeInSelection ? 1 : 0) + Math.floor(normalTileIds.length / 2);
+
+        if (!isAlreadyOpened && totalPairsCount < 5) {
+            alert(`İlk çift açılışı için en az 5 çift gereklidir! (Seçilen çift sayısı: ${totalPairsCount})`);
             return;
         }
-        for (let i = 0; i < okey101SelectedIds.length; i += 2) {
-            pairs.push([okey101SelectedIds[i], okey101SelectedIds[i + 1]]);
+        if (normalTileIds.length % 2 !== 0) {
+            alert("Lütfen çiftlerinizi ikişerli tam çiftler halinde seçiniz!");
+            return;
+        }
+
+        if (hasGostergeInSelection) {
+            pairs.push([revealedGostergeId]);
+        }
+        for (let i = 0; i < normalTileIds.length; i += 2) {
+            pairs.push([normalTileIds[i], normalTileIds[i + 1]]);
         }
     }
     // Durum 2: Otomatik ıstaka çiftleri tek tıkla aç
@@ -1621,7 +2145,7 @@ function okey101SubmitOpenPairs() {
             }
         }
 
-        pairs = detected.pairs.map(p => [p.tiles[0].id, p.tiles[1].id]);
+        pairs = detected.pairs.map(p => p.isGostergePair ? [p.tiles[0].id] : sortPairTiles(p.tiles, okey101Data.okeyDef, okey101Data.gosterge).map(t => t.id));
     }
 
     okey101SelectedIds = [];
@@ -1641,30 +2165,96 @@ function okey101AddSelectedToPer(perIndex, position) {
     socket.emit('okey101AddTileToPer', { tileIds: tileIds, tileId: tileIds[0], targetPerIndex: perIndex, position: position });
 }
 
-// Otomatik Seri Dizme (Gruplar Arasında 1 Yuva Boşluk Bırakarak Dizer)
+// Otomatik Seri Dizme (Çift Kopyaların Seriyi Bozmasını Önler, Sahte Okey'i Yerine Kurgular ve Grupları Ayırır)
 function okey101SortSeries() {
     if (!okey101Data || !okey101Data.hand) return;
+    let okeyDef = okey101Data.okeyDef;
     let hand = [...okey101Data.hand];
-    const colorOrder = { 'kirmizi': 1, 'siyah': 2, 'mavi': 3, 'sari': 4, 'sahte': 5 };
+    const colorOrder = { 'kirmizi': 1, 'siyah': 2, 'mavi': 3, 'sari': 4 };
 
-    // Taşları renk ve sayıya göre sırala
-    hand.sort((a, b) => {
-        let ca = colorOrder[a.color] || 9;
-        let cb = colorOrder[b.color] || 9;
-        if (ca !== cb) return ca - cb;
-        return a.value - b.value;
-    });
+    let realOkeys = hand.filter(t => isRealOkey(t, okeyDef));
+    let pool = hand.filter(t => !isRealOkey(t, okeyDef));
 
-    // Peş peşe gelen serileri ve renk gruplarını kümele
+    function effCol(t) { return t.isFakeOkey ? (okeyDef ? okeyDef.color : 'sari') : t.color; }
+    function effVal(t) { return t.isFakeOkey ? (okeyDef ? okeyDef.value : 0) : t.value; }
+
     let groups = [];
+    let leftovers = [];
+
+    // 1) Her renkten temiz ardışık serileri (3+ taş, çift kopyalar seriyi bölmeden!) çıkar
+    for (let col of OKEY101_COLORS) {
+        let colTiles = pool.filter(t => effCol(t) === col).sort((a, b) => effVal(a) - effVal(b));
+        while (colTiles.length > 0) {
+            let distinct = [];
+            let seen = new Set();
+            for (let t of colTiles) {
+                let v = effVal(t);
+                if (!seen.has(v)) {
+                    seen.add(v);
+                    distinct.push(t);
+                }
+            }
+            // En uzun ardışık zinciri bul (12-13-1 hariç)
+            let extractedAny = false;
+            let i = 0;
+            while (i < distinct.length) {
+                let chain = [distinct[i]];
+                let j = i + 1;
+                while (j < distinct.length && effVal(distinct[j]) === effVal(chain[chain.length - 1]) + 1) {
+                    chain.push(distinct[j]);
+                    j++;
+                }
+                // 101 Okey'de 12-13-1 serisi yoktur, seri en fazla 13'te biter
+                if (chain.length >= 3) {
+                    groups.push(chain);
+                    let usedIds = new Set(chain.map(x => x.id));
+                    colTiles = colTiles.filter(x => !usedIds.has(x.id));
+                    extractedAny = true;
+                    break;
+                }
+                i = j;
+            }
+            if (!extractedAny) {
+                leftovers.push(...colTiles);
+                break;
+            }
+        }
+    }
+
+    // 2) Kalan taşlardan 3 veya 4'lü aynı sayı farklı renk gruplarını (örn: 13-13-13) çıkar
+    for (let v = 13; v >= 1; v--) {
+        while (true) {
+            let sameVal = leftovers.filter(t => effVal(t) === v);
+            let byCol = new Map();
+            for (let t of sameVal) {
+                let c = effCol(t);
+                if (!byCol.has(c)) byCol.set(c, t);
+            }
+            if (byCol.size >= 3) {
+                let grp = Array.from(byCol.values());
+                groups.push(sortGroupTiles(grp, okeyDef));
+                let usedIds = new Set(grp.map(x => x.id));
+                leftovers = leftovers.filter(x => !usedIds.has(x.id));
+            } else {
+                break;
+            }
+        }
+    }
+
+    // 3) Kalan tekil/ikili taşları renk ve sayı sırasıyla grupla
+    leftovers.sort((a, b) => {
+        let ca = colorOrder[effCol(a)] || 9;
+        let cb = colorOrder[effCol(b)] || 9;
+        if (ca !== cb) return ca - cb;
+        return effVal(a) - effVal(b);
+    });
     let cur = [];
-    for (let i = 0; i < hand.length; i++) {
-        let t = hand[i];
+    for (let t of leftovers) {
         if (cur.length === 0) {
             cur.push(t);
         } else {
             let last = cur[cur.length - 1];
-            if (t.color === last.color && (t.value === last.value + 1 || t.value === last.value)) {
+            if (effCol(t) === effCol(last) && effVal(t) === effVal(last) + 1) {
                 cur.push(t);
             } else {
                 groups.push(cur);
@@ -1673,6 +2263,7 @@ function okey101SortSeries() {
         }
     }
     if (cur.length > 0) groups.push(cur);
+    if (realOkeys.length > 0) groups.push(realOkeys);
 
     let newSlots = new Array(30).fill(null);
     let slotIdx = 0;

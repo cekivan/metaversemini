@@ -7,6 +7,14 @@ function registerVoiceHandlers(io, socket, players) {
     // 1. Masanın Sesli Sohbet Kanalına Katılma
     socket.on('voiceJoinRoom', (data) => {
         if (!data || !data.tableId) return;
+
+        // Jammer Sinyal Kesici Kontrolü
+        if (players[socket.id]?.jammerExpiresAt && players[socket.id].jammerExpiresAt > Date.now()) {
+            let remain = Math.ceil((players[socket.id].jammerExpiresAt - Date.now()) / 1000);
+            socket.emit('systemMessage', "📡❌ Sinyaliniz kesildi! Jammer etkisi altındayken sesli sohbete katılamazsınız (" + remain + " sn).");
+            return;
+        }
+
         let tableId = data.tableId;
         let roomKey = `voice_${tableId}`;
 
@@ -42,6 +50,7 @@ function registerVoiceHandlers(io, socket, players) {
     // 2. WebRTC Sinyal İletimi (Offer / Answer / ICE Candidate)
     socket.on('voiceSignal', (data) => {
         if (!data || !data.to || !data.signal) return;
+        if (players[socket.id]?.jammerExpiresAt && players[socket.id].jammerExpiresAt > Date.now()) return;
         let targetSocketId = data.to;
 
         io.to(targetSocketId).emit('voiceSignal', {

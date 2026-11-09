@@ -1,6 +1,7 @@
 // src/coordinators/billiardCoordinator.js - 8-Ball Amerikan Bilardo Koordinatörü & Fizik Döngüsü
 const billiardEngine = require('../engines/billiard.js');
 const dataManager = require('../dataManager');
+const { handleTableGameEndXP } = require('../utils/levelSystem');
 const { activeGames } = require('./gameState');
 
 const billiardBotTimers = {};
@@ -238,8 +239,18 @@ function startBilliardPhysicsLoop(io, players = {}) {
                 // Bilardo Bitiş
                 if (game.gameOver && game.winner && !game.winnerRecorded) {
                     game.winnerRecorded = true;
-                    let wName = game.playerProfiles[game.winner]?.name;
-                    let isHuman = !game.winner.startsWith('bot_') && !wName.startsWith('🤖') && !game.playerProfiles[game.winner]?.isBot;
+                    const isBotPlayer = (pid, prof) => !pid || pid.startsWith('bot_') || prof?.isBot || (typeof prof?.name === 'string' && (prof.name.startsWith('🤖') || prof.name.includes('🤖')));
+                    const bothHumans = !isBotPlayer(game.players[0], game.playerProfiles?.[game.players[0]]) && !isBotPlayer(game.players[1], game.playerProfiles?.[game.players[1]]);
+                    if (bothHumans) {
+                        game.players.forEach(pid => {
+                            let pName = game.playerProfiles?.[pid]?.name;
+                            if (pName) dataManager.recordGamePlayed(pName, 'billiard', 1);
+                        });
+                    }
+                    handleTableGameEndXP(io, null, 'billiard', game.players.map(pid => ({ socketId: pid, name: game.playerProfiles?.[pid]?.name, isBot: isBotPlayer(pid, game.playerProfiles?.[pid]) })), [game.winner]);
+
+                    let wName = game.playerProfiles?.[game.winner]?.name;
+                    let isHuman = typeof wName === 'string' && wName.length > 0 && !isBotPlayer(game.winner, game.playerProfiles?.[game.winner]);
                     let winPrize = 20;
                     if (game.pot && game.pot > 0) {
                         winPrize += game.pot;

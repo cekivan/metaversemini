@@ -1,6 +1,7 @@
 // src/coordinators/okey101Coordinator.js - 101 Yüzbir Okey (Tekli & Eşli) Oyun Koordinatörü
 const okey101Engine = require('../engines/okey101.js');
 const dataManager = require('../dataManager');
+const { handleTableGameEndXP } = require('../utils/levelSystem');
 const { activeGames } = require('./gameState');
 
 const okey101AfkTimers = {};
@@ -35,7 +36,8 @@ function sendOkey101Update(game, io, players) {
         let prevPid = game.players[(game.turnIndex + 3) % 4];
         let partnerPid = okey101Engine.getPartnerId(game, pid);
         let partnerOpened = partnerPid && game.hasOpened && !!game.hasOpened[partnerPid];
-        let canTakeDiscard = (game.players[game.turnIndex] === pid) && !game.drawnThisTurn && !!(game.discardPiles && game.discardPiles[prevPid] && game.discardPiles[prevPid].length > 0);
+        let hasDeckTiles = !!(game.drawPile && game.drawPile.length > 0);
+        let canTakeDiscard = !game.gameOver && (game.players[game.turnIndex] === pid) && !game.drawnThisTurn && hasDeckTiles && !!(game.discardPiles && game.discardPiles[prevPid] && game.discardPiles[prevPid].length > 0);
 
         let isMyTurn = (game.players[game.turnIndex] === pid);
         let myDiscardTaken = isMyTurn && !!game.lastDiscardTaken;
@@ -51,8 +53,9 @@ function sendOkey101Update(game, io, players) {
             t.value === game.gosterge.value && 
             (game.initialGostergeOwners && game.initialGostergeOwners[pid] && game.initialGostergeOwners[pid].includes(t.id))
         );
-        let isFirstPlayerWith22 = (game.players[0] === pid && (!game.discardPiles[pid] || game.discardPiles[pid].length === 0));
-        let canRevealGosterge = (!hasDrawnEver || isFirstPlayerWith22) && !!matchingGostergeTile && !(game.revealedGosterge && game.revealedGosterge[pid]);
+        let starterPid = game.players[((game.roundNumber || 1) - 1) % game.players.length];
+        let isStarterWith22 = (starterPid === pid && (!game.discardPiles[pid] || game.discardPiles[pid].length === 0));
+        let canRevealGosterge = (!hasDrawnEver || isStarterWith22) && !!matchingGostergeTile && !(game.revealedGosterge && game.revealedGosterge[pid]);
         let myRevealedGostergeTileId = (game.revealedGosterge && game.revealedGosterge[pid]) || null;
 
         io.to(pid).emit('okey101Update', {
@@ -125,18 +128,34 @@ function sendOkey101Update(game, io, players) {
         checkOkey101RoundEnd(game, io, players);
         if (game.winner && !game.winnerRecorded) {
             game.winnerRecorded = true;
-            let wName = game.playerProfiles[game.winner]?.name;
+            let wName = game.playerProfiles?.[game.winner]?.name;
+
+            // Çok Oyunculu Anti-Bot Kuralı: Masada en az 2 gerçek oyuncu olmalıdır!
+            const isBotPlayer = (pid) => {
+                let pName = game.playerProfiles?.[pid]?.name;
+                return !pid || pid.startsWith('bot_') || (pName && (pName.startsWith('🤖') || pName.includes('🤖'))) || game.playerProfiles?.[pid]?.isBot;
+            };
+            const humanPids = game.players.filter(pid => !isBotPlayer(pid));
+
+            game.players.forEach(pid => {
+                let pName = game.playerProfiles?.[pid]?.name;
+                if (pName && !isBotPlayer(pid)) {
+                    dataManager.recordQuestProgress(pName, 'okey101_play', 1);
+                    // En az 2 gerçek insan varsa rozet seviyesine işlenir
+                    if (humanPids.length >= 2) {
+                        const isWinner = (pid === game.winner);
+                        const multiplier = isWinner ? 2 : 1; // Kazanan Bonusu (2x Multiplier)
+                        dataManager.recordGamePlayed(pName, 'okey', multiplier);
+                    }
+                }
+            });
+            handleTableGameEndXP(io, players, 'okey101', game.players.map(pid => ({ socketId: pid, name: game.playerProfiles?.[pid]?.name, isBot: isBotPlayer(pid) })), [game.winner]);
+
             if (wName) {
-                let isHuman = !game.winner.startsWith('bot_') && !wName.startsWith('🤖');
+                let isHuman = typeof wName === 'string' && wName.length > 0 && !isBotPlayer(game.winner);
                 if (isHuman) {
                     dataManager.persistentData.leaderboard.okey101[wName] = (dataManager.persistentData.leaderboard.okey101[wName] || 0) + 1;
                 }
-                game.players.forEach(pid => {
-                    let pName = game.playerProfiles[pid]?.name;
-                    if (pName && !pid.startsWith('bot_') && !pName.startsWith('🤖')) {
-                        dataManager.recordQuestProgress(pName, 'okey101_play', 1);
-                    }
-                });
                 let winPrize = 25;
                 if (game.pot && game.pot > 0) {
                     winPrize += game.pot;
@@ -149,8 +168,8 @@ function sendOkey101Update(game, io, players) {
                     dataManager.persistentData.users[wName].money = (dataManager.persistentData.users[wName].money || 100) + winPrize;
                     io.to(game.winner).emit('moneyUpdate', dataManager.persistentData.users[wName].money);
                 }
-                dataManager.savePersistentData();
             }
+            dataManager.savePersistentData();
         }
     } else {
         startOkey101AfkTimer(game, io, players);
@@ -166,7 +185,7 @@ function startOkey101AfkTimer(game, io, players) {
     }
 
     let currentPid = game.players[game.turnIndex];
-    let isBot = game.playerProfiles[currentPid]?.isBot || currentPid.startsWith('bot_');
+    let isBot = (game.playerProfiles && game.playerProfiles[currentPid]?.isBot) || (typeof currentPid === 'string' && currentPid.startsWith('bot_'));
     let delay = isBot ? 1400 : 40000;
 
     okey101AfkTimers[gid] = setTimeout(() => {
@@ -299,6 +318,26 @@ function executeVoidHandOkey101(game, io, players) {
     game.hasDrawnEver = newGame.hasDrawnEver;
     game.gameOver = false;
     game.winner = null;
+
+    if (game.yazboz) {
+        let currentRound = game.roundNumber || 1;
+        if (game.yazboz.team1 && game.yazboz.team2) {
+            [game.yazboz.team1, game.yazboz.team2].forEach(team => {
+                team.topRounds = (team.topRounds || []).filter(r => r.round !== currentRound);
+                team.bottomPenalties = (team.bottomPenalties || []).filter(p => p.round !== currentRound);
+                team.bottomSilers = (team.bottomSilers || []).filter(s => s.round !== currentRound);
+            });
+        }
+        if (game.yazboz.players) {
+            for (let pid in game.yazboz.players) {
+                let p = game.yazboz.players[pid];
+                p.topRounds = (p.topRounds || []).filter(r => r.round !== currentRound);
+                p.bottomPenalties = (p.bottomPenalties || []).filter(pen => pen.round !== currentRound);
+                p.bottomSilers = (p.bottomSilers || []).filter(sil => sil.round !== currentRound);
+            }
+        }
+        okey101Engine.updateYazbozTotals(game);
+    }
 
     let msg = "🔄 Tüm oyuncular kabul etti! El geçersiz sayıldı ve taşlar yeniden dağıtıldı (Yeniden para alınmadı).";
     game.players.forEach(pid => {

@@ -1,0 +1,546 @@
+/* public/css/dailyReward.css - Kompakt Günlük Giriş Ödülü (Taslak 3: Odak Kartı, Seri Ateşi & Yarın Teaser) */
+
+#dailyRewardModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(3, 7, 18, 0.85);
+    z-index: 30000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+/* Kompakt Dialog */
+.dr-dialog.dr-compact-dialog {
+    background: linear-gradient(165deg, #0f172a 0%, #0b1120 50%, #070d18 100%);
+    border: 2px solid rgba(250, 204, 21, 0.45);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95), 0 0 45px rgba(234, 179, 8, 0.18);
+    border-radius: 22px;
+    width: 100%;
+    max-width: 390px;
+    display: flex;
+    flex-direction: column;
+    color: #f8fafc;
+    position: relative;
+    overflow: hidden;
+    animation: drPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes drPopIn {
+    0% { transform: scale(0.88); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Modal Üst Başlık */
+.dr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 12px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.dr-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dr-header-icon {
+    font-size: 26px;
+    filter: drop-shadow(0 2px 8px rgba(250, 204, 21, 0.5));
+    animation: drGiftBounce 2.5s infinite ease-in-out;
+}
+
+@keyframes drGiftBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-3px) rotate(4deg); }
+}
+
+.dr-title {
+    font-size: 18px;
+    font-weight: 900;
+    margin: 0;
+    background: linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.dr-subtitle {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 1px;
+}
+
+.dr-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 🔥 SERİ ATEŞİ (STREAK BADGE) - SEVİYEYE GÖRE DEĞİŞEN ALEV RENKLERİ */
+.dr-streak-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.dr-flame-icon {
+    font-size: 14px;
+    display: inline-block;
+    animation: drFlameWiggle 1.4s infinite ease-in-out;
+}
+
+@keyframes drFlameWiggle {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    30% { transform: scale(1.15) rotate(-6deg); }
+    70% { transform: scale(1.1) rotate(5deg); }
+}
+
+/* Tier 1: 1 - 3 Gün (Altın Amber Alevi) */
+.dr-streak-tier-1 {
+    background: rgba(245, 158, 11, 0.16);
+    border: 1.5px solid rgba(245, 158, 11, 0.6);
+    color: #fbbf24;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+
+/* Tier 2: 4 - 7 Gün (Kızıl Kor Alevi) */
+.dr-streak-tier-2 {
+    background: rgba(239, 68, 68, 0.18);
+    border: 1.5px solid rgba(239, 68, 68, 0.7);
+    color: #f87171;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.45);
+}
+
+/* Tier 3: 8 - 14 Gün (Mistik Mor Plazma Alevi) */
+.dr-streak-tier-3 {
+    background: rgba(168, 85, 247, 0.22);
+    border: 1.5px solid rgba(168, 85, 247, 0.75);
+    color: #c084fc;
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.5);
+}
+
+/* Tier 4: 15 - 29 Gün (Buzul Mavi / Camgöbeği Plazma Alevi) */
+.dr-streak-tier-4 {
+    background: rgba(6, 182, 212, 0.22);
+    border: 1.5px solid rgba(6, 182, 212, 0.8);
+    color: #38bdf8;
+    box-shadow: 0 0 18px rgba(6, 182, 212, 0.55);
+}
+
+/* Tier 5: 30+ Gün (Tanrısal Gökkuşağı / Efsanevi Altın Alev) */
+.dr-streak-tier-5 {
+    background: linear-gradient(135deg, rgba(250, 204, 21, 0.3), rgba(244, 63, 94, 0.3));
+    border: 1.5px solid #facc15;
+    color: #fef08a;
+    box-shadow: 0 0 24px rgba(250, 204, 21, 0.7);
+    animation: drMythicPulse 2s infinite ease-in-out;
+}
+
+@keyframes drMythicPulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(250, 204, 21, 0.6); }
+    50% { box-shadow: 0 0 28px rgba(244, 63, 94, 0.8); }
+}
+
+/* Kapat Butonu */
+.dr-close-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.dr-close-btn:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+    color: #fecaca;
+    transform: rotate(90deg);
+}
+
+/* ANA ODAK KARTI: BUGÜNÜN ÖDÜLÜ */
+.dr-today-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 22px 20px 18px 20px;
+    background: radial-gradient(circle at 50% 25%, rgba(250, 204, 21, 0.08) 0%, transparent 70%);
+}
+
+.dr-chest-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.dr-chest-icon {
+    font-size: 64px;
+    line-height: 1;
+    filter: drop-shadow(0 6px 16px rgba(250, 204, 21, 0.45));
+    animation: drFloatChest 3s infinite ease-in-out;
+    cursor: default;
+    user-select: none;
+    transition: transform 0.2s ease;
+}
+
+/* Ödül Alındığında Sandık ve Kart Kutlama Darbesi (Punch) */
+.dr-chest-punch {
+    animation: drChestCelebration 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+@keyframes drChestCelebration {
+    0% { transform: scale(0.92); }
+    35% { transform: scale(1.32) rotate(-6deg); }
+    60% { transform: scale(1.12) rotate(4deg); }
+    80% { transform: scale(1.18) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.dr-card-punch {
+    animation: drCardCelebration 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes drCardCelebration {
+    0% { transform: scale(0.98); box-shadow: 0 0 35px rgba(250, 204, 21, 0.85); }
+    40% { transform: scale(1.025); box-shadow: 0 0 55px rgba(250, 204, 21, 0.95); }
+    100% { transform: scale(1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+}
+
+@keyframes drFloatChest {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-7px) scale(1.05); }
+}
+
+.dr-chest-glow {
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    background: radial-gradient(circle, rgba(250, 204, 21, 0.35) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
+    pointer-events: none;
+    animation: drGlowPulse 2.4s infinite ease-in-out;
+}
+
+@keyframes drGlowPulse {
+    0%, 100% { transform: scale(0.9); opacity: 0.6; }
+    50% { transform: scale(1.2); opacity: 1; }
+}
+
+.dr-today-meta {
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+.dr-today-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: rgba(250, 204, 21, 0.16);
+    border: 1px solid rgba(250, 204, 21, 0.4);
+    color: #facc15;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.dr-today-title {
+    font-size: 17px;
+    font-weight: 900;
+    color: #f8fafc;
+    margin-top: 5px;
+    letter-spacing: 0.3px;
+}
+
+/* Ödül Çipleri (TL & Elmas) */
+.dr-rewards-chips {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+    margin-bottom: 18px;
+}
+
+.dr-reward-chip {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.dr-chip-money {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1.5px solid rgba(16, 185, 129, 0.45);
+    color: #34d399;
+}
+
+.dr-chip-diamond {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1.5px solid rgba(56, 189, 248, 0.45);
+    color: #38bdf8;
+}
+
+.dr-chip-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* AKSİYON BUTONLARI & DURUMLAR */
+.dr-action-container {
+    width: 100%;
+    max-width: 320px;
+}
+
+.dr-btn {
+    width: 100%;
+    padding: 13px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.4px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.dr-btn-claim {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    border: 1.5px solid #34d399;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+    position: relative;
+    overflow: hidden;
+}
+
+.dr-btn-claim:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.65);
+    filter: brightness(1.08);
+}
+
+.dr-btn-claim:active {
+    transform: translateY(0);
+}
+
+/* Bugün Alındı Durum Kartı & Canlı Geri Sayım */
+.dr-claimed-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(30, 41, 59, 0.65);
+    border: 1.5px solid rgba(16, 185, 129, 0.35);
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.dr-claimed-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #34d399;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.dr-claimed-timer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #94a3b8;
+    font-size: 11.5px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.dr-claimed-timer strong {
+    color: #facc15;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+/* Can Simidi & Seriyi Kurtarma Butonları */
+.dr-action-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.dr-btn-freeze {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    border: 1.5px solid #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+    font-size: 12.5px;
+    padding: 11px 14px;
+}
+
+.dr-btn-freeze:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(14, 165, 233, 0.6);
+}
+
+.dr-btn-reset {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    font-size: 12px;
+    padding: 9px 12px;
+}
+
+.dr-btn-reset:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+/* ALT TEASER: YARININ ÖDÜLÜ */
+.dr-tomorrow-teaser {
+    background: rgba(15, 23, 42, 0.75);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+}
+
+.dr-tomorrow-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 900;
+    color: #c084fc;
+    letter-spacing: 0.8px;
+}
+
+.dr-tomorrow-sparkle {
+    font-size: 12px;
+}
+
+.dr-tomorrow-content {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #e2e8f0;
+}
+
+.dr-tomorrow-lock {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.dr-tomorrow-day {
+    color: #facc15;
+    font-weight: 900;
+}
+
+.dr-tomorrow-reward {
+    color: #f8fafc;
+}
+
+.dr-tomorrow-milestone {
+    padding: 1px 6px;
+    background: linear-gradient(135deg, rgba(250, 204, 21, 0.25), rgba(245, 158, 11, 0.25));
+    border: 1px solid #facc15;
+    color: #fef08a;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 900;
+    margin-left: 3px;
+}
+
+/* ÖDÜL ALINMAMIŞSA YÜZEN MİNİ TEKRAR AÇMA ROZETİ */
+#drFloatingBadge {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    background: linear-gradient(135deg, #ca8a04 0%, #eab308 50%, #facc15 100%);
+    color: #0f172a;
+    padding: 10px 16px;
+    border-radius: 25px;
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 8px 25px rgba(234, 179, 8, 0.55), 0 0 15px rgba(250, 204, 21, 0.4);
+    cursor: pointer;
+    align-items: center;
+    gap: 8px;
+    animation: drBadgeBounce 2s infinite ease-in-out;
+    transition: transform 0.2s ease;
+    user-select: none;
+}
+
+#drFloatingBadge:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 10px 30px rgba(234, 179, 8, 0.75);
+}
+
+@keyframes drBadgeBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* KUTLAMA PARÇACIK CANVASI */
+#dailyRewardCanvas {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 31000;
+}

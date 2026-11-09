@@ -3,6 +3,25 @@
 let currentTavlaState = null;
 let selectedTavlaPoint = null;
 let tavlaValidTargets = [];
+let lastTavlaActionKey = null;
+
+function formatTavlaPointLabel(pt, viewColor) {
+    if (pt === 'bar') return 'Kırık (Bar)';
+    if (pt === 'off') return 'Toplama';
+    if (typeof pt === 'number') {
+        let slotNum = (viewColor === 'black') ? (25 - pt) : pt;
+        return `${slotNum}. Kapı`;
+    }
+    return String(pt);
+}
+
+function formatTavlaMoveDesc(lastMove, viewColor) {
+    if (!lastMove) return '';
+    let fromLabel = formatTavlaPointLabel(lastMove.from, viewColor);
+    let toLabel = formatTavlaPointLabel(lastMove.to, viewColor);
+    let hitBadge = lastMove.hit ? ' 💥 (Taş Kırdı!)' : '';
+    return `${fromLabel} ➔ ${toLabel} (Zar: ${lastMove.die})${hitBadge}`;
+}
 
 // Tavla Toplama Yönü (Orientation): 'sag_alt' (varsayılan Türk tavlası) veya 'sol_alt'
 let tavlaOrientation = localStorage.getItem('mm_tavla_orientation') || null;
@@ -64,6 +83,24 @@ socket.on('tavlaUpdate', (state) => {
     if (window.setVoiceTable && state.tableId) window.setVoiceTable(state.tableId);
     window.isSpectating = !!state.isSpectator;
 
+    let currentPid = state.players ? state.players[state.turnIndex] : null;
+    if (currentPid !== socket.id || !state.hasRolled || state.gameOver || state.turnCompletePendingPass) {
+        selectedTavlaPoint = null;
+        tavlaValidTargets = [];
+    }
+
+    let actionKey = `${state.tableId || ''}:${state.actionSeq || 0}`;
+    let isNewAction = !!(state.actionSeq && actionKey !== lastTavlaActionKey);
+    lastTavlaActionKey = actionKey;
+
+    if (isNewAction && window.playSound) {
+        if (state.lastAction === 'roll' && (currentPid !== socket.id || state.isSpectator)) {
+            window.playSound('chatPop');
+        } else if (state.lastAction === 'move' && state.lastMove && (state.lastMove.playerId !== socket.id || state.isSpectator)) {
+            window.playSound('card');
+        }
+    }
+
     // Masaya ilk oturulduğunda veya tercih henüz kaydedilmediyse kullanıcıya yön sor
     if (!state.isSpectator && tavlaPromptShownForTable !== state.tableId) {
         tavlaPromptShownForTable = state.tableId;
@@ -90,10 +127,13 @@ socket.on('tavlaUpdate', (state) => {
         }
     }
 
-    renderTavlaBoard(state);
+    renderTavlaBoard(state, {
+        animateDiceRoll: isNewAction && state.lastAction === 'roll',
+        animateMove: isNewAction && state.lastAction === 'move'
+    });
 });
 
-function renderTavlaBoard(state) {
+function renderTavlaBoard(state, opts = {}) {
     const statusEl = document.getElementById('tavlaStatus');
     const rollBtn = document.getElementById('tavlaRollBtn');
     const diceDisplay = document.getElementById('tavlaDiceDisplay');
@@ -103,18 +143,34 @@ function renderTavlaBoard(state) {
 
     let myPid = socket.id;
     let myColor = state.playerColors ? state.playerColors[myPid] : null;
+    let viewColor = (state.isSpectator || !myColor) ? 'white' : myColor;
     let currentPid = state.players[state.turnIndex];
     let isMyTurn = !state.isSpectator && (currentPid === myPid);
 
     // 1. Durum Metni & Zar Butonu
     if (state.gameOver) {
         let isWinner = (state.winner === myPid);
-        let winText = state.isSpectator ? "Maç Bitti!" : (isWinner ? "🏆 TEBRİKLER KAZANDIN! (+20 TL Kazandın)" : "KAYBETTİN!");
+        let winnerName = state.playerProfiles?.[state.winner]?.name || "Rakip";
+        let winText = state.isSpectator
+            ? `🏆 Maç Bitti! Kazanan: ${winnerName}`
+            : (isWinner ? "🏆 TEBRİKLER KAZANDIN! (+20 TL Kazandın)" : `KAYBETTİN! (${winnerName} kazandı)`);
         statusEl.innerHTML = `<span style="color:#f1c40f; font-weight:800; font-size:17px;">${winText}</span>`;
         if (rollBtn) rollBtn.style.display = 'none';
     } else if (state.isSpectator) {
         let turnName = state.playerProfiles[currentPid]?.name || "Biri";
-        statusEl.innerHTML = `<span style="color:#38bdf8;">👁️ Yancısın | Sıra: <b>${turnName}</b></span>`;
+        let diceText = (state.dice || []).join(' - ');
+        let hasCurrLastMove = !!(state.lastMove && state.lastMove.playerId === currentPid);
+        let moveDesc = hasCurrLastMove ? formatTavlaMoveDesc(state.lastMove, viewColor) : '';
+        if (!state.hasRolled) {
+            statusEl.innerHTML = `<span style="color:#38bdf8;">👁️ Yancısın | 🎲 <b>${turnName}</b> zar atıyor...</span>`;
+        } else if (state.noMoves) {
+            statusEl.innerHTML = `<span style="color:#f87171;">👁️ Yancısın | 🎲 <b>${turnName}</b> [${diceText}] attı fakat hamlesi yok...</span>`;
+        } else if (state.turnCompletePendingPass) {
+            statusEl.innerHTML = `<span style="color:#38bdf8;">👁️ Yancısın | ✅ <b>${turnName}</b> [${diceText}] son hamlesini yaptı${moveDesc ? ': ' + moveDesc : ''}</span>`;
+        } else {
+            let remText = (state.remainingMoves || []).join(', ');
+            statusEl.innerHTML = `<span style="color:#38bdf8;">👁️ Yancısın | 🎲 <b>${turnName}</b> [${diceText}] oynuyor${moveDesc ? ' (' + moveDesc + ')' : ''} | Kalan: [${remText}]</span>`;
+        }
         if (rollBtn) rollBtn.style.display = 'none';
     } else {
         let colorName = myColor === 'white' ? "⚪ Beyaz Taşlar" : "⚫ Siyah Taşlar";
@@ -139,32 +195,85 @@ function renderTavlaBoard(state) {
             }
         } else {
             let oppName = state.playerProfiles[currentPid]?.name || "Rakip";
-            if (state.noMoves) {
-                let diceText = state.dice.join(' - ');
-                statusEl.innerHTML = `<span style="color:#f87171; font-weight:bold;">🎲 ${oppName} [${diceText}] attı fakat hamlesi yok, sıra sana geçiyor...</span>`;
+            let oppColor = state.playerColors ? state.playerColors[currentPid] : (myColor === 'white' ? 'black' : 'white');
+            let oppColorBadge = oppColor === 'white' ? '⚪ Beyaz' : '⚫ Siyah';
+            let diceText = (state.dice || []).join(' - ');
+            let hasCurrLastMove = !!(state.lastMove && state.lastMove.playerId === currentPid);
+            let moveDesc = hasCurrLastMove ? formatTavlaMoveDesc(state.lastMove, viewColor) : '';
+
+            if (!state.hasRolled) {
+                statusEl.innerHTML = `<span style="color:#e2e8f0;">🎲 <b>${oppName}</b> (${oppColorBadge}) zar atıyor...</span>`;
+            } else if (state.noMoves) {
+                if (hasCurrLastMove) {
+                    statusEl.innerHTML = `<span style="color:#f87171; font-weight:bold;">🎲 <b>${oppName}</b> [${diceText}] zarından <b>${moveDesc}</b> oynadı, kalan zar için hamlesi yok — sıra sana geçiyor...</span>`;
+                } else {
+                    statusEl.innerHTML = `<span style="color:#f87171; font-weight:bold;">🎲 <b>${oppName}</b> [${diceText}] attı fakat geçerli hamlesi yok, sıra sana geçiyor...</span>`;
+                }
+            } else if (state.turnCompletePendingPass) {
+                statusEl.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">✅ <b>${oppName}</b> [${diceText}] son hamlesini yaptı: <span style="color:#facc15;">${moveDesc}</span> — sıra sana geçiyor...</span>`;
+            } else if (state.lastAction === 'roll' || !hasCurrLastMove) {
+                let doubleTag = (state.dice && state.dice[0] === state.dice[1]) ? ' (ÇİFT! 4 Hamle)' : '';
+                statusEl.innerHTML = `<span style="color:#facc15; font-weight:bold;">🎲 <b>${oppName}</b> [${diceText}]${doubleTag} attı! Hamle yapıyor...</span>`;
             } else {
-                statusEl.innerHTML = `<span style="color:#e2e8f0;">Sıra <b>${oppName}</b> adlı oyuncuda (${myColor === 'white' ? '⚪ Beyaz' : '⚫ Siyah'})...</span>`;
+                let remText = (state.remainingMoves || []).join(', ');
+                statusEl.innerHTML = `<span style="color:#e2e8f0; font-weight:bold;">♟️ <b>${oppName}</b> [${diceText}] oynuyor: <span style="color:#38bdf8;">${moveDesc}</span> | Kalan zar: <span style="color:#facc15;">[${remText}]</span></span>`;
             }
             if (rollBtn) rollBtn.style.display = 'none';
         }
     }
 
-    // 2. Zar Gösterimi
+    // 2. Zar Gösterimi (Oynanan zarlar soluklaşır, çift zarda 4 zar gösterilir)
     if (diceDisplay) {
         if (state.dice && state.dice.length === 2) {
             let d1 = state.dice[0];
             let d2 = state.dice[1];
+            let isDouble = (d1 === d2);
+            let allDice = isDouble ? [d1, d1, d1, d1] : [d1, d2];
+            let remPool = Array.isArray(state.remainingMoves) ? [...state.remainingMoves] : [];
+            let diceBoxesHtml = '';
+
+            if (isDouble) {
+                let usedCount = Math.max(0, 4 - remPool.length);
+                allDice.forEach((val, idx) => {
+                    let isUsed = (idx < usedCount);
+                    let animClass = opts.animateDiceRoll ? 'dice-roll-anim' : '';
+                    let usedClass = isUsed ? 'dice-used' : '';
+                    diceBoxesHtml += `<div class="dice-box ${usedClass} ${animClass}" title="${isUsed ? val + ' (Oynandı)' : val + ' (Bekliyor)'}">${getDiceDotHtml(val)}</div>`;
+                });
+            } else {
+                allDice.forEach((val) => {
+                    let rIdx = remPool.indexOf(val);
+                    let isUsed = false;
+                    if (rIdx !== -1) {
+                        remPool.splice(rIdx, 1);
+                    } else {
+                        isUsed = true;
+                    }
+                    let animClass = opts.animateDiceRoll ? 'dice-roll-anim' : '';
+                    let usedClass = isUsed ? 'dice-used' : '';
+                    diceBoxesHtml += `<div class="dice-box ${usedClass} ${animClass}" title="${isUsed ? val + ' (Oynandı)' : val + ' (Bekliyor)'}">${getDiceDotHtml(val)}</div>`;
+                });
+            }
+
+            let rollerName = isMyTurn ? 'Senin Zarın' : (state.playerProfiles?.[currentPid]?.name || 'Rakip');
+            let badgeClass = isMyTurn ? 'dice-owner-me' : 'dice-owner-opp';
+            let doubleBadge = isDouble ? `<span class="dice-double-tag">ÇİFT</span>` : '';
+
             diceDisplay.innerHTML = `
-                <div class="dice-box">${getDiceDotHtml(d1)}</div>
-                <div class="dice-box">${getDiceDotHtml(d2)}</div>
+                <span class="dice-owner-badge ${badgeClass}">🎲 ${rollerName}</span>
+                ${diceBoxesHtml}
+                ${doubleBadge}
             `;
         } else {
-            diceDisplay.innerHTML = `<span style="color:#94a3b8; font-size:13px; font-style:italic;">Zar bekleniyor</span>`;
+            let waitLabel = (!state.gameOver && !isMyTurn && !state.isSpectator)
+                ? `${state.playerProfiles?.[currentPid]?.name || 'Rakip'} zar atıyor...`
+                : 'Zar bekleniyor';
+            diceDisplay.innerHTML = `<span style="color:#94a3b8; font-size:13px; font-style:italic;">${waitLabel}</span>`;
         }
     }
 
     // 3. Tahtayı Çiz
-    drawTavlaBoardHTML(state, myColor, isMyTurn);
+    drawTavlaBoardHTML(state, myColor, isMyTurn, opts);
 }
 
 function getDiceDotHtml(val) {
@@ -179,7 +288,7 @@ function getDiceDotHtml(val) {
     return pips[val] || val;
 }
 
-function drawTavlaBoardHTML(state, myColor, isMyTurn) {
+function drawTavlaBoardHTML(state, myColor, isMyTurn, opts = {}) {
     const boardEl = document.getElementById('tavlaBoard');
     if (!boardEl) return;
 
@@ -230,6 +339,8 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
         let pt = state.board[serverPoint];
         let isSelected = (selectedTavlaPoint === serverPoint);
         let isValidTarget = tavlaValidTargets.some(t => t.target === serverPoint);
+        let isLastFrom = (!isSelected && !isValidTarget && state.lastMove && state.lastMove.from === serverPoint);
+        let isLastTo = (!isSelected && !isValidTarget && state.lastMove && state.lastMove.to === serverPoint);
 
         // Klasik ahşap tavla üçgen deseni (koyu/açık dönüşümlü)
         let isDark = (slotNum % 2 === 0);
@@ -237,28 +348,32 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
 
         let isHome = (slotNum >= 1 && slotNum <= 6);
         let isOppHome = (slotNum >= 19 && slotNum <= 24);
+        let lastClasses = `${isLastFrom ? 'last-move-from' : ''} ${isLastTo ? 'last-move-to' : ''}`;
 
         if (isTop) {
-            return `<div class="tavla-point top-point ${triangleColorClass} ${isOppHome ? 'home-point-top' : ''} ${isSelected ? 'selected-point' : ''} ${isValidTarget ? 'target-point' : ''}" onclick="handleTavlaPointClick(${serverPoint})">
+            return `<div class="tavla-point top-point ${triangleColorClass} ${isOppHome ? 'home-point-top' : ''} ${isSelected ? 'selected-point' : ''} ${isValidTarget ? 'target-point' : ''} ${lastClasses}" onclick="handleTavlaPointClick(${serverPoint})">
                 <span class="point-num point-num-top">${slotNum}</span>
                 <div class="point-checkers-top">
-                    ${renderCheckers(pt.player, pt.count, isSelected)}
+                    ${renderCheckers(pt.player, pt.count, isSelected, isLastTo, !!opts.animateMove)}
                 </div>
             </div>`;
         } else {
-            return `<div class="tavla-point bot-point ${triangleColorClass} ${isHome ? 'home-point-bot' : ''} ${isSelected ? 'selected-point' : ''} ${isValidTarget ? 'target-point' : ''}" onclick="handleTavlaPointClick(${serverPoint})">
+            return `<div class="tavla-point bot-point ${triangleColorClass} ${isHome ? 'home-point-bot' : ''} ${isSelected ? 'selected-point' : ''} ${isValidTarget ? 'target-point' : ''} ${lastClasses}" onclick="handleTavlaPointClick(${serverPoint})">
                 <div class="point-checkers-bot">
-                    ${renderCheckers(pt.player, pt.count, isSelected)}
+                    ${renderCheckers(pt.player, pt.count, isSelected, isLastTo, !!opts.animateMove)}
                 </div>
                 <span class="point-num point-num-bot">${slotNum}</span>
             </div>`;
         }
     }
 
+    let isOppBorneLastTo = !!(state.lastMove && state.lastMove.to === 'off' && state.lastMove.color === oppColor);
+    let isMyBorneLastTo = !!(!canBearOffNow && state.lastMove && state.lastMove.to === 'off' && state.lastMove.color === viewColor);
+
     let borneHtml = `
         <div class="tavla-borne-area">
             <!-- Üst Tepsi: Rakip Toplanan -->
-            <div class="tavla-borne-box borne-opp">
+            <div class="tavla-borne-box borne-opp ${isOppBorneLastTo ? 'last-move-to' : ''}">
                 <div class="borne-box-title">${oppBorneTitle}</div>
                 <div class="borne-box-count"><b>${oppBorne}</b> / 15</div>
                 <div class="borne-checkers-stack">
@@ -269,7 +384,7 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
             <div class="borne-divider"></div>
 
             <!-- Alt Tepsi: Benim Toplanan -->
-            <div class="tavla-borne-box borne-my ${canBearOffNow ? 'target-point' : ''}" onclick="handleTavlaPointClick('off')">
+            <div class="tavla-borne-box borne-my ${canBearOffNow ? 'target-point' : ''} ${isMyBorneLastTo ? 'last-move-to' : ''}" onclick="handleTavlaPointClick('off')">
                 ${canBearOffNow ? '<div class="collect-btn-badge">Buraya Topla!</div>' : ''}
                 <div class="borne-checkers-stack">
                     ${renderBorneCheckers(viewColor, myBorne)}
@@ -280,20 +395,25 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
         </div>
     `;
 
+    let isOppBarFrom = !!(state.lastMove && state.lastMove.from === 'bar' && state.lastMove.color === oppColor);
+    let isOppBarHit = !!(state.lastMove && state.lastMove.hit && state.lastMove.color === viewColor);
+    let isMyBarFrom = !!(selectedTavlaPoint !== 'bar' && state.lastMove && state.lastMove.from === 'bar' && state.lastMove.color === viewColor);
+    let isMyBarHit = !!(selectedTavlaPoint !== 'bar' && state.lastMove && state.lastMove.hit && state.lastMove.color === oppColor);
+
     let barHtml = `
         <div class="tavla-bar" onclick="handleTavlaPointClick('bar')">
             <!-- Üst Kısım: Rakip Kırık -->
-            <div class="bar-section bar-top">
+            <div class="bar-section bar-top ${isOppBarFrom ? 'last-move-from' : ''} ${isOppBarHit ? 'last-move-to' : ''}">
                 <div class="bar-sec-title">${oppBarTitle}</div>
                 <div class="bar-checkers">
-                    ${renderCheckers(oppColor, oppBar, false)}
+                    ${renderCheckers(oppColor, oppBar, false, isOppBarHit, !!opts.animateMove)}
                 </div>
             </div>
             <div class="bar-divider"><span>BAR</span></div>
             <!-- Alt Kısım: Benim Kırık -->
-            <div class="bar-section bar-bot ${selectedTavlaPoint === 'bar' ? 'selected-point' : ''}">
+            <div class="bar-section bar-bot ${selectedTavlaPoint === 'bar' ? 'selected-point' : ''} ${isMyBarFrom ? 'last-move-from' : ''} ${isMyBarHit ? 'last-move-to' : ''}">
                 <div class="bar-checkers">
-                    ${renderCheckers(viewColor, myBar, selectedTavlaPoint === 'bar')}
+                    ${renderCheckers(viewColor, myBar, selectedTavlaPoint === 'bar', isMyBarHit, !!opts.animateMove)}
                 </div>
                 <div class="bar-sec-title">${myBarTitle}</div>
             </div>
@@ -343,7 +463,7 @@ function drawTavlaBoardHTML(state, myColor, isMyTurn) {
     boardEl.innerHTML = html;
 }
 
-function renderCheckers(player, count, isSelected) {
+function renderCheckers(player, count, isSelected, isLastMovedTarget = false, animateMove = false) {
     if (!player || count <= 0) return "";
     let colorClass = player === 'white' ? 'checker-white' : 'checker-black';
     let countBadge = count > 5 ? `<span class="checker-count-badge">${count}</span>` : '';
@@ -353,7 +473,10 @@ function renderCheckers(player, count, isSelected) {
     for (let i = 0; i < visibleCount; i++) {
         let isTopChecker = (i === visibleCount - 1);
         let selectedClass = (isSelected && isTopChecker) ? 'checker-selected' : '';
-        html += `<div class="tavla-checker ${colorClass} ${selectedClass}">
+        let movedClass = (!isSelected && isLastMovedTarget && isTopChecker)
+            ? `checker-last-moved ${animateMove ? 'checker-land-anim' : ''}`
+            : '';
+        html += `<div class="tavla-checker ${colorClass} ${selectedClass} ${movedClass}">
             ${isTopChecker && count > 5 ? countBadge : ''}
         </div>`;
     }
@@ -388,7 +511,7 @@ function handleTavlaPointClick(pointIndex) {
 
     let myPid = socket.id;
     let currentPid = currentTavlaState.players[currentTavlaState.turnIndex];
-    if (currentPid !== myPid || !currentTavlaState.hasRolled || currentTavlaState.noMoves) return;
+    if (currentPid !== myPid || !currentTavlaState.hasRolled || currentTavlaState.noMoves || currentTavlaState.turnCompletePendingPass) return;
 
     // Eğer zaten bir taş seçiliyse ve geçerli bir hedef noktaya tıklandıysa
     if (selectedTavlaPoint !== null) {

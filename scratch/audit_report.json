@@ -1,0 +1,368 @@
+[
+  {
+    "file": "public\\js\\barberShop.js",
+    "line": 175,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "initialAvatar = JSON.parse(JSON.stringify(curAv));"
+  },
+  {
+    "file": "public\\js\\barberShop.js",
+    "line": 176,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "previewAvatar = JSON.parse(JSON.stringify(curAv));"
+  },
+  {
+    "file": "public\\js\\barberShop.js",
+    "line": 883,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "previewAvatar = JSON.parse(JSON.stringify(initialAvatar));"
+  },
+  {
+    "file": "public\\js\\dressingRoom.js",
+    "line": 36,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "dressingAvatar = JSON.parse(JSON.stringify(myAvatar || {}));"
+  },
+  {
+    "file": "public\\js\\fatherPet.js",
+    "line": 139,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "mouthOpen = (progress / 0.32) * 0.4;"
+  },
+  {
+    "file": "public\\js\\fatherPet.js",
+    "line": 142,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "let pullProg = (progress - 0.32) / 0.26;"
+  },
+  {
+    "file": "public\\js\\fatherPet.js",
+    "line": 488,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "beamAlpha = progress / 0.2;"
+  },
+  {
+    "file": "public\\js\\fatherPet.js",
+    "line": 533,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "let haloY = eY - 45 - (1 - progress / 0.6) * 120;"
+  },
+  {
+    "file": "public\\js\\fishing.js",
+    "line": 46,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "let pct = (leftMs / totalMs) * 100;"
+  },
+  {
+    "file": "public\\js\\housing.js",
+    "line": 894,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "furniture: (typeof DEMO_HOUSES !== 'undefined' && DEMO_HOUSES[tourType]) ? JSON.parse(JSON.stringify(DEMO_HOUSES[tourType])) : [],"
+  },
+  {
+    "file": "public\\js\\main.js",
+    "line": 1285,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "let leftRatio = Math.max(0, leftMs / totalMs);"
+  },
+  {
+    "file": "public\\js\\miningClient.js",
+    "line": 603,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('loginSuccess', (data) => {"
+  },
+  {
+    "file": "public\\js\\miningClient.js",
+    "line": 604,
+    "type": "POTENTIAL_NEGATIVE_EXPLOIT",
+    "lineText": "if (data.diamonds !== undefined) state.diamonds = data.diamonds;"
+  },
+  {
+    "file": "public\\js\\miningClient.js",
+    "line": 621,
+    "type": "POTENTIAL_NEGATIVE_EXPLOIT",
+    "lineText": "if (data.diamonds !== undefined) state.diamonds = data.diamonds;"
+  },
+  {
+    "file": "public\\js\\miningClient.js",
+    "line": 667,
+    "type": "POTENTIAL_NEGATIVE_EXPLOIT",
+    "lineText": "if (data.diamonds !== undefined) state.diamonds = data.diamonds;"
+  },
+  {
+    "file": "public\\js\\renderers\\costumes\\frogCostume.js",
+    "line": 15,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "const p = phase / 0.15;"
+  },
+  {
+    "file": "public\\js\\renderers\\costumes\\frogCostume.js",
+    "line": 21,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "const p = (phase - 0.15) / 0.70;"
+  },
+  {
+    "file": "public\\js\\renderers\\costumes\\frogCostume.js",
+    "line": 28,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "const p = (phase - 0.85) / 0.15;"
+  },
+  {
+    "file": "public\\js\\renderers\\heldItemsRenderer.js",
+    "line": 1308,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "swingRot = (phase < 0.35) ? (phase / 0.35) * 1.35 : (1 - (phase - 0.35) / 0.65) * 1.35;"
+  },
+  {
+    "file": "public\\js\\renderers\\k2\\k2Fx.js",
+    "line": 787,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "const nostrilAlpha = Math.sin((progress / 0.44) * Math.PI) * 0.52;"
+  },
+  {
+    "file": "public\\js\\renderers\\k2\\k2Fx.js",
+    "line": 956,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "const t = (progress - 0.15) / 0.85;"
+  },
+  {
+    "file": "public\\js\\renderers\\k2\\k2Fx.js",
+    "line": 987,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "const innerAlpha = (1.0 - progress / 0.35) * alpha * 0.60;"
+  },
+  {
+    "file": "public\\js\\renderers\\k2\\k2Fx.js",
+    "line": 1025,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "const coreAlpha = (1.0 - progress / 0.45) * alpha;"
+  },
+  {
+    "file": "public\\js\\renderers\\renderIsometricGardenHouse.js",
+    "line": 386,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "let dx = (x2 - x1) / count;"
+  },
+  {
+    "file": "public\\js\\renderers\\renderIsometricGardenHouse.js",
+    "line": 387,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "let dy = (y2 - y1) / count;"
+  },
+  {
+    "file": "public\\js\\renderers\\renderIsometricGardenHouse.js",
+    "line": 1439,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "let dx = (x2 - x1) / count;"
+  },
+  {
+    "file": "public\\js\\renderers\\renderIsometricGardenHouse.js",
+    "line": 1440,
+    "type": "POTENTIAL_DIV_ZERO",
+    "lineText": "let dy = (y2 - y1) / count;"
+  },
+  {
+    "file": "public\\js\\renderers\\renderIsometricGardenHouse.js",
+    "line": 1627,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "furniture: (typeof window.DEMO_HOUSES !== 'undefined' && window.DEMO_HOUSES[tourT]) ? JSON.parse(JSON.stringify(window.DEMO_HOUSES[tourT])) : [{ id: 'sedir', x: 270, y: 310, rotation: 0 }],"
+  },
+  {
+    "file": "scripts\\migrate_to_mongo.js",
+    "line": 32,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "const parsed = JSON.parse(raw);"
+  },
+  {
+    "file": "src\\dataManager.js",
+    "line": 268,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "const parsed = JSON.parse(raw);"
+  },
+  {
+    "file": "src\\handlers\\adminHandler.js",
+    "line": 80,
+    "type": "POTENTIAL_NEGATIVE_EXPLOIT",
+    "lineText": "dataManager.persistentData.users[targetKey].money = amount;"
+  },
+  {
+    "file": "src\\handlers\\adminHandler.js",
+    "line": 388,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('devTriggerFatherCatch', () => {"
+  },
+  {
+    "file": "src\\handlers\\boardGameActionHandler.js",
+    "line": 42,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('playCard', (cardIndex) => {"
+  },
+  {
+    "file": "src\\handlers\\botanicHandler.js",
+    "line": 245,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('get_farm_plots', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\botanicHandler.js",
+    "line": 268,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('plant_seed', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\botanicHandler.js",
+    "line": 330,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('water_and_fertilize', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\botanicHandler.js",
+    "line": 381,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('harvest_plot', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\botanicHandler.js",
+    "line": 466,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('clean_withered_plot', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\botanicHandler.js",
+    "line": 519,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('botanic_buy_supply', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\botanicHandler.js",
+    "line": 558,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('botanic_sell_crop', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\botanicHandler.js",
+    "line": 608,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('botanic_buy_flower', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\gameActionHandler.js",
+    "line": 537,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('closeTable', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\gameActionHandler.js",
+    "line": 621,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('tableReaction', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\gameActionHandler.js",
+    "line": 735,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('acceptReconnect', (tableId) => {"
+  },
+  {
+    "file": "src\\handlers\\gameActionHandler.js",
+    "line": 909,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('declineReconnect', (tableId) => {"
+  },
+  {
+    "file": "src\\handlers\\gameActionHandler.js",
+    "line": 920,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('takeoverSeat', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\ganyanHandler.js",
+    "line": 296,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('get_ganyan_state', () => {"
+  },
+  {
+    "file": "src\\handlers\\housingHandler.js",
+    "line": 243,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('getHouseData', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\miningHandler.js",
+    "line": 68,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('get_mine_state', () => {"
+  },
+  {
+    "file": "src\\handlers\\miningHandler.js",
+    "line": 91,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('buy_pickaxe', () => {"
+  },
+  {
+    "file": "src\\handlers\\miningHandler.js",
+    "line": 152,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('mine_node_miss', () => {"
+  },
+  {
+    "file": "src\\handlers\\miningHandler.js",
+    "line": 156,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('mine_node_complete', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\miningHandler.js",
+    "line": 310,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('sell_ores', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\petShopHandler.js",
+    "line": 14,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('getCompanionPetsInRoom', () => {"
+  },
+  {
+    "file": "src\\handlers\\petShopHandler.js",
+    "line": 34,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('getPetShopStatus', () => {"
+  },
+  {
+    "file": "src\\handlers\\petShopHandler.js",
+    "line": 61,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('abandonPet', () => {"
+  },
+  {
+    "file": "src\\handlers\\slotHandler.js",
+    "line": 200,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('dev_test_slot_jackpot', (data) => {"
+  },
+  {
+    "file": "src\\handlers\\socialHandler.js",
+    "line": 297,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('zombieAttack', () => {"
+  },
+  {
+    "file": "src\\handlers\\voiceHandler.js",
+    "line": 64,
+    "type": "MISSING_PLAYER_GUARD",
+    "lineText": "socket.on('voiceSpeaking', (data) => {"
+  },
+  {
+    "file": "src\\tableManager.js",
+    "line": 4,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "const baseTableConfigs = JSON.parse(JSON.stringify(config.BASE_TABLE_CONFIGS));"
+  },
+  {
+    "file": "src\\tableManager.js",
+    "line": 5,
+    "type": "UNSAFE_JSON_PARSE",
+    "lineText": "const tables = JSON.parse(JSON.stringify(config.DEFAULT_TABLES));"
+  }
+]

@@ -42,6 +42,10 @@ function startTavlaGame(players) {
         remainingMoves: [],                  // Kullanılabilir zar hamleleri
         hasRolled: false,
         noMoves: false,
+        turnCompletePendingPass: false,
+        lastMove: null,
+        lastAction: null,
+        actionSeq: 0,
         winner: null,
         gameOver: false,
         spectators: [],
@@ -182,6 +186,10 @@ function rollDice(gameData, playerId) {
 
     gameData.dice = [d1, d2];
     gameData.hasRolled = true;
+    gameData.turnCompletePendingPass = false;
+    gameData.lastMove = null;
+    gameData.lastAction = 'roll';
+    gameData.actionSeq = (gameData.actionSeq || 0) + 1;
 
     if (d1 === d2) {
         // Çift zar: 4 hamle hakkı
@@ -197,7 +205,7 @@ function rollDice(gameData, playerId) {
     return true;
 }
 
-function makeMove(gameData, playerId, fromPoint, toPoint, usedDie) {
+function makeMove(gameData, playerId, fromPoint, toPoint, usedDie, options = {}) {
     let color = gameData.playerColors[playerId];
     if (!color || gameData.players[gameData.turnIndex] !== playerId || !gameData.hasRolled) return false;
 
@@ -205,6 +213,7 @@ function makeMove(gameData, playerId, fromPoint, toPoint, usedDie) {
     if (dieIndex === -1) return false;
 
     let opp = color === 'white' ? 'black' : 'white';
+    let wasHit = false;
 
     // 1. Taşın çıkış noktasından eksiltilmesi
     if (fromPoint === 'bar') {
@@ -231,19 +240,37 @@ function makeMove(gameData, playerId, fromPoint, toPoint, usedDie) {
             targetPt.player = color;
             targetPt.count = 1;
             gameData.bar[opp]++;
+            wasHit = true;
         } else {
             targetPt.player = color;
             targetPt.count++;
         }
     }
 
-    // 3. Kullanılan zarı listeden düş
+    // 3. Kullanılan zarı listeden düş ve son hamleyi kaydet
     gameData.remainingMoves.splice(dieIndex, 1);
+    gameData.actionSeq = (gameData.actionSeq || 0) + 1;
+    gameData.lastAction = 'move';
+    gameData.lastMove = {
+        playerId,
+        color,
+        from: fromPoint,
+        to: toPoint,
+        die: usedDie,
+        hit: wasHit,
+        seq: gameData.actionSeq
+    };
+
+    let autoPass = (!options || options.autoPass !== false);
 
     // Kalan zarlarla hamle kaldı mı kontrol et
     if (!gameData.gameOver) {
         if (gameData.remainingMoves.length === 0) {
-            passTurn(gameData);
+            if (autoPass) {
+                passTurn(gameData);
+            } else {
+                gameData.turnCompletePendingPass = true;
+            }
         } else {
             let canMoveFurther = hasAnyValidMoves(gameData, playerId);
             if (!canMoveFurther) {
@@ -260,8 +287,52 @@ function passTurn(gameData) {
     gameData.turnIndex = (gameData.turnIndex + 1) % gameData.players.length;
     gameData.hasRolled = false;
     gameData.noMoves = false;
+    gameData.turnCompletePendingPass = false;
     gameData.dice = [];
     gameData.remainingMoves = [];
+    gameData.lastAction = 'pass';
+    gameData.actionSeq = (gameData.actionSeq || 0) + 1;
+}
+
+function makeSingleTavlaBotMove(gameData, botId) {
+    if (!gameData || gameData.gameOver || gameData.players[gameData.turnIndex] !== botId) return false;
+    if (!gameData.hasRolled || gameData.noMoves || gameData.turnCompletePendingPass) return false;
+    if (!gameData.remainingMoves || gameData.remainingMoves.length === 0) return false;
+
+    let color = gameData.playerColors[botId];
+    if (!color) return false;
+
+    if (gameData.bar[color] > 0) {
+        let moves = getValidMovesForPoint(gameData, botId, 'bar');
+        if (moves.length > 0) {
+            let hitBarMove = moves.find(m => m.target !== 'off' && gameData.board[m.target].player && gameData.board[m.target].player !== color);
+            let chosenBar = hitBarMove || moves[0];
+            return makeMove(gameData, botId, 'bar', chosenBar.target, chosenBar.die, { autoPass: false });
+        }
+        gameData.noMoves = true;
+        return false;
+    }
+
+    let allMoves = [];
+    for (let i = 1; i <= 24; i++) {
+        if (gameData.board[i].player === color && gameData.board[i].count > 0) {
+            let moves = getValidMovesForPoint(gameData, botId, i);
+            moves.forEach(m => allMoves.push({ from: i, to: m.target, die: m.die }));
+        }
+    }
+
+    if (allMoves.length > 0) {
+        // Öncelik: 1) Taş toplama, 2) Rakibin açık taşını kırma, 3) Kendi açık taşını kapı yapma, 4) İlk geçerli hamle
+        let offMove = allMoves.find(m => m.to === 'off');
+        let hitMove = allMoves.find(m => m.to !== 'off' && gameData.board[m.to].player && gameData.board[m.to].player !== color);
+        let coverMove = allMoves.find(m => m.to !== 'off' && gameData.board[m.to].player === color && gameData.board[m.to].count === 1 && gameData.board[m.from].count !== 2);
+        let chosen = offMove || hitMove || coverMove || allMoves[0];
+
+        return makeMove(gameData, botId, chosen.from, chosen.to, chosen.die, { autoPass: false });
+    }
+
+    gameData.noMoves = true;
+    return false;
 }
 
 function makeTavlaBotMove(gameData, botId) {
@@ -323,6 +394,7 @@ module.exports = {
     hasAnyValidMoves,
     makeMove,
     passTurn,
+    makeSingleTavlaBotMove,
     makeTavlaBotMove,
     isHomeBoard,
     canBearOff,

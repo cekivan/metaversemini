@@ -1,7 +1,7 @@
 // public/js/blackjack.js - Multiplayer Canlı Blackjack 21 İstemci Mantığı
 
 let bjCurrentTable = null;
-let bjCurrentBet = 50;
+let bjCurrentBet = 100;
 let bjPreviousState = null;
 let bjPayoutSoundPlayed = false;
 
@@ -526,6 +526,7 @@ function bjAddChip(amount) {
     let inp = document.getElementById('bjCustomBetInput');
     let val = parseInt(inp ? inp.value : bjCurrentBet, 10) || 0;
     val += amount;
+    if (val < 100) val = 100;
     bjCurrentBet = val;
     if (inp) inp.value = val;
 
@@ -537,13 +538,25 @@ function bjAddChip(amount) {
 }
 window.bjAddChip = bjAddChip;
 
+function bjOnCustomBetInput(rawVal) {
+    let val = parseInt(rawVal, 10);
+    if (!isNaN(val) && val >= 100) {
+        bjCurrentBet = val;
+        const placeBetBtn = document.getElementById('bjPlaceBetBtn');
+        if (placeBetBtn && (!bjCurrentTable || !bjCurrentTable.seats.find(s => s.socketId === socket.id)?.hasPlacedBet)) {
+            placeBetBtn.innerText = `🪙 Bahis Yap (${bjCurrentBet} TL)`;
+        }
+    }
+}
+window.bjOnCustomBetInput = bjOnCustomBetInput;
+
 function bjClearBet() {
-    bjCurrentBet = 10;
+    bjCurrentBet = 100;
     let inp = document.getElementById('bjCustomBetInput');
-    if (inp) inp.value = 10;
+    if (inp) inp.value = 100;
 
     const placeBetBtn = document.getElementById('bjPlaceBetBtn');
-    if (placeBetBtn) placeBetBtn.innerText = `🪙 Bahis Yap (10 TL)`;
+    if (placeBetBtn) placeBetBtn.innerText = `🪙 Bahis Yap (100 TL)`;
     if (window.playSound) window.playSound('chip');
 }
 window.bjClearBet = bjClearBet;
@@ -551,7 +564,11 @@ window.bjClearBet = bjClearBet;
 function bjSubmitBet() {
     if (!window.socket) return;
     let inp = document.getElementById('bjCustomBetInput');
-    let amount = parseInt(inp ? inp.value : bjCurrentBet, 10) || 10;
+    let amount = parseInt(inp ? inp.value : bjCurrentBet, 10) || 100;
+    if (amount < 100) {
+        showBjToast("Minimum bahis miktarı 100 TL'dir!", true);
+        return;
+    }
 
     socket.emit('blackjack_place_bet', { amount: amount });
     if (window.playSound) window.playSound('chip');

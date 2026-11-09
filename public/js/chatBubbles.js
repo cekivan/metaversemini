@@ -1,6 +1,7 @@
 // public/js/chatBubbles.js - Konuşma Baloncukları, Hızlı Emoji ve Yan Panel Sohbeti
 
 let activeChatBubbles = {};
+if (typeof window !== 'undefined') window.activeChatBubbles = activeChatBubbles;
 let chatMessagesLog = [];
 const MAX_CHAT_LOG = 60;
 let activePlayerEmojis = {};
@@ -15,6 +16,14 @@ let activeSendChannel = 'room';
 const CHAT_ROOM_NAMES = {
     'sokak': 'Meydan',
     'cadde': 'Cadde',
+    'cadde2': 'Cadde 2',
+    'vip_club': 'VİP Club',
+    'optik': 'Optik Gözlük Butiği',
+    'optika': 'Optik Gözlük Butiği',
+    'kultur_merkezi_lobi': 'Kültür Lobi',
+    'kultur_merkezi_sahne': 'Sanat Sahnesi',
+    'kultur_merkezi_kulis': 'VIP Kulis',
+    'kultur_merkezi_sinema': 'Sinema Salonu',
     'dedenin_yeri': 'Dede',
     'emlakci': 'Emlak',
     'kafe': 'Kafe',
@@ -47,6 +56,17 @@ function appendChatMessageToHistory(itemOrName, msg, channel, room) {
             channel: channel || 'room',
             room: room || ''
         };
+    }
+
+    // Sistem / Jammer Bildirimi Kontrolü
+    if (item.isSystem) {
+        let line = document.createElement('div');
+        line.className = 'chat-msg-row chat-msg-system';
+        line.style.cssText = "background: rgba(245, 158, 11, 0.15); border-left: 3px solid #f59e0b; padding: 4px 8px; border-radius: 5px; margin: 3px 0; font-size: 11.5px;";
+        line.innerHTML = `<span style="font-weight: 800; color: #fde047; margin-right: 6px;">📡 BİLDİRİM</span><span style="color: #fef08a; font-weight: 600;">${item.msg}</span>`;
+        historyDiv.appendChild(line);
+        historyDiv.scrollTop = historyDiv.scrollHeight;
+        return;
     }
 
     // Aktif sekme filtresi
@@ -98,10 +118,18 @@ function appendChatMessageToHistory(itemOrName, msg, channel, room) {
         line.style.borderRadius = '5px';
     }
 
-    // Gönderici Adı
+    // Gönderici Adı (Gizli Kimlik Maskesi Kontrolü)
+    let isSenderAnon = !!(item.isAnon || item.name === '???');
+    let displayName = isSenderAnon ? '???' : (item.name || 'Biri');
     let b = document.createElement('b');
-    b.textContent = item.name + ': ';
-    b.style.color = item.channel === 'whisper' ? '#f472b6' : (item.channel === 'all' ? '#fde047' : '#5eead4');
+    b.textContent = displayName + ': ';
+    if (item.isNeonRed) {
+        b.style.color = '#ff1744';
+        b.style.textShadow = '0 0 8px rgba(255, 23, 68, 0.75)';
+        b.style.fontWeight = '900';
+    } else {
+        b.style.color = item.channel === 'whisper' ? '#f472b6' : (item.channel === 'all' ? '#fde047' : '#5eead4');
+    }
     line.appendChild(b);
 
     // Mesaj Metni
@@ -191,6 +219,13 @@ function sendSideChat() {
     let rawMsg = input.value.trim();
     if (!rawMsg) return;
 
+    if (typeof isLocalPlayerJammed === 'function' && isLocalPlayerJammed()) {
+        if (typeof showGameNotificationText === 'function') {
+            showGameNotificationText("📡❌ Sinyaliniz kesildi! Jammer etkisi altındasınız, konuşamazsınız.");
+        }
+        return;
+    }
+
     if (handleSpecialChatCommands(rawMsg)) {
         input.value = "";
         updateChatCharCounter();
@@ -274,11 +309,32 @@ function setClickMovementEnabled(enabled) {
 window.setWasdMovementEnabled = setWasdMovementEnabled;
 window.setClickMovementEnabled = setClickMovementEnabled;
 
+// Ayarlar Sekme Değiştirici (Ses, Kontrol, Kumanda, Hesap)
+function switchSettingsTab(tabName) {
+    const tabs = ['audio', 'controls', 'joystick', 'account'];
+    tabs.forEach(t => {
+        const btn = document.getElementById('tabBtn_' + t);
+        const pane = document.getElementById('settingsPane_' + t);
+        if (t === tabName) {
+            if (btn) btn.classList.add('active');
+            if (pane) pane.style.display = 'flex';
+        } else {
+            if (btn) btn.classList.remove('active');
+            if (pane) pane.style.display = 'none';
+        }
+    });
+    if (tabName === 'joystick' && typeof syncSettingsModalJoystickUI === 'function') {
+        syncSettingsModalJoystickUI();
+    }
+}
+window.switchSettingsTab = switchSettingsTab;
+
 // Ayarlar Penceresi (SFX, Müzik, Sesli Sohbet, Hareket Ayarları)
 function openSettingsModal() {
     const modal = document.getElementById('settingsModal');
     if (!modal) return;
     modal.style.display = 'flex';
+    switchSettingsTab('audio');
     if (typeof getAudioSettings === 'function') {
         const audioSettings = getAudioSettings();
         const sfxSlider = document.getElementById('sfxVolumeSlider');
@@ -338,20 +394,14 @@ function handleVoiceVolumeChange(val) {
 }
 
 function updateChatUIBadges() {
-    const floatBadge = document.getElementById('floatingChatBadge');
     const headerBadge = document.getElementById('chatHeaderBadge');
 
     if (unreadChatCount > 0) {
-        if (floatBadge) {
-            floatBadge.innerText = unreadChatCount;
-            floatBadge.style.display = 'inline-block';
-        }
         if (headerBadge) {
             headerBadge.innerText = unreadChatCount;
             headerBadge.style.display = 'inline-block';
         }
     } else {
-        if (floatBadge) floatBadge.style.display = 'none';
         if (headerBadge) headerBadge.style.display = 'none';
     }
 }
@@ -385,14 +435,22 @@ function toggleChatMinimize(e) {
 function toggleChatPanel(e) {
     if (e && e.stopPropagation) e.stopPropagation();
     const panel = document.getElementById('sideChatContainer');
-    const floatBtn = document.getElementById('floatingChatToggleBtn');
     if (!panel) return;
 
     const isHidden = (panel.style.display === 'none' || getComputedStyle(panel).display === 'none');
 
     if (isHidden) {
         panel.style.display = 'flex';
-        if (floatBtn) floatBtn.style.display = 'none';
+        if (window.innerWidth <= 768) {
+            const rect = panel.getBoundingClientRect();
+            const isOutOfBounds = (rect.right > window.innerWidth + 4 || rect.left < 0 || rect.top < 4 || rect.top > window.innerHeight - 44);
+            if (!panel.dataset.mobilePositioned || isOutOfBounds) {
+                panel.style.right = '8px';
+                panel.style.left = 'auto';
+                panel.style.top = Math.min(54, Math.max(8, window.innerHeight - 240)) + 'px';
+                panel.dataset.mobilePositioned = 'true';
+            }
+        }
         if (isChatMinimized) {
             panel.classList.add('chat-minimized');
         } else {
@@ -405,13 +463,12 @@ function toggleChatPanel(e) {
         if (historyDiv) historyDiv.scrollTop = historyDiv.scrollHeight;
     } else {
         panel.style.display = 'none';
-        if (floatBtn) floatBtn.style.display = 'flex';
         updateAllChatButtons(false);
     }
 }
 
 function updateAllChatButtons(isOpen) {
-    const btnIds = ['chatToggleBtn', 'tableChatToggleBtn', 'bjChatToggleBtn', 'rouletteChatToggleBtn', 'slotChatToggleBtn', 'ganyanChatToggleBtn'];
+    const btnIds = ['chatToggleBtn', 'tableChatToggleBtn', 'bjChatToggleBtn', 'rouletteChatToggleBtn', 'slotChatToggleBtn', 'ganyanChatToggleBtn', 'xoxChatToggleBtn', 'amiralChatToggleBtn', 'chessChatToggleBtn'];
     btnIds.forEach(id => {
         const btn = document.getElementById(id);
         if (!btn) return;
@@ -427,12 +484,36 @@ function updateAllChatButtons(isOpen) {
     });
 }
 
+// Mobil ve Dar Ekranlarda Başlangıçta Sabit Yan Sohbet Panelini Otomatik Gizle (Oyun Alanını Kapatmaması İçin)
+function initMobileChatPanelDefaultState() {
+    if (typeof window === 'undefined') return;
+    if (window.innerWidth <= 768) {
+        const panel = document.getElementById('sideChatContainer');
+        if (panel) panel.style.display = 'none';
+        updateAllChatButtons(false);
+    }
+}
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMobileChatPanelDefaultState);
+    } else {
+        initMobileChatPanelDefaultState();
+    }
+}
+
 // Alt Bar Hızlı Sohbet Gönderme (Ekrandan konuşma)
 function sendBottomChat() {
     const input = document.getElementById('bottomChatInput');
     if (!input) return;
     let rawMsg = input.value.trim();
     if (!rawMsg) return;
+
+    if (typeof isLocalPlayerJammed === 'function' && isLocalPlayerJammed()) {
+        if (typeof showGameNotificationText === 'function') {
+            showGameNotificationText("📡❌ Sinyaliniz kesildi! Jammer etkisi altındasınız, konuşamazsınız.");
+        }
+        return;
+    }
 
     if (handleSpecialChatCommands(rawMsg)) {
         input.value = "";
@@ -554,6 +635,9 @@ function toggleEmoteMenu(e) {
     if (!menu) return;
     const isHidden = (menu.style.display === 'none' || !menu.style.display);
     if (isHidden) {
+        const hasZombie = typeof isWearingZombieCostume === 'function' && isWearingZombieCostume();
+        const attackButton = document.getElementById('zombieAttackAction');
+        if (attackButton) attackButton.style.display = hasZombie ? 'flex' : 'none';
         menu.style.display = 'flex';
         if (arrow) arrow.style.transform = 'rotate(180deg)';
     } else {
@@ -563,7 +647,18 @@ function toggleEmoteMenu(e) {
 }
 
 function triggerEmoteAction(action) {
-    if (typeof triggerPlayerAction === 'function') {
+    if (action === 'sit_floor' && typeof players !== 'undefined' && players[myId] && players[myId].action === 'sit_floor') {
+        if (typeof standUpIfSitting === 'function') standUpIfSitting();
+        else if (window.socket) window.socket.emit('playerAction', { action: 'stand' });
+        const menu = document.getElementById('emoteDropdownMenu');
+        const arrow = document.getElementById('emoteMenuArrow');
+        if (menu) menu.style.display = 'none';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+        return;
+    }
+    if (action === 'zombie_attack' && typeof triggerZombieAttack === 'function') {
+        triggerZombieAttack();
+    } else if (typeof triggerPlayerAction === 'function') {
         triggerPlayerAction(action);
     } else if (window.socket) {
         window.socket.emit('playerAction', { action: action });
@@ -595,7 +690,7 @@ function triggerCigaretteSmoke() {
 
 function toggleAvatarModelQuick() {
     let cur = (typeof myAvatar !== 'undefined' && myAvatar.model) ? myAvatar.model : 'classic_2';
-    let next = (cur === 'karakter_2') ? 'classic_2' : 'karakter_2';
+    let next = (cur === 'classic_2') ? 'karakter_2' : 'classic_2';
     if (typeof selectAvatarBodyModel === 'function') {
         selectAvatarBodyModel(next);
     }
@@ -608,9 +703,34 @@ function toggleAvatarModelQuick() {
 function handleSpecialChatCommands(rawMsg) {
     if (!rawMsg) return false;
     let lowMsg = rawMsg.toLowerCase().trim().replace(/\s+/g, '');
+    if (lowMsg === '/kafe' || lowMsg === '/cafe' || lowMsg === '/oyunsalonu' || lowMsg === '/seceneka' || lowMsg === '/mapa' || lowMsg === '/salon') {
+        if (typeof changeRoom === 'function') changeRoom('kafe');
+        if (typeof showFloatingToast === 'function') showFloatingToast('☕ VIP Oyun Kulübü (Seçenek A: 2.5D Hacimli Mimari)');
+        return true;
+    }
     if (lowMsg === '/cadde' || lowMsg === '/sanalika' || lowMsg === '/1cadde') {
         if (typeof selectPlace === 'function') selectPlace('sanalika_cadde');
         else if (typeof changeRoom === 'function') changeRoom('sanalika_cadde');
+        return true;
+    }
+    if (lowMsg === '/sahilyolu' || lowMsg === '/kordon' || lowMsg === '/sahilyol') {
+        if (typeof changeRoom === 'function') changeRoom('sahil_yolu');
+        if (typeof showFloatingToast === 'function') showFloatingToast('🌴 Sahil Yolu Kıyı Kordonuna Hoş Geldiniz!');
+        return true;
+    }
+    if (lowMsg === '/avm' || lowMsg === '/avmkat1' || lowMsg === '/kat1' || lowMsg === '/alisveris') {
+        if (typeof changeRoom === 'function') changeRoom('avm_kat1');
+        if (typeof showFloatingToast === 'function') showFloatingToast('🛍️ Grand Sahil AVM - Zemin Kat (Trend Butikler)');
+        return true;
+    }
+    if (lowMsg === '/avmkat2' || lowMsg === '/kat2') {
+        if (typeof changeRoom === 'function') changeRoom('avm_kat2');
+        if (typeof showFloatingToast === 'function') showFloatingToast('🛍️ Grand Sahil AVM - 1. Kat (VIP Lüks Butikler)');
+        return true;
+    }
+    if (lowMsg === '/optik' || lowMsg === '/optika' || lowMsg === '/gozlukcu' || lowMsg === '/kenan') {
+        if (typeof changeRoom === 'function') changeRoom('optik');
+        if (typeof showFloatingToast === 'function') showFloatingToast('🕶️ Optik Gözlük Butiği (2:1 İzometrik 3D Diorama Odası)');
         return true;
     }
     if (lowMsg === '/karakter1' || lowMsg === '/model1' || lowMsg === '/k1') {
@@ -635,6 +755,10 @@ function handleSpecialChatCommands(rawMsg) {
     }
     if (lowMsg === '/alkis' || lowMsg === '/alkış' || lowMsg === '/clap') {
         triggerEmoteAction('clap');
+        return true;
+    }
+    if (lowMsg === '/otur' || lowMsg === '/sit' || lowMsg === '/bagdas' || lowMsg === '/bağdaş') {
+        triggerEmoteAction('sit_floor');
         return true;
     }
     return false;
@@ -678,7 +802,8 @@ if (window.socket) {
         if (window.playSound) window.playSound('chatPop');
 
         let channel = data.channel || 'room';
-        let senderName = data.name || ((typeof players !== 'undefined' && players[data.id]) ? players[data.id].name : "Biri");
+        let isSenderAnon = !!(data.isAnon || data.name === '???' || (typeof players !== 'undefined' && players[data.id] && players[data.id].anonMaskExpiresAt > Date.now()));
+        let senderName = isSenderAnon ? "???" : (data.name || ((typeof players !== 'undefined' && players[data.id]) ? players[data.id].name : "Biri"));
         let senderRoom = data.room || (typeof currentRoom !== 'undefined' ? currentRoom : '');
 
         let item = {
@@ -687,6 +812,8 @@ if (window.socket) {
             room: senderRoom,
             msg: data.msg,
             channel: channel,
+            isNeonRed: !!data.isNeonRed,
+            isAnon: !!data.isAnon,
             time: Date.now()
         };
 
@@ -729,6 +856,7 @@ if (window.socket) {
                 text: bubbleText,
                 name: senderName,
                 channel: channel,
+                isAnon: isSenderAnon,
                 timer: timer,
                 createdAt: Date.now()
             });
@@ -748,6 +876,53 @@ if (window.socket) {
                     myAvatar.isChatTalking = true;
                     setTimeout(() => { if (typeof myAvatar !== 'undefined') myAvatar.isChatTalking = false; }, chatDuration);
                 }
+            }
+        }
+    });
+
+    // Fısıltı Baş Üstü Göstergesi (Özel mesaj içeriği odaya sızmaz, baş üstünde kim kime fısıldıyor gösterilir)
+    window.socket.on('chatWhisperIndicator', (data) => {
+        if (!data || !data.id || !data.bubbleText) return;
+        // Kullanıcı şartı: "sesi yapma" - ses çalınmaz!
+
+        let isSenderAnon = !!(data.isAnon || (typeof players !== 'undefined' && players[data.id] && players[data.id].anonMaskExpiresAt > Date.now()));
+        let senderName = isSenderAnon ? "???" : (data.senderName || "");
+
+        if (!activeChatBubbles[data.id]) activeChatBubbles[data.id] = [];
+        if (activeChatBubbles[data.id].length >= 4) {
+            let oldBubble = activeChatBubbles[data.id].shift();
+            clearTimeout(oldBubble.timer);
+        }
+
+        let timer = setTimeout(() => {
+            if (activeChatBubbles[data.id]) {
+                activeChatBubbles[data.id] = activeChatBubbles[data.id].filter(b => b.timer !== timer);
+            }
+        }, 4500);
+
+        activeChatBubbles[data.id].push({
+            text: data.bubbleText,
+            name: senderName,
+            channel: 'whisper_indicator',
+            isAnon: isSenderAnon,
+            timer: timer,
+            createdAt: Date.now()
+        });
+
+        // Fısıldama esnasında kısa ağız kıpırdama animasyonu
+        const chatDuration = 2500;
+        if (typeof players !== 'undefined' && players[data.id]) {
+            players[data.id].lastChatTime = Date.now();
+            players[data.id].lastChatDuration = chatDuration;
+            players[data.id].isChatTalking = true;
+            setTimeout(() => { if (typeof players !== 'undefined' && players[data.id]) players[data.id].isChatTalking = false; }, chatDuration);
+        }
+        if (typeof myId !== 'undefined' && data.id === myId) {
+            if (typeof myAvatar !== 'undefined') {
+                myAvatar.lastChatTime = Date.now();
+                myAvatar.lastChatDuration = chatDuration;
+                myAvatar.isChatTalking = true;
+                setTimeout(() => { if (typeof myAvatar !== 'undefined') myAvatar.isChatTalking = false; }, chatDuration);
             }
         }
     });

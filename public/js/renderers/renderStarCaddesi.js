@@ -957,10 +957,6 @@ function handleStarCaddeHover() {
 
     if (hoveredVenue) {
         ctx.save();
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(hoveredVenue.bounds.x, hoveredVenue.bounds.y, hoveredVenue.bounds.w, hoveredVenue.bounds.h);
-
         // Tooltip Banner
         let tx = hoveredVenue.bounds.x + hoveredVenue.bounds.w / 2;
         let ty = hoveredVenue.bounds.y - 8;

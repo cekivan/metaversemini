@@ -1,0 +1,638 @@
+/* ==========================================================================
+   MINI METAVERSE - BASE & HUD STYLES
+   Temel stiller, reset, fontlar, üst navigasyon, zoom kontrolleri, oyun canvası
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+* {
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+html {
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100vw;
+}
+
+body { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0f172a 100%); 
+    margin: 0; 
+    padding-bottom: 25px;
+    min-height: 100vh;
+    width: 100%;
+    max-width: 100vw;
+    color: #f8fafc;
+    overflow-x: hidden !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Tarayıcı varsayılan sürükleme ve seçim çerçevesi engeli */
+*::selection {
+    background: transparent !important;
+    color: inherit !important;
+}
+*::-moz-selection {
+    background: transparent !important;
+    color: inherit !important;
+}
+
+input, textarea, [contenteditable="true"] {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
+
+input::selection, textarea::selection {
+    background: rgba(56, 189, 248, 0.35) !important;
+    color: #ffffff !important;
+}
+input::-moz-selection, textarea::-moz-selection {
+    background: rgba(56, 189, 248, 0.35) !important;
+    color: #ffffff !important;
+}
+
+img, canvas, svg {
+    -webkit-user-drag: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+/* 1. ÜST MENÜ */
+.top-nav {
+    position: relative;
+    margin: 12px auto 14px auto;
+    z-index: 999;
+    display: flex;
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.85);
+    padding: 8px 14px;
+    border-radius: 14px;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    max-width: 1000px;
+    contain: layout style;
+    will-change: transform;
+}
+
+.nav-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    color: white;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.nav-btn:active {
+    transform: translateY(0);
+}
+
+/* MEKANLAR AÇILIR MENÜSÜ */
+.places-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.place-menu-item {
+    width: 100%;
+    padding: 9px 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #f1f5f9;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+}
+.place-menu-item:hover {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    transform: translateX(4px);
+}
+
+/* EKRAN ZOOM / ÇÖZÜNÜRLÜK KONTROLÜ STİLLERİ */
+.zoom-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.zoom-dropdown-btn {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.zoom-dropdown-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.55);
+    filter: brightness(1.1);
+}
+
+.zoom-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 270px;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8), 0 0 20px rgba(14, 165, 233, 0.2);
+    backdrop-filter: blur(16px);
+    z-index: 10050;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+    animation: popIn 0.18s ease-out;
+}
+
+.zoom-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zoom-menu-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.zoom-stepper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 2px 4px;
+}
+
+.zoom-step-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-weight: 900;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.zoom-step-btn:hover {
+    background: rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+}
+
+.zoom-step-btn:active {
+    transform: scale(0.92);
+}
+
+.zoom-step-val {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #f8fafc;
+    min-width: 38px;
+    text-align: center;
+}
+
+.zoom-slider-container {
+    padding: 4px 2px 6px 2px;
+}
+
+.zoom-range-input {
+    width: 100%;
+    accent-color: #0284c7;
+    cursor: pointer;
+    height: 6px;
+    border-radius: 3px;
+    background: #334155;
+    outline: none;
+}
+
+.zoom-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+}
+
+.zoom-preset-btn {
+    padding: 6px 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 7px;
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.zoom-preset-btn:hover {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+    transform: translateY(-1px);
+}
+
+.zoom-preset-btn.active {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    border-color: #38bdf8;
+    color: white;
+    font-weight: 800;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.zoom-menu-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zoom-action-btn {
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+}
+
+.zoom-action-fit {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: white;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+}
+
+.zoom-action-fit:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.45);
+}
+
+.zoom-action-reset {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #cbd5e1;
+}
+
+.zoom-action-reset:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: white;
+}
+
+/* OYUN İÇİ ZOOM KONTROLÜ (IN-GAME MODAL ZOOM) */
+.in-game-zoom-ctrl {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 7px;
+    padding: 2px 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.ig-zoom-btn {
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    line-height: 1;
+    padding: 0;
+}
+
+.ig-zoom-btn:hover {
+    background: rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+    transform: scale(1.1);
+}
+
+.ig-zoom-btn:active {
+    transform: scale(0.9);
+}
+
+.ig-zoom-badge {
+    font-size: 11px;
+    font-weight: 800;
+    color: #38bdf8;
+    min-width: 36px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0 2px;
+    transition: color 0.15s;
+}
+
+.ig-zoom-badge:hover {
+    color: #7dd3fc;
+    text-decoration: underline;
+}
+
+.emoji-quick-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 3px 6px;
+    transition: transform 0.15s, background 0.15s;
+    line-height: 1;
+}
+
+.emoji-quick-btn:hover {
+    transform: scale(1.25);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.btn-street { background: linear-gradient(135deg, #10b981, #059669); }
+.btn-cafe { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.btn-beach { background: linear-gradient(135deg, #0284c7, #0369a1); }
+.btn-chat { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+/* 2. OYUN CANVAS */
+#gameCanvas { 
+    width: 800px;
+    max-width: 98vw;
+    height: auto;
+    aspect-ratio: 800 / 500;
+    display: block;
+    margin: 12px auto 0 auto;
+    border: 4px solid #334155; 
+    border-radius: 16px; 
+    touch-action: none;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    cursor: default;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    image-rendering: auto;
+    transition: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
+}
+
+#gameCanvas.wide-screen {
+    width: 1000px;
+    max-width: 98vw;
+    aspect-ratio: 1000 / 625;
+}
+
+#gameCanvas.wide-screen ~ #gameBottomControlBar,
+#gameBottomControlBar.wide-screen {
+    max-width: 1000px;
+}
+
+/* Modal Pop-In & Fade Animations */
+@keyframes modalPopIn {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -48%) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes overlayFadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.55;
+        transform: scale(0.96);
+    }
+}
+
+
+/* 8. PARA & BAKİYE GÖSTERGESİ */
+.money-badge {
+    background: linear-gradient(135deg, #10b981, #047857);
+    color: #ffffff;
+    font-weight: 800;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.3px;
+}
+
+
+/* Mekanlar Açılır Menü Stilleri */
+.places-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.places-dropdown-btn {
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.places-dropdown-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.55) !important;
+    filter: brightness(1.1);
+}
+
+.place-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 14px;
+    background: rgba(30, 41, 59, 0.65);
+    color: #f1f5f9;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    box-sizing: border-box;
+    transition: all 0.16s ease-in-out;
+}
+
+.place-menu-item:hover {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.35), rgba(99, 102, 241, 0.35));
+    border-color: rgba(56, 189, 248, 0.5);
+    color: #ffffff;
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+}
+
+.place-menu-item:active {
+    transform: scale(0.98) translateX(2px);
+}
+
+
+/* =====================================================================
+   MADENCİLİK, ELMAS (💎) VE KAZMA HUD STİLLERİ
+===================================================================== */
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.4), 0 8px 24px rgba(0, 0, 0, 0.6);
+        transform: translateX(-50%) scale(1.0);
+    }
+    100% {
+        box-shadow: 0 0 35px rgba(56, 189, 248, 0.8), 0 12px 32px rgba(0, 0, 0, 0.85);
+        transform: translateX(-50%) scale(1.02);
+    }
+}
+
+.diamond-badge {
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.pickaxe-badge {
+    user-select: none;
+    transition: all 0.2s ease;
+}
+.pickaxe-badge:hover {
+    transform: translateY(-1px);
+    background: rgba(51, 65, 85, 0.95) !important;
+}
+
+/* ========================================================
+   LÜKS PARILTILI 3D ELMAS ROZETİ (TOP HUD)
+   ======================================================== */
+.luxury-diamond-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 3px 12px 3px 8px !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.35) 0%, rgba(2, 132, 199, 0.5) 50%, rgba(56, 189, 248, 0.28) 100%) !important;
+    border: 1.5px solid #38bdf8 !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6), inset 0 -1px 3px rgba(2, 132, 199, 0.8) !important;
+    cursor: default !important;
+    position: relative !important;
+    overflow: hidden !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+    backdrop-filter: blur(8px) !important;
+}
+.diamond-gem-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.diamond-gem-icon {
+    font-size: 15px;
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.9));
+    animation: diamondPulseAnim 3s infinite ease-in-out;
+}
+.diamond-val-wrapper {
+    display: flex;
+    align-items: center;
+}
+.diamond-val-text {
+    font-size: 13.5px;
+    font-weight: 900;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #f0f9ff !important;
+    text-shadow: 0 0 8px rgba(56, 189, 248, 0.9), 0 0 2px #38bdf8 !important;
+    letter-spacing: 0.5px;
+}
+.diamond-sparkle-fx {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.65) 50%, transparent 60%);
+    transform: rotate(25deg) translateX(-100%);
+    animation: diamondGlintSweepAnim 4.5s infinite ease-in-out;
+    pointer-events: none;
+}
+@keyframes diamondPulseAnim {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.8)); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(125, 211, 252, 1)); }
+}
+@keyframes diamondGlintSweepAnim {
+    0% { transform: rotate(25deg) translateX(-120%); opacity: 0; }
+    15% { opacity: 0.85; }
+    30% { transform: rotate(25deg) translateX(120%); opacity: 0; }
+    100% { transform: rotate(25deg) translateX(120%); opacity: 0; }
+}

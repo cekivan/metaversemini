@@ -35,7 +35,8 @@ function registerPetShopHandlers(io, socket, players) {
         const player = players[socket.id];
         if (!player || !player.name) return;
 
-        const uData = dataManager.persistentData.users[player.name] || {};
+        const uKey = (dataManager.findUserKey ? dataManager.findUserKey(player.name) : null) || player.name;
+        const uData = dataManager.persistentData.users[uKey] || {};
         const userMoney = uData.money !== undefined ? uData.money : (player.money || 0);
 
         const currentPet = petManager.getPetByUsername(player.name);
@@ -90,7 +91,8 @@ function handleBuyPet(io, socket, players, data, legacyResponse = false) {
     }
 
     const username = player.name;
-    const uData = dataManager.persistentData.users[username];
+    const uKey = (dataManager.findUserKey ? dataManager.findUserKey(username) : null) || username;
+    const uData = dataManager.persistentData.users[uKey];
     if (!uData) {
         socket.emit('gameError', "Kullanıcı verisi yüklenemedi!");
         return;

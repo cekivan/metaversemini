@@ -1,6 +1,6 @@
 // public/js/slotMachine.js - ⚡ Dedenin Şimşek Slotu 777 ⚡ İstemci Mantığı
 
-let slotCurrentBet = 50;
+let slotCurrentBet = 100;
 let isSlotSpinning = false;
 let isSlotAutoSpin = false;
 let slotAutoSpinRemaining = 0;
@@ -39,8 +39,10 @@ function openSlotModal() {
     updateSlotUserBalance();
     initSlotReels();
 
+    if (!slotCurrentBet || slotCurrentBet < 100) slotCurrentBet = 100;
     const customInput = document.getElementById('slotCustomBetInput');
     if (customInput) customInput.value = slotCurrentBet;
+    setSlotBet(slotCurrentBet);
 
     if (window.socket) {
         socket.emit('slot_init');
@@ -130,7 +132,7 @@ window.onCustomSlotBetInput = onCustomSlotBetInput;
 function setSlotMaxBet() {
     if (isSlotSpinning) return;
     let userMoney = (window.myMoney !== undefined) ? window.myMoney : 1000;
-    let maxBet = Math.max(10, userMoney);
+    let maxBet = Math.max(100, userMoney);
     setSlotBet(maxBet);
 }
 window.setSlotMaxBet = setSlotMaxBet;
@@ -168,6 +170,14 @@ function updateSlotAutoBtn() {
 // 4. Slot Çevirme Mantığı (Spin)
 function spinSlot() {
     if (isSlotSpinning) return;
+
+    if (slotCurrentBet < 100) {
+        showSlotToast("Minimum bahis 100 TL'dir!", true);
+        isSlotAutoSpin = false;
+        updateSlotAutoBtn();
+        if (window.playSound) window.playSound('error');
+        return;
+    }
 
     let currentBalance = (window.myMoney !== undefined) ? window.myMoney : 1000;
     if (slotCurrentBet > currentBalance) {
@@ -270,6 +280,11 @@ function stopReelWithSymbol(reelIdx, targetSymId, onStopped) {
 
 // 5. Soket Dinleyicileri
 if (typeof socket !== 'undefined' && socket) {
+    socket.on('slot_info', (data) => {
+        if (!data) return;
+        window.slotAllowedBets = data.allowedBets;
+    });
+
     socket.on('slot_result', (data) => {
         // Sırayla çarkları durdur (Reel 0: 1.0s, Reel 1: 1.6s, Reel 2: 2.2s)
         setTimeout(() => {

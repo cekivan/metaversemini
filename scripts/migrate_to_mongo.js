@@ -10,7 +10,7 @@ const MONGO_URI = process.env.MONGO_URI;
 
 async function runMigration() {
     console.log('--- DATA.JSON -> MONGODB AKTARIM ARACI ---');
-    
+
     if (!MONGO_URI || MONGO_URI.includes('<kullanici_adi>') || MONGO_URI.includes('<username>') || MONGO_URI.includes('<password>') || MONGO_URI.includes('<sifre>')) {
         console.error('❌ HATA: .env dosyasında geçerli bir MONGO_URI bulunamadı!');
         console.log('👉 Lütfen .env dosyanızı açıp geçerli MongoDB bağlantı linkinizi girin:');
