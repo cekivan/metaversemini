@@ -284,7 +284,10 @@ async function syncDataJsonToMongo() {
     try {
         console.log('🍃 [MONGODB]: data.json ve MongoDB iki yönlü senkronize ediliyor...');
 
-        // 1. data.json'daki TÜM kullanıcıları kontrol et: MongoDB'de eksik olanları ekle
+        // 1. data.json'daki kullanıcıları kontrol et:
+        // KURAL: Kullanıcı hem localde hem MongoDB'de varsa MongoDB'deki veri DAİMA GERÇEKTİR ve ÖNCELİKLİDİR.
+        // MongoDB'deki mevcut kullanıcılara data.json'dan ASLA veri ezme/aktarma yapılmaz.
+        // Yalnızca MongoDB'de hiç var olmayan (yerelde yeni açılmış) kullanıcılar MongoDB'ye eklenir.
         if (fs.existsSync(DATA_FILE)) {
             const raw = fs.readFileSync(DATA_FILE, 'utf8');
             const parsed = JSON.parse(raw);
@@ -300,47 +303,19 @@ async function syncDataJsonToMongo() {
                         delete doc.__v;
                         await User.create(doc);
                         addedCount++;
-                    } else {
-                        // Mevcut kullanıcıda data.json'daki daha yüksek/yeni verileri MongoDB'ye aktar
-                        const updateDoc = {};
-                        if (u.level !== undefined && (existing.level === undefined || u.level > (existing.level || 1))) {
-                            updateDoc.level = u.level;
-                        }
-                        if (u.totalXP !== undefined && (existing.totalXP === undefined || u.totalXP > (existing.totalXP || 0))) {
-                            updateDoc.totalXP = u.totalXP;
-                        }
-                        if (u.money !== undefined && u.money > (existing.money || 0)) {
-                            updateDoc.money = u.money;
-                        }
-                        if (u.diamonds !== undefined && u.diamonds > (existing.diamonds || 0)) {
-                            updateDoc.diamonds = u.diamonds;
-                        }
-                        if (u.jammerCount !== undefined && u.jammerCount > (existing.jammerCount || 0)) {
-                            updateDoc.jammerCount = u.jammerCount;
-                        }
-                        if (u.zeusCount !== undefined && u.zeusCount > (existing.zeusCount || 0)) {
-                            updateDoc.zeusCount = u.zeusCount;
-                        }
-                        if (u.mugKnifeCount !== undefined && u.mugKnifeCount > (existing.mugKnifeCount || 0)) {
-                            updateDoc.mugKnifeCount = u.mugKnifeCount;
-                        }
-                        if (u.hasMugKnife && !existing.hasMugKnife) {
-                            updateDoc.hasMugKnife = true;
-                        }
-                        if (Object.keys(updateDoc).length > 0) {
-                            await User.updateOne({ _id: existing._id }, { $set: updateDoc });
-                        }
                     }
+                    // Kullanıcı MongoDB'de zaten varsa HİÇBİR ŞEY YAPMA:
+                    // MongoDB'deki veriler (seviye, totalXP, para, elmas, envanter vb.) daima esastır ve dokunulmaz.
                 } catch (userErr) {
                     // Tek bir kullanıcının hatası diğerlerini engellemesin
                 }
             }
             if (addedCount > 0) {
-                console.log(`✅ [MONGODB]: data.json içindeki ${addedCount} adet eksik kullanıcı MongoDB'ye başarıyla aktarıldı!`);
+                console.log(`✅ [MONGODB]: data.json içindeki ${addedCount} adet yeni kullanıcı MongoDB'ye başarıyla aktarıldı!`);
             }
         }
 
-        // 2. Güncel kullanıcı listesini MongoDB'den çek ve belleği güncelle
+        // 2. Güncel kullanıcı listesini doğrudan MongoDB'den çek ve belleği güncelle (MongoDB Tek Gerçek Kaynak)
         const allUsers = await User.find({}).lean();
         const rawMap = {};
         for (const u of allUsers) {
@@ -357,9 +332,9 @@ async function syncDataJsonToMongo() {
             await User.updateOne({ username: /^elyesa$/i }, { $set: { role: 'mod', isMod: true } }).catch(() => { });
         }
 
-        // 3. Yerel data.json dosyasını da MongoDB ile tam eşit tut
-        scheduleDiskBackup();
-        console.log(`🍃 [MONGODB]: Canlı veriler MongoDB ile senkronize edildi (${allUsers.length} kullanıcı aktif).`);
+        // 3. Yerel data.json dosyasını da MongoDB'deki gerçek verilerle güncelle (MongoDB öncelikli tam senkronizasyon)
+        flushNowSync();
+        console.log(`🍃 [MONGODB]: Canlı veriler MongoDB ile senkronize edildi (${allUsers.length} kullanıcı aktif, MongoDB öncelikli).`);
     } catch (err) {
         console.error('❌ [MONGODB]: Senkronizasyon hatası:', err.message);
     }

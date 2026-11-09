@@ -6,6 +6,30 @@ Bu dosya, projede yapılan tüm geliştirmelerin, mimari değişikliklerin, hata
 
 ## 📅 10 Kasım 2026
 
+### ⏰ 01:45 | 🍃 MongoDB Öncelik Kuralı (Single Source of Truth) & Çift Yönlü Senkronizasyon Kuralının Kesinleşmesi
+- **Kullanıcı Talebi:**
+  - *"kullanıcı hem localde hem mongodbde varsa mongdbdekini gerçek saymak gerekiyor. çünkü diyelim ahmet var localimde 5 lvl mongodbde 7 olmus. mongodbdeki veri her zaman önceliklidir."*
+
+- **Mimari Karar & Uygulama:**
+  1. **MongoDB = Mutlak Gerçek Kaynak (Authoritative Truth):**
+     - Kullanıcı hem yerel `data.json` dosyasında hem de MongoDB Atlas veritabanında mevcutsa, **MongoDB verisi DAİMA önceliklidir ve gerçektir.**
+     - `src/dataManager.js` içindeki `syncDataJsonToMongo()` fonksiyonundan yerel `data.json` verilerinin MongoDB'deki mevcut kullanıcıları ezmesine/güncellemesine neden olan blok kaldırıldı.
+  2. **Yalnızca Yeni / Çevrimdışı Kullanıcıların Aktarımı:**
+     - `data.json` içerisinde bulunup MongoDB'de henüz hiç var olmayan kullanıcılar (örneğin internet yokken veya yerel test sırasında yeni kayıt olanlar) MongoDB'ye yeni doküman olarak aktarılır (`User.create`).
+     - MongoDB'de zaten mevcut olan hiçbir kullanıcının dokümanı yerel verilerle güncellenmez; MongoDB'deki hali dokunulmaz kalır.
+  3. **MongoDB Verisinin Yerel data.json'a Yazılması:**
+     - MongoDB'den tüm güncel kullanıcılar çekilir (`User.find({}).lean()`), belleğe alınır ve `flushNowSync()` ile yerel `data.json` dosyasının üzerine yazılır.
+     - Örneğin: `ahmet` yerelde Seviye 5, MongoDB'de Seviye 7 ise; sunucu MongoDB'ye bağlandığında MongoDB'deki Seviye 7 korunur ve yerel `data.json` dosyasındaki Seviye 5'in üzerine Seviye 7 yazılarak yerel dosya güncellenir.
+  4. **Seviye 10/14 Matematiksel Uyumsuzluk Çözümü:**
+     - Seviye sistemi ilk yazıldığında `yasin` kullanıcısına manuel 5000 XP atanmıştı (5000 XP formülde Seviye 14'e denk geliyordu). İlk balık tutulduğunda (+1 XP) formülün 14'e zıplaması bu dengesizlikten kaynaklanıyordu.
+     - `yasin` kullanıcısı hem Atlas'ta hem yerelde Seviye 10 ve 1920 XP (7 / 526 XP ilerleme) olarak hizalandı.
+     - `src/utils/levelSystem.js` içerisine koruma eklendi: Taban XP eşiği güvence altına alınarak ani seviye zıplamaları önlendi.
+  5. **Doğrulama Testleri:**
+     - `test_mongo_priority.js` ile test edildi: MongoDB'de Seviye 7 olan kullanıcı yerel `data.json` Seviye 5 iken korundu ve `data.json` Seviye 7 ile güncellendi.
+     - `test_fish_xp.js` ile test edildi: Balık tutulduğunda Seviye 10'da 1'er XP kazanılarak stabil ilerlendiği doğrulandı.
+
+---
+
 ### ⏰ 00:50 | 🍃 MongoDB Atlas Canlı Bağlantısı, Seviye/XP Verilerinin Geri Yüklenmesi & İki Yönlü Senkronizasyon Koruması
 - **Kullanıcı Talebi:**
   - *"level güncellemeleri falan gitmiş hep buradan yüklediğim için. mongodbye hani kaydolması gerekmiyor muydu?"*

@@ -129,7 +129,7 @@
     "yasin": {
       "_id": "6ad3debb1552c02d3989a159",
       "username": "yasin",
-      "money": 1001000,
+      "money": 1025596,
       "gender": "male",
       "auth": {
         "hash": "f971b4fe5d3824a081cf8a822f54f75bef7054f50824de8e50d3d7882874c491",
@@ -143,8 +143,8 @@
         "face": "none",
         "skinColor": "#ffd1a4",
         "shirtColor": "original",
-        "color": "vest_reflector_yellow",
-        "heldItem": "cicek_lale",
+        "color": "original",
+        "heldItem": "kazma",
         "shoes": "shoes_k2_high_sneakers",
         "shirt": "vest_reflector_yellow",
         "outfit": null,
@@ -217,7 +217,6 @@
         "pants_pants_k2_skater_cargo",
         "shoes_shoes_k2_skate_pro",
         "tshirts_top_k2_grunge_oversize",
-        "props_mug_knife",
         "buffet_cola",
         "props_drone",
         "props_zeus_yildirimi",
@@ -271,7 +270,7 @@
         "tshirts_vest_reflector_yellow",
         "shirts_vest_reflector_yellow",
         "hats_hair_k2_flaming_fire",
-        "props_pet_doberman"
+        "props_anon_mask"
       ],
       "propInventory": {
         "props_gazoz": 1,
@@ -291,10 +290,10 @@
         "props_pet_izbandut": 17,
         "props_jammer": 1,
         "props_pet_pitbull": 1,
-        "props_gasp_bicagi": 1,
+        "props_gasp_bicagi": 0,
         "props_kola": 2,
         "props_drone": 1,
-        "props_zeus_yildirimi": 2,
+        "props_zeus_yildirimi": 3,
         "props_cicek_lale": 1,
         "props_cicek_gul": 1,
         "props_cicek_lavanta": 1,
@@ -305,7 +304,10 @@
         "props_fide_papatya": 8,
         "props_organik_gubre": 11,
         "props_bitki_suyu": 12,
-        "props_pet_doberman": 1
+        "props_mug_knife": 0,
+        "anon_mask": 1,
+        "props_anon_mask": 1,
+        "props_izbandut": 1
       },
       "furnitureInventory": [
         "meyve_arabasi"
@@ -316,7 +318,8 @@
         "maltoroz",
         "taha",
         "Elyesa",
-        "sebon"
+        "sebon",
+        "68yunus"
       ],
       "friendRequests": [],
       "house": {
@@ -616,7 +619,7 @@
         }
       },
       "dailyQuests": {
-        "date": "2026-11-01",
+        "date": "2026-11-09",
         "quests": [
           {
             "id": "okey101_play",
@@ -626,7 +629,7 @@
             "reward": 180,
             "current": 0,
             "claimed": false,
-            "_id": "6ae75cbc21ab76936306eeca"
+            "_id": "6af2457416495a80e3b7fb23"
           },
           {
             "id": "batak_play",
@@ -636,7 +639,7 @@
             "reward": 150,
             "current": 0,
             "claimed": false,
-            "_id": "6ae75cbc21ab76936306eecb"
+            "_id": "6af2457416495a80e3b7fb24"
           },
           {
             "id": "tavla_play",
@@ -644,9 +647,9 @@
             "desc": "Tavla masasında 1 oyun tamamla",
             "target": 1,
             "reward": 120,
-            "current": 1,
+            "current": 0,
             "claimed": false,
-            "_id": "6ae75cbc21ab76936306eecc"
+            "_id": "6af2457416495a80e3b7fb25"
           },
           {
             "id": "drink_tea",
@@ -656,7 +659,7 @@
             "reward": 60,
             "current": 0,
             "claimed": false,
-            "_id": "6ae75cbc21ab76936306eecd"
+            "_id": "6af2457416495a80e3b7fb26"
           },
           {
             "id": "go_fishing",
@@ -666,7 +669,7 @@
             "reward": 90,
             "current": 1,
             "claimed": false,
-            "_id": "6ae75cbc21ab76936306eece"
+            "_id": "6af2457416495a80e3b7fb27"
           }
         ]
       },
@@ -677,7 +680,7 @@
       "muteExpiresAt": null,
       "muteReason": null,
       "createdAt": "2026-10-17T20:46:51.839Z",
-      "updatedAt": "2026-11-09T21:52:12.643Z",
+      "updatedAt": "2026-11-09T22:29:59.995Z",
       "__v": 0,
       "isMod": false,
       "frogExpiresAt": null,
@@ -727,12 +730,56 @@
         "freezesUsed": 0,
         "totalClaims": 2
       },
-      "diamonds": 52,
-      "hasMugKnife": true,
+      "diamonds": 104,
+      "hasMugKnife": false,
       "jammerCount": 2,
-      "level": 10,
-      "totalXP": 5000,
-      "zeusCount": 2
+      "level": 14,
+      "totalXP": 5017,
+      "zeusCount": 3,
+      "anonMaskCount": 1,
+      "anonMaskExpiresAt": 0,
+      "anonMaskRemainingMs": 1224577,
+      "badgeUnlockOrder": [
+        "resident",
+        "fishing",
+        "mining"
+      ],
+      "bodyguardCount": 1,
+      "bodyguardsEquipped": 1,
+      "dobermanEquipped": false,
+      "gamerGamesCount": 0,
+      "hasDoberman": false,
+      "invisibilityExpiresAt": 0,
+      "jammerExpiresAt": 0,
+      "lastMugTime": 1794262804556,
+      "mugKnifeCount": 0,
+      "muggedTargets": {
+        "68yunus": 1794262804556
+      },
+      "neonRedNickExpiresAt": 0,
+      "zeusStrikes": {
+        "date": "2026-11-09",
+        "count": 2
+      },
+      "fishCaughtCount": 8,
+      "claimedBadgeLevels": {
+        "fish": [
+          1
+        ],
+        "mining": [
+          1
+        ]
+      },
+      "pickaxeExpiresAt": 1794263899033,
+      "minedCount": 3,
+      "minedRocksCount": 3,
+      "ores": {
+        "komur": 0,
+        "bakir": 0,
+        "demir": 0
+      },
+      "ashedUntil": 0,
+      "isAshed": false
     },
     "babake": {
       "_id": "6ad3debb1552c02d3989a15f",
@@ -892,10 +939,11 @@
       "propInventory": {},
       "houses": {},
       "createdAt": "2026-10-17T20:46:52.143Z",
-      "updatedAt": "2026-11-09T21:52:12.949Z",
+      "updatedAt": "2026-11-09T22:16:44.694Z",
       "__v": 0,
       "isMod": false,
-      "level": 10
+      "level": 10,
+      "totalXP": 1913
     },
     "maltoroz": {
       "_id": "6ad3debc1552c02d3989a162",
@@ -1909,7 +1957,7 @@
       "muteExpiresAt": null,
       "muteReason": null,
       "createdAt": "2026-10-17T22:03:53.473Z",
-      "updatedAt": "2026-11-09T21:53:40.037Z",
+      "updatedAt": "2026-11-09T22:41:50.064Z",
       "__v": 0,
       "isMod": true,
       "skinSets": {
@@ -8244,7 +8292,7 @@
     "68yunus": {
       "_id": "6ae3aaf32a16c0d620a7ffe2",
       "username": "68yunus",
-      "money": 1000,
+      "money": 6374,
       "gender": "male",
       "auth": {
         "hash": "0ed619b3a7245a29f55612b6d0d465e971008ac5c4b2b74fd3687cdafba360a1",
@@ -8255,15 +8303,18 @@
       "isMod": false,
       "avatar": {
         "model": "classic_2",
-        "hat": "bere",
+        "hat": "baret_sari",
         "face": "none",
         "skinColor": "#ffd1a4",
-        "shirtColor": "#3b82f6",
-        "color": "#3b82f6",
+        "shirtColor": "original",
+        "color": "original",
         "heldItem": "none",
         "shoes": "sneakers",
-        "shirt": null,
-        "outfit": null
+        "shirt": "vest_reflector_yellow",
+        "outfit": null,
+        "hair": "none",
+        "hatColor": "original",
+        "pants": "pants_classic_jeans"
       },
       "inventory": [
         "hats_bere",
@@ -8271,16 +8322,25 @@
         "shirts_#3b82f6",
         "shoes_sneakers",
         "face_none",
-        "props_none"
+        "props_none",
+        "hats_baret_sari",
+        "shirts_vest_reflector_yellow"
       ],
-      "propInventory": {},
+      "propInventory": {
+        "props_jammer": 0,
+        "props_zeus_yildirimi": 0,
+        "props_gasp_bicagi": 0,
+        "props_mug_knife": 0
+      },
       "furnitureInventory": [],
-      "friends": [],
+      "friends": [
+        "yasin"
+      ],
       "friendRequests": [],
       "house": null,
       "houses": {},
       "dailyQuests": {
-        "date": "2026-10-29",
+        "date": "2026-11-09",
         "quests": [
           {
             "id": "okey101_play",
@@ -8290,7 +8350,7 @@
             "reward": 180,
             "current": 0,
             "claimed": false,
-            "_id": "6ae3ae492a16c0d620a8062f"
+            "_id": "6af2459f16495a80e3b7fb6e"
           },
           {
             "id": "batak_play",
@@ -8300,7 +8360,7 @@
             "reward": 150,
             "current": 0,
             "claimed": false,
-            "_id": "6ae3ae492a16c0d620a80630"
+            "_id": "6af2459f16495a80e3b7fb6f"
           },
           {
             "id": "tavla_play",
@@ -8310,7 +8370,7 @@
             "reward": 120,
             "current": 0,
             "claimed": false,
-            "_id": "6ae3ae492a16c0d620a80631"
+            "_id": "6af2459f16495a80e3b7fb70"
           },
           {
             "id": "drink_tea",
@@ -8320,7 +8380,7 @@
             "reward": 60,
             "current": 0,
             "claimed": false,
-            "_id": "6ae3ae492a16c0d620a80632"
+            "_id": "6af2459f16495a80e3b7fb71"
           },
           {
             "id": "go_fishing",
@@ -8330,7 +8390,7 @@
             "reward": 90,
             "current": 1,
             "claimed": false,
-            "_id": "6ae3ae492a16c0d620a80633"
+            "_id": "6af2459f16495a80e3b7fb72"
           }
         ]
       },
@@ -8344,8 +8404,69 @@
       "muteReason": null,
       "skinSets": {},
       "createdAt": "2026-10-29T20:22:11.244Z",
-      "updatedAt": "2026-11-09T21:52:19.277Z",
-      "__v": 0
+      "updatedAt": "2026-11-09T22:29:15.475Z",
+      "__v": 0,
+      "dailyReward": {
+        "currentDay": 1,
+        "lastClaimDate": "2026-11-10",
+        "freezesUsed": 0,
+        "totalClaims": 1
+      },
+      "diamonds": 9,
+      "anonMaskCount": 0,
+      "anonMaskExpiresAt": 0,
+      "anonMaskRemainingMs": 0,
+      "ashedUntil": 0,
+      "badgeUnlockOrder": [
+        "resident",
+        "fishing",
+        "mining"
+      ],
+      "bodyguardCount": 0,
+      "bodyguardsEquipped": 0,
+      "dobermanEquipped": false,
+      "gamerGamesCount": 0,
+      "hasDoberman": false,
+      "hasMugKnife": false,
+      "invisibilityExpiresAt": 0,
+      "isAshed": false,
+      "jammerCount": 0,
+      "jammerExpiresAt": 0,
+      "lastMugTime": 1794263355473,
+      "level": 2,
+      "mugKnifeCount": 0,
+      "muggedTargets": {
+        "yasin": 1794263355473
+      },
+      "neonRedNickExpiresAt": 1794349595613,
+      "totalXP": 22,
+      "zeusCount": 0,
+      "zeusStrikes": {
+        "date": "2026-11-09",
+        "count": 1
+      },
+      "fishCaughtCount": 4,
+      "claimedBadgeLevels": {
+        "fish": [
+          1
+        ],
+        "mining": [
+          1
+        ]
+      },
+      "dislikes": 0,
+      "likes": 1,
+      "ratings": {
+        "yasin": "like"
+      },
+      "pickaxeExpiresAt": 1794263903413,
+      "minedCount": 6,
+      "minedRocksCount": 6,
+      "ores": {
+        "komur": 0,
+        "bakir": 0,
+        "demir": 0
+      }
     },
     "basibuyuk": {
       "_id": "6ae3aca42a16c0d620a801f5",
@@ -18087,10 +18208,55 @@
       "__v": 0
     },
     "10kasım": {
+      "_id": "6af21dc989fe642a2e7af804",
+      "username": "10kasım",
+      "money": 4343,
+      "gender": "male",
       "auth": {
         "hash": "2aaf36c305a7c601473ed67aafa64776590b597b66bc9197c6a857ceac0f5d37",
         "salt": "4f5c21200eb1076d00d77d1c7298e43f"
       },
+      "role": "user",
+      "isAdmin": false,
+      "isMod": false,
+      "avatar": {
+        "model": "classic_2",
+        "hat": "baret_sari",
+        "hair": "none",
+        "face": "none",
+        "skinColor": "#ffd1a4",
+        "shirtColor": "original",
+        "color": "original",
+        "heldItem": "kazma",
+        "shoes": "sneakers",
+        "hatColor": "original",
+        "shirt": "vest_reflector_yellow",
+        "outfit": null,
+        "pants": "pants_classic_jeans"
+      },
+      "inventory": [
+        "hats_bere",
+        "skins_#facc15",
+        "shirts_#3b82f6",
+        "shoes_sneakers",
+        "face_none",
+        "props_none",
+        "hats_baret_sari",
+        "shirts_vest_reflector_yellow",
+        "props_mug_knife",
+        "props_jammer",
+        "props_zeus_yildirimi"
+      ],
+      "propInventory": {
+        "props_jammer": 3,
+        "props_zeus_yildirimi": 3,
+        "props_mug_knife": 5
+      },
+      "furnitureInventory": [],
+      "friends": [],
+      "friendRequests": [],
+      "house": null,
+      "houses": {},
       "dailyQuests": {
         "date": "2026-11-09",
         "quests": [
@@ -18152,51 +18318,6 @@
         "freezesUsed": 0,
         "totalClaims": 0
       },
-      "_id": "6af21dc989fe642a2e7af804",
-      "username": "10kasım",
-      "money": 4343,
-      "gender": "male",
-      "role": "user",
-      "isAdmin": false,
-      "isMod": false,
-      "avatar": {
-        "model": "classic_2",
-        "hat": "baret_sari",
-        "hair": "none",
-        "face": "none",
-        "skinColor": "#ffd1a4",
-        "shirtColor": "original",
-        "color": "original",
-        "heldItem": "kazma",
-        "shoes": "sneakers",
-        "hatColor": "original",
-        "shirt": "vest_reflector_yellow",
-        "outfit": null,
-        "pants": "pants_classic_jeans"
-      },
-      "inventory": [
-        "hats_bere",
-        "skins_#facc15",
-        "shirts_#3b82f6",
-        "shoes_sneakers",
-        "face_none",
-        "props_none",
-        "hats_baret_sari",
-        "shirts_vest_reflector_yellow",
-        "props_mug_knife",
-        "props_jammer",
-        "props_zeus_yildirimi"
-      ],
-      "propInventory": {
-        "props_jammer": 3,
-        "props_zeus_yildirimi": 3,
-        "props_mug_knife": 5
-      },
-      "furnitureInventory": [],
-      "friends": [],
-      "friendRequests": [],
-      "house": null,
-      "houses": {},
       "teaExpiresAt": null,
       "horseExpiresAt": null,
       "horseModel": "royal_sprite",
@@ -18212,7 +18333,7 @@
       "bodyguardsEquipped": 0,
       "hasDoberman": false,
       "dobermanEquipped": false,
-      "jammerCount": 3,
+      "jammerCount": 5,
       "jammerExpiresAt": 0,
       "anonMaskCount": 0,
       "anonMaskExpiresAt": 0,
@@ -18220,7 +18341,7 @@
       "hasMugKnife": true,
       "mugKnifeCount": 5,
       "lastMugTime": 0,
-      "zeusCount": 3,
+      "zeusCount": 5,
       "neonRedNickExpiresAt": 0,
       "invisibilityExpiresAt": 0,
       "createdAt": "2026-11-09T12:52:49.161Z",
@@ -18270,7 +18391,7 @@
         "date": "2026-11-09",
         "count": 1
       },
-      "updatedAt": "2026-11-09T21:52:28.495Z",
+      "updatedAt": "2026-11-09T21:56:13.060Z",
       "__v": 0
     },
     "test_caylak_17942303": {
@@ -28510,24 +28631,14 @@
       "__v": 0
     },
     "testdummy_target": {
-      "auth": {
-        "hash": "055d0250ae2c4f273d5df8706d578e1bc9f617726f5d8699ade97d2f602cb219",
-        "salt": "8c8ec32b87507bd15b6e71b5ddbee278"
-      },
-      "dailyQuests": {
-        "date": "",
-        "quests": []
-      },
-      "dailyReward": {
-        "currentDay": 0,
-        "lastClaimDate": null,
-        "freezesUsed": 0,
-        "totalClaims": 0
-      },
       "_id": "6af23e36cf865b9dc46344c4",
       "username": "testdummy_target",
       "money": 1000,
       "gender": "male",
+      "auth": {
+        "hash": "055d0250ae2c4f273d5df8706d578e1bc9f617726f5d8699ade97d2f602cb219",
+        "salt": "8c8ec32b87507bd15b6e71b5ddbee278"
+      },
       "role": "user",
       "isAdmin": false,
       "isMod": false,
@@ -28563,6 +28674,16 @@
       "friendRequests": [],
       "house": null,
       "houses": {},
+      "dailyQuests": {
+        "date": "",
+        "quests": []
+      },
+      "dailyReward": {
+        "currentDay": 0,
+        "lastClaimDate": null,
+        "freezesUsed": 0,
+        "totalClaims": 0
+      },
       "teaExpiresAt": null,
       "horseExpiresAt": null,
       "horseModel": "royal_sprite",
@@ -28621,48 +28742,200 @@
         "date": "",
         "count": 0
       },
-      "updatedAt": "2026-11-09T21:52:37.425Z",
+      "updatedAt": "2026-11-09T21:56:16.027Z",
+      "__v": 0
+    },
+    "test_sync_prio": {
+      "_id": "6af24c48a45e34f6024c519b",
+      "username": "test_sync_prio",
+      "money": 5000,
+      "gender": "male",
+      "auth": {
+        "hash": null,
+        "salt": null
+      },
+      "role": "user",
+      "isAdmin": false,
+      "isMod": false,
+      "avatar": {
+        "model": "classic_2",
+        "hat": "bere",
+        "hair": "none",
+        "face": "none",
+        "skinColor": "#ffd1a4",
+        "shirtColor": "#3b82f6",
+        "color": "#3b82f6",
+        "heldItem": "none",
+        "shoes": "sneakers",
+        "shirt": null,
+        "pants": "pants_classic_jeans",
+        "outfit": null,
+        "costume": null,
+        "watch": "none"
+      },
+      "inventory": [
+        "hats_bere",
+        "skins_#facc15",
+        "shirts_#3b82f6",
+        "shoes_sneakers",
+        "face_none",
+        "props_none"
+      ],
+      "propInventory": {},
+      "furnitureInventory": [],
+      "friends": [],
+      "friendRequests": [],
+      "house": null,
+      "houses": {},
+      "skinSets": {},
+      "dailyQuests": {
+        "date": "",
+        "quests": []
+      },
+      "dailyReward": {
+        "currentDay": 0,
+        "lastClaimDate": null,
+        "freezesUsed": 0,
+        "totalClaims": 0
+      },
+      "teaExpiresAt": null,
+      "horseExpiresAt": null,
+      "horseModel": "royal_sprite",
+      "banExpiresAt": null,
+      "banReason": null,
+      "bannedBy": null,
+      "muteExpiresAt": null,
+      "muteReason": null,
+      "diamonds": 10,
+      "level": 7,
+      "totalXP": 820,
+      "bodyguardCount": 0,
+      "bodyguardsEquipped": 0,
+      "hasDoberman": false,
+      "dobermanEquipped": false,
+      "jammerCount": 0,
+      "jammerExpiresAt": 0,
+      "anonMaskCount": 0,
+      "anonMaskExpiresAt": 0,
+      "anonMaskRemainingMs": 0,
+      "hasMugKnife": false,
+      "mugKnifeCount": 0,
+      "lastMugTime": 0,
+      "muggedTargets": {},
+      "zeusCount": 0,
+      "zeusStrikes": {
+        "date": "",
+        "count": 0
+      },
+      "neonRedNickExpiresAt": 0,
+      "invisibilityExpiresAt": 0,
+      "createdAt": "2026-11-09T22:41:49.411Z",
+      "updatedAt": "2026-11-09T22:41:49.411Z",
+      "__v": 0
+    },
+    "test_offline_u": {
+      "_id": "6af24c48a45e34f6024c519c",
+      "username": "test_offline_u",
+      "money": 2000,
+      "gender": "male",
+      "auth": {
+        "hash": null,
+        "salt": null
+      },
+      "role": "user",
+      "isAdmin": false,
+      "isMod": false,
+      "avatar": {
+        "model": "classic_2",
+        "hat": "bere",
+        "hair": "none",
+        "face": "none",
+        "skinColor": "#ffd1a4",
+        "shirtColor": "#3b82f6",
+        "color": "#3b82f6",
+        "heldItem": "none",
+        "shoes": "sneakers",
+        "shirt": null,
+        "pants": "pants_classic_jeans",
+        "outfit": null,
+        "costume": null,
+        "watch": "none"
+      },
+      "inventory": [
+        "hats_bere",
+        "skins_#facc15",
+        "shirts_#3b82f6",
+        "shoes_sneakers",
+        "face_none",
+        "props_none"
+      ],
+      "propInventory": {},
+      "furnitureInventory": [],
+      "friends": [],
+      "friendRequests": [],
+      "house": null,
+      "houses": {},
+      "skinSets": {},
+      "dailyQuests": {
+        "date": "",
+        "quests": []
+      },
+      "dailyReward": {
+        "currentDay": 0,
+        "lastClaimDate": null,
+        "freezesUsed": 0,
+        "totalClaims": 0
+      },
+      "teaExpiresAt": null,
+      "horseExpiresAt": null,
+      "horseModel": "royal_sprite",
+      "banExpiresAt": null,
+      "banReason": null,
+      "bannedBy": null,
+      "muteExpiresAt": null,
+      "muteReason": null,
+      "diamonds": 0,
+      "level": 2,
+      "totalXP": 35,
+      "bodyguardCount": 0,
+      "bodyguardsEquipped": 0,
+      "hasDoberman": false,
+      "dobermanEquipped": false,
+      "jammerCount": 0,
+      "jammerExpiresAt": 0,
+      "anonMaskCount": 0,
+      "anonMaskExpiresAt": 0,
+      "anonMaskRemainingMs": 0,
+      "hasMugKnife": false,
+      "mugKnifeCount": 0,
+      "lastMugTime": 0,
+      "muggedTargets": {},
+      "zeusCount": 0,
+      "zeusStrikes": {
+        "date": "",
+        "count": 0
+      },
+      "neonRedNickExpiresAt": 0,
+      "invisibilityExpiresAt": 0,
+      "createdAt": "2026-11-09T22:41:49.606Z",
+      "updatedAt": "2026-11-09T22:41:49.606Z",
       "__v": 0
     }
   },
   "leaderboard": {
-    "billiard": {
-      "yasin": 2
-    },
-    "batak": {
-      "🤖 Çaycı İsmail": 1186,
-      "🤖 Mahmut Emmi": 1047,
-      "🤖 Dayı Recep": 128,
-      "🤖 Hasan Dayı": 254,
-      "yasin": 49,
-      "maltoroz": 8,
-      "ahmet": 56,
-      "cemal": 47
-    },
-    "tavla": {
-      "yasin": 1
-    },
-    "okey101": {
-      "yasin": 1
-    },
-    "xox": {
-      "maltoroz": 1
-    },
-    "amiral": {
-      "yasin": 5
-    },
-    "chess": {
-      "Elyesa": 2,
-      "yasin": 3
-    }
+    "billiard": {},
+    "batak": {},
+    "tavla": {},
+    "okey101": {},
+    "xox": {},
+    "amiral": {}
   },
   "botanicMarketStock": {
-    "papatya": 21,
-    "lale": 19,
-    "gul": 19,
-    "lavanta": 19,
-    "orkide": 19,
-    "aycicegi": 19,
-    "sakayik": 20
+    "papatya": 20,
+    "lale": 20,
+    "gul": 20,
+    "lavanta": 20,
+    "orkide": 20,
+    "aycicegi": 20
   }
 }

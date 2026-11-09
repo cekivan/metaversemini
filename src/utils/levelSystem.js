@@ -72,13 +72,14 @@ function addPlayerXP(io, players, socketId, uData, xpAmount, source = 'genel') {
         io = dataManager.serverContext.io;
     }
 
-    const oldTotalXP = Number(uData.totalXP) || 0;
-    const oldLevel = (uData.level !== undefined && uData.level !== null) ? Number(uData.level) : calculateLevel(oldTotalXP);
-
-    const newTotalXP = oldTotalXP + xpAmount;
+    const oldLevel = (uData.level !== undefined && uData.level !== null) ? Number(uData.level) : calculateLevel(Number(uData.totalXP) || 0);
+    const minBaseXP = getRequiredTotalXP(oldLevel);
+    // Eğer oyuncunun totalXP'si kayıtlı seviyesinin gerektirdiği taban XP'den düşükse, seviyenin tabanından başlat
+    const currentBaseXP = Math.max(Number(uData.totalXP) || 0, minBaseXP);
+    const newTotalXP = currentBaseXP + xpAmount;
     uData.totalXP = newTotalXP;
 
-    const newLevel = Math.min(MAX_LEVEL, calculateLevel(newTotalXP));
+    const newLevel = Math.max(oldLevel, Math.min(MAX_LEVEL, calculateLevel(newTotalXP)));
     uData.level = newLevel;
 
     if (players && socketId && players[socketId]) {

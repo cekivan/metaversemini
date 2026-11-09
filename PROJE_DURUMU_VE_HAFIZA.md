@@ -34,6 +34,16 @@
 
 ## 2. Son Yapılan Kritik Geliştirmeler & Çözülen Sorunlar
 
+### 🍃 10 Kasım 2026 | MongoDB Öncelik Kuralı (Single Source of Truth) & Seviye / XP Doğrulaması
+1. **MongoDB = Nihai ve Tek Gerçek Kaynak:**
+   - Kullanıcı hem yerel `data.json` dosyasında hem de canlı MongoDB'de mevcutsa, **MongoDB verisi daima önceliklidir ve gerçektir.**
+   - `src/dataManager.js` içindeki `syncDataJsonToMongo()` fonksiyonundan MongoDB'deki mevcut kullanıcıları yerel `data.json` ile güncelleyen mantık tamamen kaldırıldı.
+   - Yerelden MongoDB'ye yalnızca MongoDB'de henüz hiç bulunmayan (offline yeni kayıtlar) aktarılır.
+   - Ortak kullanıcılarda MongoDB'den gelen güncel veri (bakiye, seviye, envanter vb.) yerel `data.json`'ın üzerine yazılarak yerel dosya güncellenir.
+2. **Seviye 10 / Seviye 14 Matematiksel Eşitlemesi:**
+   - `yasin` kullanıcısı hem MongoDB Atlas'ta hem `data.json`'da Seviye 10 (1920 XP) olarak eşitlendi.
+   - `src/utils/levelSystem.js` içerisine koruma eklendi: Taban XP eşiği güvenceye alınarak beklenmeyen seviye zıplamaları veya düşüşleri engellendi.
+
 ### 🍃 10 Kasım 2026 | MongoDB Atlas Canlı Bağlantısı, Seviye/XP Verilerinin Geri Yüklenmesi & İki Yönlü Senkronizasyon Koruması
 1. **MongoDB Atlas Entegrasyonu:**
    - `.env` içerisindeki bağlantı adresi MongoDB Atlas kümesine bağlandı ve canlı veritabanı aktif edildi (`316 kullanıcı`).
