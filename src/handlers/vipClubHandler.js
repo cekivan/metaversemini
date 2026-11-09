@@ -21,8 +21,8 @@ const SHADY_ITEMS = {
         name: 'Sinyal Kesici (Jammer)',
         price: 1500,
         currency: 'money',
-        minLevel: 3,
-        desc: '1 kullanımlık sinyal kesici. Hedef oyuncunun 3 dakika chate yazmasını ve konuşmasını engeller. (Gereksinim: Seviye 3)',
+        minLevel: 2,
+        desc: '1 kullanımlık sinyal kesici. Hedef oyuncunun 3 dakika chate yazmasını ve konuşmasını engeller. (Gereksinim: Seviye 2)',
         icon: '📡',
         isConsumable: true
     },
@@ -606,8 +606,8 @@ function registerVipClubHandlers(io, socket, players, helpers) {
         const callerData = dataManager.persistentData.users[callerKey];
 
         const callerLevel = players[socket.id].level || (callerData?.level || 1);
-        if (callerLevel < 3) {
-            socket.emit('gameError', '🔒 Sinyal Kesici (Jammer)\'ı kullanabilmek için en az Seviye 3 olmalısınız!');
+        if (callerLevel < 2) {
+            socket.emit('gameError', '🔒 Sinyal Kesici (Jammer)\'ı kullanabilmek için en az Seviye 2 olmalısınız!');
             return;
         }
 

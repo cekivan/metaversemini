@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
-    <title>Mini Metaverse Beta v1.3</title>
+    <title>Mini Metaverse Beta v1.4</title>
     <!-- MODÜLER CSS DOSYALARI (Hızlı ve Paralel Yükleme) -->
     <link rel="stylesheet" href="css/base.css?v=20261104">
     <link rel="stylesheet" href="css/ui-modals.css?v=20261104">
@@ -23,24 +23,8 @@
 </head>
 <body>
 
-    <!-- Sol Üst HUD Seviye ve XP Çubuğu -->
-    <div id="hudLevelContainer" class="hud-level-container" title="Profilini ve Seviye Ayrıntılarını Gör">
-        <div class="hud-level-badge" id="hudLevelBadge">
-            <span class="hud-level-prefix">LV</span>
-            <span class="hud-level-number" id="hudLevelNumber">1</span>
-        </div>
-        <div class="hud-xp-track-wrapper">
-            <div class="hud-xp-meta">
-                <span class="hud-xp-title" id="hudLevelTitle">Çaylak</span>
-                <span class="hud-xp-text" id="hudXpText">0 / 20 XP</span>
-            </div>
-            <div class="hud-xp-progress-bar">
-                <div class="hud-xp-fill" id="hudXpFill" style="width: 0%;"></div>
-            </div>
-        </div>
-        <!-- Anlık XP Kazanım Uçan Bildirimi -->
-        <div id="hudXpFloatContainer" class="hud-xp-float-container"></div>
-    </div>
+    <!-- Anlık XP Kazanım Uçan Bildirimi -->
+    <div id="hudXpFloatContainer" class="hud-xp-float-container" style="position: fixed; top: 16px; left: 16px; z-index: 10020; pointer-events: none;"></div>
 
     <!-- 1. ÜST MENÜ (Mekan Değiştirme, Gece/Gündüz, Liderlik, Gardırop, Bakiye ve Chat Kontrolleri) -->
     <div class="top-nav">
@@ -82,9 +66,6 @@
                 </button>
             </div>
         </div>
-        <button id="betaShowcaseNavBtn" class="nav-btn" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); box-shadow: 0 4px 14px rgba(236, 72, 153, 0.45); font-weight: 800; display: flex; align-items: center; gap: 6px;" onclick="openBetaShowcaseModal()" title="Beta v1.4 Büyük Güncellemesini İncele">
-            <span>🚀</span> Beta v1.4
-        </button>
         <button id="myProfileNavBtn" class="nav-btn" style="background: linear-gradient(135deg, #6366f1, #4f46e5); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35); font-weight: 800; display: flex; align-items: center; gap: 5px;" onclick="openMyPlayerProfile()" title="Kendi Profilini ve 12 Kare Rozetini Gör">
             <span>👤</span> Profilim
         </button>
@@ -165,7 +146,7 @@
             <div style="font-size: 38px; margin-bottom: 2px;">🎮</div>
             <h1 style="color: #facc15; margin: 0 0 6px 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 <span>Mini Metaverse</span>
-                <span style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; font-size: 13px; font-weight: 800; padding: 3px 10px; border-radius: 999px; box-shadow: 0 2px 10px rgba(236,72,153,0.4); text-transform: uppercase; letter-spacing: 0.5px;">Beta v1.3</span>
+                <span class="login-beta-badge">🚀 Beta v1.4</span>
             </h1>
             <p style="color: #94a3b8; font-size: 13px; margin-bottom: 18px;">Kıraathane & Sanal Dünya'ya Hoş Geldiniz</p>
             

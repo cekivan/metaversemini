@@ -160,11 +160,15 @@ function registerZeusHandlers(io, socket, players, helpers) {
             channel: 'room'
         });
 
+        const strikesToday = getZeusStrikesToday(callerData);
+        strikesToday.count = (strikesToday.count || 0) + 1;
+
         socket.emit('zeusStateUpdate', {
             dailyCount: strikesToday.count,
             dailyMax: MAX_DAILY_STRIKES,
             strikesLeft: Math.max(0, MAX_DAILY_STRIKES - strikesToday.count),
-            hasItem: true
+            count: callerData.zeusCount || 0,
+            hasItem: (callerData.zeusCount > 0) || (callerData.avatar?.heldItem === 'zeus_yildirimi') || (callerData.inventory && callerData.inventory.includes('props_zeus_yildirimi'))
         });
 
         // B) AŞAMA 2: 10. Saniyede Yıldırım Çarpması (1 Saniye İskelet Şoku)

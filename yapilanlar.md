@@ -4,6 +4,161 @@ Bu dosya, projede yapılan tüm geliştirmelerin, mimari değişikliklerin, hata
 
 ---
 
+## 📅 10 Kasım 2026
+
+### ⏰ 00:30 | 🚀 Sol Üst Seviye Barının Kaldırılması, Üst Menüden Beta v1.4 Butonunun Silinmesi & Seviye 2 Jammer / Zeus Yıldırımı Kilitlerinin Açılması
+- **Kullanıcı Talepleri:**
+  1. *"bir de level ilerlemesi profilde var sol üstten kaldır bu ilerlemeyi."*
+  2. *"bir de yukarıdaki butonlardan v1.4 butonunu da kaldır."*
+  3. *"bir de 2 level oldum ve jammeri yıldırımı kullanamıyorum? düzelt"*
+  4. *"son isteğim yarıda kaldı. düzenle ve yarıda kaldığı için oluşan bug varsa düzelt."*
+
+- **1. Sol Üst HUD Seviye Barının Kaldırılması:**
+  - `public/index.html`:
+    - Sol üst köşede yer alan `#hudLevelContainer` DOM elemanı tamamen kaldırıldı (böylece sol üstte oyuncunun unvanı, rozet dairesi ve XP ilerleme barı görüntülenmez, ekran temiz ve ferah kalır).
+    - `#hudXpFloatContainer` korundu; oyuncu maden kazdığında veya bitki hasat ettiğinde `+XP` uçan parçacık bildirimleri ekranda belirmeye devam eder.
+  - `public/js/levelClient.js`:
+    - DOM elementleri (`this.badgeNum`, `this.titleEl`, `this.textEl`, `this.fillEl`, `this.badgeEl`) `if (this.element)` kontrolleriyle korumaya alındı, elementlerin DOM'da olmaması durumunda konsola veya motora hiçbir hata yansımaz.
+    - Seviye ilerlemesi ve rozet detayları, kullanıcının talebi doğrultusunda sadece Profil modalindeki 12 kare rozet vitrininde ve Seviye Sistemi modalinde incelenebilir hale getirildi.
+
+- **2. Üst Menüden `🚀 Beta v1.4` Butonunun Kaldırılması:**
+  - `public/index.html`:
+    - `.top-nav` içerisindeki `<button id="betaShowcaseNavBtn">🚀 Beta v1.4</button>` butonu kaldırıldı.
+    - Menü navigasyon barı orijinal kompakt yapısına kavuşturuldu.
+
+- **3. Seviye 2 Jammer (Sinyal Kesici) & Zeus'un İlahi Yıldırımı Kullanım Çözümü:**
+  - **Kök Sebep Analizi:**
+    - `public/js/social.js` içinde `hasJammer` için `myLvl >= 3` ve `hasZeus` için `myLvl >= 4` koşulları hardcoded kalmıştı; bu sebeple Seviye 2 olan bir oyuncu başka bir oyuncunun profiline tıkladığında bu butonlar hiç oluşturulmuyordu.
+    - `useJammerOnInteractingPlayer()` ve `useZeusLightningOnInteractingPlayer()` fonksiyonlarında `myLvl < 3` ve `myLvl < 4` engel kontrolleri mevcuttu ve tıklandığında hata fırlatıyordu.
+    - `src/handlers/vipClubHandler.js` içinde Tekinsiz Tekin'in Jammer satış koşulu `minLevel: 3` idi ve `useJammerOnPlayer` soket dinleyicisi `callerLevel < 3` kontrolü yapıyordu.
+    - `src/handlers/authHandler.js` oturum açılışında (`loginSuccess`) `zeusCount` değerini istemciye göndermiyordu; istemcide `window.myZeusCount` `undefined` kalıyordu.
+  - **Uygulanan Düzeltmeler:**
+    - `src/handlers/vipClubHandler.js`: `jammer.minLevel` 2'ye çekildi; `useJammerOnPlayer` seviye gereksinimi `callerLevel < 2` olarak güncellendi.
+    - `src/handlers/zeusHandler.js`: Seviye kontrolü en az Seviye 2 olarak ayarlandı (`callerLevel < 2`). Ayrıca elinde olmasa bile envanterinde/çantasında Zeus Yıldırımı olan oyuncunun doğrudan profil yan sekmesinden yıldırımı fırlatabilmesi sağlandı (`currentZeusCount > 0`).
+    - `src/handlers/authHandler.js`: `loginSuccess` payload'ına `zeusCount`, `mugKnifeCount`, `hasMugKnife` ve `jammerCount` eksiksiz eklendi.
+    - `public/js/main.js`: `loginSuccess` ile gelen `zeusCount`, `mugKnifeCount` ve `jammerCount` global değişkenlere işlendi.
+    - `public/js/social.js`:
+      - `checkProfileSpecialActionsOwnership()` fonksiyonu baştan aşağı yenilendi; Seviye 2 ve üzeri için hem Jammer hem Gasp hem de Zeus Yıldırımı kullanılabilir hale getirildi (`myLvl >= 2`).
+      - Başka oyuncu profilindeki yan sekmelerde Seviye 2 ve üzeri her oyuncuya Jammer, Gasp ve Zeus butonları gösterildi; eşyası varsa animasyonlu ve adetli (`3 Adet`), eşyası yoksa soluk (`dimmed-special`) ve Tekinsiz Tekin'e yönlendiren rehber mesajıyla sunuldu.
+      - `propInventoryUpdate` ve `zeusStateUpdate` soket dinleyicilerine canlı sayaç senkronizasyonu eklendi.
+    - `public/js/levelClient.js`: `LEVEL_UNLOCKS[2]` listesine `Sinyal Kesici (Jammer)` eklendi.
+    - `data.json`: Test kullanıcısı `10kasım` için Jammer, Zeus Yıldırımı ve Gasp Bıçağı adetleri tanımlandı.
+
+- **Doğrulama ve Test:**
+  - Headless Edge tarayıcısı üzerinden CDP ile uçtan uca test edildi:
+    - DOM'da `#hudLevelContainer` ve `#betaShowcaseNavBtn` bulunmadığı (`false`) doğrulandı.
+    - `10kasım` (Seviye 2) ile oturum açıldığında oyuncunun profilinde 3 özel eylem sekmesinin (`tab-jammer`, `tab-mug`, `tab-zeus`) eksiksiz yer aldığı tespit edildi.
+    - Jammer ve Zeus Yıldırımı başka oyuncu üzerinde çalıştırıldı; sistem bildirimi (`10kasım, testdummy_target'nin jammerla sinyalini kesti`) ve Zeus Fırtınası (`[ZEUS ENGINE] Fırtına başladı`) hatasız tetiklendi.
+    - Ekran görüntüleri kaydedildi: `verified_level2_profile_actions.png`, `verified_hud_and_nav_clean.png`.
+
+---
+
+## 📅 9 Kasım 2026
+
+### ⏰ 23:00 | 🌟 Yeni Hesap Karakter 2 Doğuşu, Giriş Ekranı Beta v1.4 Parlak Efekti ve Gardırop İlk Açılış Boş Karakter Bugı Giderimi
+- **Kullanıcı Talepleri:**
+  1. *"yeni kurulan hesaplar karakter 2 ile doğsun bundan sonra."*
+  2. *"bir de oyun giriş ekranında beta v1.4 yazsın güzel bir efektle. beta v1.3 yazıyor hala."*
+  3. *"bir de gardropu ilk açtığımızda hiçbir karakter gözükmemesi gibi bir bug oluyo onu da analiz et ve çöz."*
+
+- **1. Yeni Kurulan Hesapların Karakter 2 (Eklemli) Olarak Doğması:**
+  - `src/dataManager.js` içerisindeki `registerUser()` fonksiyonu güncellendi:
+    - Varsayılan model artık `model: 'karakter_2'` (Eklemli modern model).
+    - Erkek karakter başlangıç kıyafetleri:
+      - Üst: `k2_cyber_street` (K2 Siber Sokak Tişörtü)
+      - Alt: `pants_k2_tactical_jogger` (Taktik Kargo Jogger)
+      - Ayakkabı: `shoes_k2_skate_pro` (Skater Pro Chunky Sneaker)
+      - Saç: `hair_k2_fade_pompadour`
+      - Envanter: Bu eşyaların tüm sahiplik anahtarları doğrudan oyuncunun envanterine verildi.
+    - Kadın karakter başlangıç kıyafetleri:
+      - Üst: `top_k2_pastel_hoodie` (K2 Pastel Crop Hoodie)
+      - Alt: `pants_k2_cargo_mini` (Taktik Urban Kargo Mini Etek)
+      - Ayakkabı: `shoes_k2_chunky_sneaker` (K2 Chunky Platform Sneaker)
+      - Saç: `hair_k2_hime_cut`
+      - Envanter: Bu eşyaların tüm sahiplik anahtarları doğrudan oyuncunun envanterine verildi.
+  - `src/handlers/authHandler.js`:
+    - `onLoginSuccess` model boşsa varsayılan olarak `karakter_2` atayacak şekilde güçlendirildi.
+    - `karakter_2` modeline sahip kullanıcıların eski veritabanından eksik gömlek/pantolon gelmesi durumuna karşı güvenli otomatik giydirme tamamlandı.
+  - `public/js/wardrobe.js`:
+    - `myAvatar` ve `previewAvatar` başlangıç modelleri `karakter_2` olarak senkronize edildi.
+
+- **2. Giriş Ekranı Beta v1.4 Rozeti ve Animasyon Efekti:**
+  - `public/index.html`:
+    - `<title>` etiketi `Mini Metaverse Beta v1.4` olarak güncellendi.
+    - Giriş ve kayıt kutusunun başlığındaki statik "Beta v1.3" kaldırılıp yerine `.login-beta-badge` sınıfına sahip `🚀 Beta v1.4` rozeti entegre edildi.
+  - `public/css/base.css`:
+    - `.login-beta-badge` için modern, akıcı 3 renkli gradient (`#ec4899` pembe, `#8b5cf6` mor, `#06b6d4` siber camgöbeği), gradient akışı (`@keyframes loginBetaGradShift`), nefes alan neon aura nabzı (`@keyframes loginBetaPulse`) ve üzerinden 3.2 saniyede bir diyagonal geçen ışık hüzmesi süpürmesi (`@keyframes loginBetaShine`) uygulandı.
+
+- **3. Gardırop İlk Açılışında Karakterin Görünmemesi Bugının Kapsamlı Analizi ve Çözümü:**
+  - **Tespit Edilen Kök Sebepler:**
+    - **Kök Sebep 1 (Modal Görünürlüğü Sıralaması):** `openWardrobe()` fonksiyonunda `renderWardrobeUI()` fonksiyonu çağrılırken modal henüz `display: none` durumundaydı. Gizli element içerisindeki canvas çizimi kimi tarayıcılarda bağlamı geçersiz kılmakta veya layout hesaplanmadığı için podyum boş kalmaktaydı.
+    - **Kök Sebep 2 (Canvas Element Önbelleği / Stale Context):** `avatarRenderer.js` içerisindeki `_cachedPreviewCanvas` ve `_cachedPreviewCtx` DOM elemanının bağlı olup olmadığını (`isConnected`) veya genişliğinin 0 olup olmadığını denetlemiyordu.
+    - **Kök Sebep 3 (Değişken Kapsamı ve Senkronizasyon):** `wardrobe.js` içerisindeki `isWardrobeOpen = true` çağrısı `window.isWardrobeOpen` globalini güncellemiyordu; `avatarRenderer.js` içerisindeki `avatarPreviewLoop` döngüsü bu bayrak yüzünden ilk karede döngüden çıkabiliyordu.
+    - **Kök Sebep 4 (Veritabanı Nesnesi Eksikliği):** Kullanıcı ilk kez oturum açtığında veya kayıt olduğunda `myAvatar` nesnesinde `shirt` veya `pants` null gelebiliyor, K2 veya Klasik 2 çizim fonksiyonları boş limb/gövde nesnesiyle karşılaşabiliyordu.
+  - **Uygulanan Düzeltmeler:**
+    - `openWardrobe()` fonksiyonunun en başında `#wardrobeModal` `style.display = 'flex'` yapılarak layout hemen açıldı.
+    - `isWardrobeOpen = true` ile birlikte `window.isWardrobeOpen = true` senkronize edildi.
+    - `myAvatar` ve `previewAvatar` nesnelerine model bazlı (hem `karakter_2` hem klasik) tam kıyafet, pantolon, saç ve ayakkabı fallback emniyet kalkanı eklendi.
+    - `drawAvatarPreview()` fonksiyonu `renderWardrobeUI()` sonrasında doğrudan çağrılarak ilk kare anında çizdirildi; `_cachedPreviewCanvas` bağlılık kontrolü eklendi ve çizim hatalarına karşı `try/catch` zırhı yerleştirildi.
+    - `wardrobe.js` `loginSuccess` dinleyicisine avatar ve envanter senkronizasyonu bağlandı.
+
+- **4. Test ve Edge CDP Doğrulaması:**
+  - `scratch/verify_all_three_fixes.js` çalıştırıldı:
+    - **Test 1:** Giriş ekranında `Mini Metaverse Beta v1.4` başlığı, `🚀 BETA V1.4` rozeti ve CSS animasyonları doğrulandı (`verified_login_beta_v14_badge.png`).
+    - **Test 2:** Yeni test kullanıcısı kaydedildi (`k2test_94802`), `avatar.model === 'karakter_2'` olduğu, `k2_cyber_street` ve `pants_k2_tactical_jogger` giydiği kanıtlandı.
+    - **Test 3:** Gardırop ilk kez açıldığında canvas piksel verisi `nonZeroImmediate: 6742` olarak okundu (önceden 0/boştu!), animasyon döngüsü sonrasında `nonZeroAfterLoop: 6772` ile canlı 8 açılı karakterin kusursuz renderlandığı doğrulandı (`verified_wardrobe_first_open_fixed.png`).
+
+---
+
+## 📅 10 Kasım 2026
+
+### ⏰ 00:30 | 🚀 Sol Üst Seviye Barının Kaldırılması, Üst Menüden Beta v1.4 Butonunun Silinmesi & Seviye 2 Jammer / Zeus Yıldırımı Kilitlerinin Açılması
+- **Kullanıcı Talepleri:**
+  1. *"bir de level ilerlemesi profilde var sol üstten kaldır bu ilerlemeyi."*
+  2. *"bir de yukarıdaki butonlardan v1.4 butonunu da kaldır."*
+  3. *"bir de 2 level oldum ve jammeri yıldırımı kullanamıyorum? düzelt"*
+  4. *"son isteğim yarıda kaldı. düzenle ve yarıda kaldığı için oluşan bug varsa düzelt."*
+
+- **1. Sol Üst HUD Seviye Barının Kaldırılması:**
+  - `public/index.html`:
+    - Sol üst köşede yer alan `#hudLevelContainer` DOM elemanı tamamen kaldırıldı (böylece sol üstte oyuncunun unvanı, rozet dairesi ve XP ilerleme barı görüntülenmez, ekran temiz ve ferah kalır).
+    - `#hudXpFloatContainer` korundu; oyuncu maden kazdığında veya bitki hasat ettiğinde `+XP` uçan parçacık bildirimleri ekranda belirmeye devam eder.
+  - `public/js/levelClient.js`:
+    - DOM elementleri (`this.badgeNum`, `this.titleEl`, `this.textEl`, `this.fillEl`, `this.badgeEl`) `if (this.element)` kontrolleriyle korumaya alındı, elementlerin DOM'da olmaması durumunda konsola veya motora hiçbir hata yansımaz.
+    - Seviye ilerlemesi ve rozet detayları, kullanıcının talebi doğrultusunda sadece Profil modalindeki 12 kare rozet vitrininde ve Seviye Sistemi modalinde incelenebilir hale getirildi.
+
+- **2. Üst Menüden `🚀 Beta v1.4` Butonunun Kaldırılması:**
+  - `public/index.html`:
+    - `.top-nav` içerisindeki `<button id="betaShowcaseNavBtn">🚀 Beta v1.4</button>` butonu kaldırıldı.
+    - Menü navigasyon barı orijinal kompakt yapısına kavuşturuldu.
+
+- **3. Seviye 2 Jammer (Sinyal Kesici) & Zeus'un İlahi Yıldırımı Kullanım Çözümü:**
+  - **Kök Sebep Analizi:**
+    - `public/js/social.js` içinde `hasJammer` için `myLvl >= 3` ve `hasZeus` için `myLvl >= 4` koşulları hardcoded kalmıştı; bu sebeple Seviye 2 olan bir oyuncu başka bir oyuncunun profiline tıkladığında bu butonlar hiç oluşturulmuyordu.
+    - `useJammerOnInteractingPlayer()` ve `useZeusLightningOnInteractingPlayer()` fonksiyonlarında `myLvl < 3` ve `myLvl < 4` engel kontrolleri mevcuttu ve tıklandığında hata fırlatıyordu.
+    - `src/handlers/vipClubHandler.js` içinde Tekinsiz Tekin'in Jammer satış koşulu `minLevel: 3` idi ve `useJammerOnPlayer` soket dinleyicisi `callerLevel < 3` kontrolü yapıyordu.
+    - `src/handlers/authHandler.js` oturum açılışında (`loginSuccess`) `zeusCount` değerini istemciye göndermiyordu; istemcide `window.myZeusCount` `undefined` kalıyordu.
+  - **Uygulanan Düzeltmeler:**
+    - `src/handlers/vipClubHandler.js`: `jammer.minLevel` 2'ye çekildi; `useJammerOnPlayer` seviye gereksinimi `callerLevel < 2` olarak güncellendi.
+    - `src/handlers/zeusHandler.js`: Seviye kontrolü en az Seviye 2 olarak ayarlandı (`callerLevel < 2`). Ayrıca elinde olmasa bile envanterinde/çantasında Zeus Yıldırımı olan oyuncunun doğrudan profil yan sekmesinden yıldırımı fırlatabilmesi sağlandı (`currentZeusCount > 0`).
+    - `src/handlers/authHandler.js`: `loginSuccess` payload'ına `zeusCount`, `mugKnifeCount`, `hasMugKnife` ve `jammerCount` eksiksiz eklendi.
+    - `public/js/main.js`: `loginSuccess` ile gelen `zeusCount`, `mugKnifeCount` ve `jammerCount` global değişkenlere işlendi.
+    - `public/js/social.js`:
+      - `checkProfileSpecialActionsOwnership()` fonksiyonu baştan aşağı yenilendi; Seviye 2 ve üzeri için hem Jammer hem Gasp hem de Zeus Yıldırımı kullanılabilir hale getirildi (`myLvl >= 2`).
+      - Başka oyuncu profilindeki yan sekmelerde Seviye 2 ve üzeri her oyuncuya Jammer, Gasp ve Zeus butonları gösterildi; eşyası varsa animasyonlu ve adetli (`3 Adet`), eşyası yoksa soluk (`dimmed-special`) ve Tekinsiz Tekin'e yönlendiren rehber mesajıyla sunuldu.
+      - `propInventoryUpdate` ve `zeusStateUpdate` soket dinleyicilerine canlı sayaç senkronizasyonu eklendi.
+    - `public/js/levelClient.js`: `LEVEL_UNLOCKS[2]` listesine `Sinyal Kesici (Jammer)` eklendi.
+    - `data.json`: Test kullanıcısı `10kasım` için Jammer, Zeus Yıldırımı ve Gasp Bıçağı adetleri tanımlandı.
+
+- **Doğrulama ve Test:**
+  - Headless Edge tarayıcısı üzerinden CDP ile uçtan uca test edildi:
+    - DOM'da `#hudLevelContainer` ve `#betaShowcaseNavBtn` bulunmadığı (`false`) doğrulandı.
+    - `10kasım` (Seviye 2) ile oturum açıldığında oyuncunun profilinde 3 özel eylem sekmesinin (`tab-jammer`, `tab-mug`, `tab-zeus`) eksiksiz yer aldığı tespit edildi.
+    - Jammer ve Zeus Yıldırımı başka oyuncu üzerinde çalıştırıldı; sistem bildirimi (`10kasım, testdummy_target'nin jammerla sinyalini kesti`) ve Zeus Fırtınası (`[ZEUS ENGINE] Fırtına başladı`) hatasız tetiklendi.
+    - Ekran görüntüleri kaydedildi: `verified_level2_profile_actions.png`, `verified_hud_and_nav_clean.png`.
+
+---
+
 ## 📅 9 Kasım 2026
 
 ### ⏰ 22:40 | 🎆 Günlük Ödül Patlama Efekti (Explosion) Kapsamlı Analizi, Takılma/Bug Giderimi ve Ultra-Akıcı 3D Vektörel Fizik Yenilemesi

@@ -34,6 +34,35 @@
 
 ## 2. Son Yapılan Kritik Geliştirmeler & Çözülen Sorunlar
 
+### 🚀 10 Kasım 2026 | Sol Üst Seviye Barının Kaldırılması, Beta v1.4 Butonunun Silinmesi & Seviye 2 Jammer / Zeus Yıldırımı Çözümü
+1. **Sol Üst HUD Seviye Barının Kaldırılması:**
+   - `public/index.html` içerisindeki `#hudLevelContainer` DOM elemanı silindi; sol üstteki XP barı ve rozet kaldırıldı. Oyuncunun seviye ilerlemesi artık sadece Profil modalindeki 12 kare rozet vitrininde ve Seviye Sistemi penceresinde görünür.
+   - Anlık kazanılan XP'lerin ekranda akıcı belirmesi için `#hudXpFloatContainer` korundu.
+2. **Üst Menüden Beta v1.4 Butonunun Silinmesi:**
+   - Navigasyon menüsündeki `#betaShowcaseNavBtn` kaldırıldı, menü sadeleştirildi.
+3. **Seviye 2 Jammer (Sinyal Kesici) & Zeus Yıldırımı Erişimi:**
+   - `public/js/social.js` içindeki `hasJammer (>=3)` ve `hasZeus (>=4)` hardcoded kontrolleri Seviye 2'ye (`myLvl >= 2`) indirildi.
+   - `useJammerOnInteractingPlayer` ve `useZeusLightningOnInteractingPlayer` fonksiyonlarındaki seviye 3 ve 4 bariyerleri kaldırıldı (`myLvl < 2`).
+   - `src/handlers/vipClubHandler.js` içindeki Tekinsiz Tekin Jammer satış seviyesi (`minLevel: 2`) ve `useJammerOnPlayer` kontrolü Seviye 2 yapıldı.
+   - `src/handlers/zeusHandler.js` içindeki seviye kontrolü Seviye 2 yapıldı.
+   - `src/handlers/authHandler.js` `loginSuccess` ile `zeusCount` ve `mugKnifeCount` istemciye senkronize edildi.
+   - `10kasım` test kullanıcısının envanterine Jammer ve Zeus Yıldırımı tanımlandı ve başarılı şekilde test edildi.
+
+### 🌟 9 Kasım 2026 | Yeni Hesap Karakter 2 Doğuşu, Giriş Ekranı Beta v1.4 Parlak Efekti & Gardırop İlk Açılış Bugı Fix
+1. **Yeni Hesapların Karakter 2 Olarak Doğması:**
+   - `src/dataManager.js` `registerUser` fonksiyonunda varsayılan avatar modeli `karakter_2` yapıldı.
+   - Erkek için `k2_cyber_street`, `pants_k2_tactical_jogger`, `shoes_k2_skate_pro`, `hair_k2_fade_pompadour`; Kadın için `top_k2_pastel_hoodie`, `pants_k2_cargo_mini`, `shoes_k2_chunky_sneaker`, `hair_k2_hime_cut` başlangıç kıyafetleri ve tam envanter sahiplikleri tanımlandı.
+   - `src/handlers/authHandler.js` oturum açılışında fallback modelini `karakter_2` olarak belirleyecek ve eksik kıyafetleri tamamlayacak şekilde güncellendi.
+2. **Giriş Ekranı Beta v1.4 Parlayan Efektli Rozet:**
+   - `public/index.html` sayfa başlığı `<title>Mini Metaverse Beta v1.4</title>` yapıldı.
+   - Giriş penceresine `.login-beta-badge` sınıfıyla `🚀 Beta v1.4` rozeti entegre edildi.
+   - `public/css/base.css` içerisinde canlı 3 renkli gradient kayması (`loginBetaGradShift`), nefes alan neon aura nabzı (`loginBetaPulse`) ve diyagonal ışık süpürme efekti (`loginBetaShine`) ile şık bir görsel kimlik kazandırıldı.
+3. **Gardırop İlk Açılışında Boş Karakter Çıkma Bugı Çözümü:**
+   - Kök sebep: `renderWardrobeUI()` çağrılırken modalın henüz `display: none` olması, `isWardrobeOpen` bayrağının `window` ile senkron olmaması, `myAvatar`'ın veritabanından eksik gömlek/pantolonla gelmesi durumunda çizim nesnesinin boş kalması.
+   - Çözüm: `openWardrobe()` başında modal hemen görünür kılındı (`display: flex`), `isWardrobeOpen` ve `window.isWardrobeOpen` senkronize edildi, hem `karakter_2` hem klasik modeller için tam kıyafet fallback'leri sağlandı.
+   - `avatarRenderer.js` içerisindeki `drawAvatarPreview()` fonksiyonu bağlılık (`isConnected`) kontrolü ve `try/catch` zırhı ile güçlendirildi.
+4. **Doğrulama:** Headless Edge CDP ile `verified_login_beta_v14_badge.png` ve `verified_wardrobe_first_open_fixed.png` başarıyla test edilerek kaydedildi.
+
 ### 🎆 9 Kasım 2026 | Günlük Ödül Patlama Efekti (Explosion) Akıcılık & 3D Vektörel Yenilemesi
 1. **Analiz ve Tespit Edilen Takılma Sebepleri:**
    - Dönen emoji glyph'lerinin (`💎`) Windows DirectWrite rasterizasyonunda kare düşürmesi ve yalpalayarak piksel takılması yapması.

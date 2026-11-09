@@ -16,20 +16,24 @@ var myInventory = {
     props: ['none', 'k2_energy_drink', 'k2_skateboard']
 };
 window.myInventory = myInventory;
-let myAvatar = {
-    model: 'classic_2',
-    hat: 'bere',
-    hair: 'none',
+var myAvatar = {
+    model: 'karakter_2',
+    hat: 'none',
+    hair: 'hair_k2_fade_pompadour',
     face: 'none',
-    skinColor: '#facc15',
-    color: '#3b82f6',
-    shirt: '#3b82f6',
-    pants: 'pants_classic_jeans',
+    skinColor: '#ffd1a4',
+    color: 'k2_cyber_street',
+    shirt: 'k2_cyber_street',
+    shirtColor: 'k2_cyber_street',
+    pants: 'pants_k2_tactical_jogger',
+    pantsColor: 'original',
     outfit: null,
     watch: 'none',
     heldItem: 'none',
-    shoes: 'sneakers'
+    shoes: 'shoes_k2_skate_pro',
+    shoesColor: 'original'
 };
+window.myAvatar = myAvatar;
 
 // Sanalika Stili Tüm Gardırop Renk Paleti (Orijinal + 9 Klasik Canlı Renk)
 const WARDROBE_COLOR_OPTIONS = [
@@ -626,19 +630,22 @@ function updateDiamondDisplay(amount) {
 window.updateDiamondDisplay = updateDiamondDisplay;
 
 var previewAvatar = {
-    model: 'classic_2',
+    model: 'karakter_2',
     gender: (typeof window !== 'undefined' && window.myGender) ? window.myGender : 'male',
-    hat: 'bere',
-    hair: 'none',
+    hat: 'none',
+    hair: 'hair_k2_fade_pompadour',
     face: 'none',
-    skinColor: '#facc15',
-    color: '#3b82f6',
-    shirt: '#3b82f6',
-    pants: 'pants_classic_jeans',
+    skinColor: '#ffd1a4',
+    color: 'k2_cyber_street',
+    shirt: 'k2_cyber_street',
+    shirtColor: 'k2_cyber_street',
+    pants: 'pants_k2_tactical_jogger',
+    pantsColor: 'original',
     outfit: null,
     watch: 'none',
     heldItem: 'none',
-    shoes: 'sneakers'
+    shoes: 'shoes_k2_skate_pro',
+    shoesColor: 'original'
 };
 window.previewAvatar = previewAvatar;
 
@@ -855,37 +862,98 @@ function isItemOwned(category, id, colorId = null) {
 }
 
 function openWardrobe() {
+    // 1. Modalı hemen görünür kıl (Canvas layoutunun ve contextinin sıfır kalmasını önle)
+    const modal = document.getElementById('wardrobeModal');
+    if (modal) modal.style.display = 'flex';
+
     isWardrobeOpen = true;
+    window.isWardrobeOpen = true;
+
+    // myAvatar güvencesi
+    if (!myAvatar || !myAvatar.model) {
+        if (typeof window !== 'undefined' && window.myAvatar && window.myAvatar.model) {
+            myAvatar = { ...window.myAvatar };
+        } else if (typeof players !== 'undefined' && typeof myId !== 'undefined' && players[myId]) {
+            myAvatar = { ...players[myId] };
+        }
+    }
+
     const userGen = (typeof getPlayerGender === 'function') ? getPlayerGender() : (window.myGender || (myAvatar && myAvatar.gender) || 'male');
+    const isFem = (userGen === 'female');
     if (myAvatar) {
         myAvatar.gender = userGen;
-        myAvatar.isFemale = (userGen === 'female');
+        myAvatar.isFemale = isFem;
+        if (!myAvatar.model) myAvatar.model = 'karakter_2';
     }
-    previewAvatar = { ...myAvatar };
+
+    previewAvatar = { ...(myAvatar || {}) };
     previewAvatar.gender = userGen;
-    previewAvatar.isFemale = (userGen === 'female');
+    previewAvatar.isFemale = isFem;
     previewAvatar.id = (typeof window !== 'undefined' && window.myId) ? window.myId : (typeof myId !== 'undefined' ? myId : 'preview_self');
     if (myAvatar && myAvatar.face) {
         previewAvatar.face = myAvatar.face;
         previewAvatar.faceColor = myAvatar.faceColor || 'original';
     }
-    
+
+    if (!previewAvatar.model) {
+        previewAvatar.model = (myAvatar && myAvatar.model) || 'karakter_2';
+    }
+
+    // Kıyafetlerin ilk açılışta null gelme durumuna karşı emniyet kalkanı
+    if (previewAvatar.model === 'karakter_2') {
+        if (!previewAvatar.shirt && !previewAvatar.outfit) {
+            previewAvatar.shirt = isFem ? 'top_k2_pastel_hoodie' : 'k2_cyber_street';
+            previewAvatar.shirtColor = previewAvatar.shirt;
+            previewAvatar.color = previewAvatar.shirt;
+        }
+        if (!previewAvatar.pants && !previewAvatar.outfit) {
+            previewAvatar.pants = isFem ? 'pants_k2_cargo_mini' : 'pants_k2_tactical_jogger';
+        }
+        if (!previewAvatar.shoes) {
+            previewAvatar.shoes = isFem ? 'shoes_k2_chunky_sneaker' : 'shoes_k2_skate_pro';
+        }
+        if (!previewAvatar.hair || previewAvatar.hair === 'none') {
+            previewAvatar.hair = isFem ? 'hair_k2_hime_cut' : 'hair_k2_fade_pompadour';
+        }
+    } else {
+        if (!previewAvatar.shirt && !previewAvatar.outfit) {
+            previewAvatar.shirt = previewAvatar.color || (isFem ? 'dress_pink' : '#3b82f6');
+            previewAvatar.shirtColor = previewAvatar.shirt;
+            previewAvatar.color = previewAvatar.shirt;
+        }
+        if (!previewAvatar.pants && !previewAvatar.outfit) {
+            previewAvatar.pants = isFem ? '#ffd1a4' : 'pants_classic_jeans';
+        }
+        if (!previewAvatar.shoes) {
+            previewAvatar.shoes = isFem ? 'flats' : 'sneakers';
+        }
+    }
+
+    window.previewAvatar = previewAvatar;
+    window.myAvatar = myAvatar;
+
     // Erkek karakter için default erkek, kadın karakter için default kadın kıyafetleri
-    wardrobeGenderFilter = (userGen === 'female') ? 'female' : 'male';
+    wardrobeGenderFilter = isFem ? 'female' : 'male';
     wardrobePage = 1;
     setWardrobeGenderFilter(wardrobeGenderFilter);
 
     updateModelSelectorUI();
     renderWardrobeUI();
-    const modal = document.getElementById('wardrobeModal');
-    if (modal) modal.style.display = 'flex';
+
+    // Canvas'ı anında bir kez çizdir
+    if (typeof drawAvatarPreview === 'function') {
+        drawAvatarPreview();
+    }
+
     const _prevLoop = (typeof avatarPreviewLoop === 'function') ? avatarPreviewLoop : (typeof window.avatarPreviewLoop === 'function' ? window.avatarPreviewLoop : null);
     if (_prevLoop) requestAnimationFrame(_prevLoop);
 }
 
 function closeWardrobe() {
     isWardrobeOpen = false;
+    window.isWardrobeOpen = false;
     previewAvatar = { ...myAvatar };
+    window.previewAvatar = previewAvatar;
     const modal = document.getElementById('wardrobeModal');
     if (modal) modal.style.display = 'none';
 }
@@ -1993,6 +2061,32 @@ socket.on('skinSetsUpdate', (data) => {
 });
 
 socket.on('loginSuccess', (data) => {
+    if (data && data.avatar) {
+        myAvatar = { ...(myAvatar || {}), ...data.avatar };
+        if (!myAvatar.gender && (data.gender || window.myGender)) {
+            myAvatar.gender = data.gender || window.myGender;
+        }
+        if (myAvatar.model === 'karakter_2') {
+            const isFem = (myAvatar.gender === 'female');
+            if (!myAvatar.shirt && !myAvatar.outfit) {
+                myAvatar.shirt = isFem ? 'top_k2_pastel_hoodie' : 'k2_cyber_street';
+                myAvatar.shirtColor = myAvatar.shirt;
+                myAvatar.color = myAvatar.shirt;
+            }
+            if (!myAvatar.pants && !myAvatar.outfit) {
+                myAvatar.pants = isFem ? 'pants_k2_cargo_mini' : 'pants_k2_tactical_jogger';
+            }
+            if (!myAvatar.shoes) {
+                myAvatar.shoes = isFem ? 'shoes_k2_chunky_sneaker' : 'shoes_k2_skate_pro';
+            }
+            if (!myAvatar.hair || myAvatar.hair === 'none') {
+                myAvatar.hair = isFem ? 'hair_k2_hime_cut' : 'hair_k2_fade_pompadour';
+            }
+        }
+        window.myAvatar = myAvatar;
+        previewAvatar = { ...myAvatar };
+        window.previewAvatar = previewAvatar;
+    }
     if (data && data.skinSets) {
         mySkinSets = { ...mySkinSets, ...data.skinSets };
         window.mySkinSets = mySkinSets;

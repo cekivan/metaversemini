@@ -3106,8 +3106,13 @@ function drawClassic2Avatar(ctx, pX, pY, p, facing, isSitting, legSwing, playerW
 
 // --- 7. GARDIROP ÖNİZLEME DÖNGÜSÜ ---
 function avatarPreviewLoop() {
-    if (!isWardrobeOpen) return;
-    drawAvatarPreview();
+    const isOpen = (typeof isWardrobeOpen !== 'undefined' && isWardrobeOpen) || (typeof window !== 'undefined' && window.isWardrobeOpen);
+    if (!isOpen) return;
+    try {
+        drawAvatarPreview();
+    } catch (err) {
+        console.error('[Wardrobe] avatarPreviewLoop error:', err);
+    }
     requestAnimationFrame(avatarPreviewLoop);
 }
 window.avatarPreviewLoop = avatarPreviewLoop;
@@ -3117,12 +3122,13 @@ let _cachedPreviewCanvas = null;
 let _cachedPreviewCtx = null;
 
 function drawAvatarPreview() {
-    if (!_cachedPreviewCanvas) {
-        _cachedPreviewCanvas = document.getElementById('avatarPreviewCanvas');
-        if (_cachedPreviewCanvas) _cachedPreviewCtx = _cachedPreviewCanvas.getContext('2d');
+    let previewCanvas = _cachedPreviewCanvas;
+    if (!previewCanvas || !previewCanvas.isConnected || previewCanvas.width === 0) {
+        previewCanvas = document.getElementById('avatarPreviewCanvas');
+        _cachedPreviewCanvas = previewCanvas;
+        _cachedPreviewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
     }
-    if (!_cachedPreviewCanvas || !_cachedPreviewCtx) return;
-    const previewCanvas = _cachedPreviewCanvas;
+    if (!previewCanvas || !_cachedPreviewCtx) return;
     const pCtx = _cachedPreviewCtx;
     pCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
 
@@ -3153,34 +3159,62 @@ function drawAvatarPreview() {
     pCtx.ellipse(0, 22, 12, 5, 0, 0, Math.PI * 2);
     pCtx.fill();
 
-    let activeAv = (isWardrobeOpen && previewAvatar) ? previewAvatar : myAvatar;
-    if (activeAv) {
-        const userGen = (typeof getPlayerGender === 'function') ? getPlayerGender() : (typeof window !== 'undefined' ? (window.myGender || 'male') : 'male');
-        if (!activeAv.gender) activeAv.gender = userGen;
-        activeAv.isFemale = (userGen === 'female');
-        if (!activeAv.id && typeof window !== 'undefined') activeAv.id = window.myId || 'preview_self';
-        if ((!activeAv.face || activeAv.face === 'none') && myAvatar && myAvatar.face && myAvatar.face !== 'none' && (!previewAvatar || previewAvatar._selectedFaceCategory !== true)) {
-            activeAv.face = myAvatar.face;
-            activeAv.faceColor = myAvatar.faceColor || 'original';
-        }
-    }
-    let isDressOrSkirt = (activeAv.color && (activeAv.color.startsWith('dress_') || activeAv.color.startsWith('skirt_')));
-    let isFemale = isFemaleAvatar(activeAv, activeAv.color, activeAv.hat, activeAv.shoes);
-    let facing = (typeof window !== 'undefined' && window.previewFacing) ? window.previewFacing : 'down';
+    const isOpen = (typeof isWardrobeOpen !== 'undefined' && isWardrobeOpen) || (typeof window !== 'undefined' && window.isWardrobeOpen);
+    let activeAv = (isOpen && (typeof previewAvatar !== 'undefined' ? previewAvatar : window.previewAvatar)) ? (typeof previewAvatar !== 'undefined' ? previewAvatar : window.previewAvatar) : (typeof myAvatar !== 'undefined' ? myAvatar : (window.myAvatar || {}));
+    if (!activeAv) activeAv = {};
+    const userGen = (typeof getPlayerGender === 'function') ? getPlayerGender() : (window.myGender || (activeAv && activeAv.gender) || 'male');
+    const isFem = (userGen === 'female');
+    if (!activeAv.gender) activeAv.gender = userGen;
+    activeAv.isFemale = isFem;
+    if (!activeAv.id && typeof window !== 'undefined') activeAv.id = window.myId || 'preview_self';
+    if (!activeAv.model) activeAv.model = 'karakter_2';
+    if (!activeAv.skinColor) activeAv.skinColor = '#ffd1a4';
 
+    if (activeAv.model === 'karakter_2') {
+        if (!activeAv.shirt && !activeAv.outfit) {
+            activeAv.shirt = isFem ? 'top_k2_pastel_hoodie' : 'k2_cyber_street';
+            activeAv.shirtColor = activeAv.shirt;
+            activeAv.color = activeAv.shirt;
+        }
+        if (!activeAv.pants && !activeAv.outfit) {
+            activeAv.pants = isFem ? 'pants_k2_cargo_mini' : 'pants_k2_tactical_jogger';
+        }
+        if (!activeAv.shoes) activeAv.shoes = isFem ? 'shoes_k2_chunky_sneaker' : 'shoes_k2_skate_pro';
+        if (!activeAv.hair || activeAv.hair === 'none') activeAv.hair = isFem ? 'hair_k2_hime_cut' : 'hair_k2_fade_pompadour';
+    } else {
+        if (!activeAv.shirt && !activeAv.outfit) {
+            activeAv.shirt = activeAv.color || (isFem ? 'dress_pink' : '#3b82f6');
+            activeAv.shirtColor = activeAv.shirt;
+            activeAv.color = activeAv.shirt;
+        }
+        if (!activeAv.pants && !activeAv.outfit) activeAv.pants = isFem ? activeAv.skinColor : 'pants_classic_jeans';
+        if (!activeAv.shoes) activeAv.shoes = isFem ? 'flats' : 'sneakers';
+    }
+
+    if ((!activeAv.face || activeAv.face === 'none') && typeof myAvatar !== 'undefined' && myAvatar && myAvatar.face && myAvatar.face !== 'none' && (!activeAv || activeAv._selectedFaceCategory !== true)) {
+        activeAv.face = myAvatar.face;
+        activeAv.faceColor = myAvatar.faceColor || 'original';
+    }
+
+    let facing = (typeof window !== 'undefined' && window.previewFacing) ? window.previewFacing : 'down';
     let previewCycle = Date.now() / 250;
     let isK2Preview = (activeAv.model === 'karakter_2' || (typeof window !== 'undefined' && window.selectedModelId === 'karakter_2'));
     let costumeId = activeAv.costume || (activeAv.outfit && activeAv.outfit.startsWith('costume_') ? activeAv.outfit : null);
     let isZombieCostumeActive = (typeof ZombieCostumeRenderer !== 'undefined' && ZombieCostumeRenderer.isCostume(costumeId));
     let isCostumeActive = isZombieCostumeActive || (typeof AnimalCostumeRenderer !== 'undefined' && AnimalCostumeRenderer.isCostume(costumeId));
-    if (isZombieCostumeActive) {
-        ZombieCostumeRenderer.draw(pCtx, 0, 0, activeAv, facing, false, false, previewCycle, true);
-    } else if (isCostumeActive) {
-        AnimalCostumeRenderer.draw(pCtx, 0, 0, activeAv, facing, false, false, previewCycle, true);
-    } else if (isK2Preview && typeof Karakter2Renderer !== 'undefined') {
-        Karakter2Renderer.draw(pCtx, 0, 0, activeAv, facing, false, 0, previewCycle, false, true);
-    } else {
-        drawClassic2Avatar(pCtx, 0, 0, activeAv, facing, false, 0, previewCycle, false, true);
+
+    try {
+        if (isZombieCostumeActive) {
+            ZombieCostumeRenderer.draw(pCtx, 0, 0, activeAv, facing, false, false, previewCycle, true);
+        } else if (isCostumeActive) {
+            AnimalCostumeRenderer.draw(pCtx, 0, 0, activeAv, facing, false, false, previewCycle, true);
+        } else if (isK2Preview && typeof Karakter2Renderer !== 'undefined') {
+            Karakter2Renderer.draw(pCtx, 0, 0, activeAv, facing, false, 0, previewCycle, false, true);
+        } else {
+            drawClassic2Avatar(pCtx, 0, 0, activeAv, facing, false, 0, previewCycle, false, true);
+        }
+    } catch (renderErr) {
+        console.error('[AvatarPreview] Render error caught:', renderErr);
     }
     pCtx.restore();
     return;

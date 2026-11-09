@@ -480,6 +480,15 @@
     box-shadow: 0 0 20px rgba(250, 204, 21, 0.75);
     filter: brightness(1.18);
 }
+.profile-side-tab.dimmed-special {
+    opacity: 0.72;
+    filter: saturate(0.6);
+    border: 1px dashed rgba(255, 255, 255, 0.4) !important;
+}
+.profile-side-tab.dimmed-special:hover {
+    opacity: 1;
+    filter: saturate(1);
+}
 
 /* ==============================================================
    ÖZEL EŞYA BUTONLARI & TEMATİK CANLI ANİMASYONLARI

@@ -518,19 +518,21 @@ async function registerUser(rawName, password, gender = 'male') {
         botanicHarvestCount: 0,
         gamerGamesCount: 0,
         avatar: {
-            model: 'classic_2',
-            hat: isFem ? 'none' : 'bere',
-            hair: isFem ? 'hair_long' : 'none',
+            model: 'karakter_2',
+            hat: 'none',
+            hair: isFem ? 'hair_k2_hime_cut' : 'hair_k2_fade_pompadour',
             face: 'none',
             skinColor: '#ffd1a4',
-            shirtColor: isFem ? 'dress_pink' : '#3b82f6',
-            color: isFem ? 'dress_pink' : '#3b82f6',
-            heldItem: 'none',
-            shoes: isFem ? 'flats' : 'sneakers'
+            shirtColor: isFem ? 'top_k2_pastel_hoodie' : 'k2_cyber_street',
+            color: isFem ? 'top_k2_pastel_hoodie' : 'k2_cyber_street',
+            shirt: isFem ? 'top_k2_pastel_hoodie' : 'k2_cyber_street',
+            pants: isFem ? 'pants_k2_cargo_mini' : 'pants_k2_tactical_jogger',
+            shoes: isFem ? 'shoes_k2_chunky_sneaker' : 'shoes_k2_skate_pro',
+            heldItem: 'none'
         },
         inventory: isFem
-            ? ['hair_hair_long', 'skins_#ffd1a4', 'shirts_dress_pink', 'shoes_flats', 'face_none', 'props_none']
-            : ['hats_bere', 'skins_#facc15', 'shirts_#3b82f6', 'shoes_sneakers', 'face_none', 'props_none'],
+            ? ['hair_k2_hime_cut', 'hair_hair_k2_hime_cut', 'skins_#ffd1a4', 'shirts_top_k2_pastel_hoodie', 'top_k2_pastel_hoodie', 'pants_pants_k2_cargo_mini', 'pants_k2_cargo_mini', 'shoes_shoes_k2_chunky_sneaker', 'shoes_k2_chunky_sneaker', 'face_none', 'props_none']
+            : ['hair_k2_fade_pompadour', 'hair_hair_k2_fade_pompadour', 'skins_#ffd1a4', 'shirts_k2_cyber_street', 'k2_cyber_street', 'pants_pants_k2_tactical_jogger', 'pants_k2_tactical_jogger', 'shoes_shoes_k2_skate_pro', 'shoes_k2_skate_pro', 'face_none', 'props_none'],
         friends: [],
         friendRequests: [],
         house: null,

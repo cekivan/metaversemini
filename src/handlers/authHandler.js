@@ -13,7 +13,24 @@ function registerAuthHandlers(io, socket, players, helpers) {
     function onLoginSuccess(uData, username, isAdmin) {
         const previousModel = uData.avatar && uData.avatar.model;
         if (!uData.avatar) uData.avatar = {};
-        if (!uData.avatar.model) uData.avatar.model = 'classic_2';
+        if (!uData.avatar.model) uData.avatar.model = 'karakter_2';
+        if (uData.avatar.model === 'karakter_2') {
+            const isFem = (uData.gender === 'female');
+            if (!uData.avatar.shirt && !uData.avatar.outfit) {
+                uData.avatar.shirt = isFem ? 'top_k2_pastel_hoodie' : 'k2_cyber_street';
+                uData.avatar.shirtColor = uData.avatar.shirt;
+                uData.avatar.color = uData.avatar.shirt;
+            }
+            if (!uData.avatar.pants && !uData.avatar.outfit) {
+                uData.avatar.pants = isFem ? 'pants_k2_cargo_mini' : 'pants_k2_tactical_jogger';
+            }
+            if (!uData.avatar.shoes) {
+                uData.avatar.shoes = isFem ? 'shoes_k2_chunky_sneaker' : 'shoes_k2_skate_pro';
+            }
+            if (!uData.avatar.hair || uData.avatar.hair === 'none') {
+                uData.avatar.hair = isFem ? 'hair_k2_hime_cut' : 'hair_k2_fade_pompadour';
+            }
+        }
         if (uData.avatar.hat && typeof uData.avatar.hat === 'string' && uData.avatar.hat.startsWith('hair_') && (!uData.avatar.hair || uData.avatar.hair === 'none')) {
             uData.avatar.hair = uData.avatar.hat;
             uData.avatar.hat = 'none';
@@ -146,7 +163,9 @@ function registerAuthHandlers(io, socket, players, helpers) {
             muteExpiresAt: uData.muteExpiresAt || null,
             muteReason: uData.muteReason || null,
             jammerCount: uData.jammerCount || 0,
-            hasMugKnife: !!uData.hasMugKnife,
+            zeusCount: uData.zeusCount || 0,
+            mugKnifeCount: uData.mugKnifeCount || (uData.hasMugKnife ? 1 : 0),
+            hasMugKnife: !!(uData.hasMugKnife || (uData.mugKnifeCount && uData.mugKnifeCount > 0)),
             bodyguardsEquipped: (uData.bodyguardsEquipped !== undefined) ? uData.bodyguardsEquipped : (uData.bodyguardCount || 0),
             bodyguardCount: uData.bodyguardCount || 0,
             hasDoberman: !!uData.hasDoberman,

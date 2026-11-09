@@ -6,12 +6,12 @@
   const LEVEL_UNLOCKS = {
     2: [
       { icon: '🚪', name: 'VİP Club Kapıları Açıldı!', desc: 'Cadde 2\'deki gizli yeraltı kulübüne ücretsiz giriş hakkı kazandın!' },
+      { icon: '📡', name: 'Sinyal Kesici (Jammer)', desc: 'Karaborsadan jammer alıp hedefin telsiz ve konuşma frekansını susturabilirsin!' },
       { icon: '🗡️', name: 'Gasp Bıçağı', desc: 'Yakın mesafeden 2.000 TL soygun yapabilme imkanı! (2 Elmas)' },
       { icon: '⚡', name: "Zeus'un İlahi Yıldırımı", desc: 'Gökyüzünden yıldırımla hedefi çarparak 30 saniye kül yığınına dönüştür! (2 Elmas)' },
       { icon: '🕶️', name: '1. İzbandut Özel Koruma', desc: 'Seni tüm gasp ve saldırılardan can siperi olarak koruyan ilk özel koruma hakkı!' }
     ],
     3: [
-      { icon: '📡', name: 'Sinyal Kesici (Jammer)', desc: 'Karaborsadan jammer alıp hedefin telsiz ve konuşma frekansını susturabilirsin!' },
       { icon: '🐕‍🦺', name: 'Sadık Doberman', desc: 'Gaspa karşı seni koruyan ve yanından ayrılmayan özel bekçi köpeği!' },
       { icon: '🎭', name: 'Gizli Kimlik Maskesi', desc: '30 dakika boyunca ismini gizler ve konuşmalarına dumanlı aura katar!' }
     ],

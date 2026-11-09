@@ -6,31 +6,48 @@ function checkProfileSpecialActionsOwnership() {
     const av = (typeof window !== 'undefined' && (window.myAvatar || (typeof myAvatar !== 'undefined' ? myAvatar : {}))) || {};
     const myLvl = (typeof LevelClient !== 'undefined' && LevelClient.currentLevel) ? LevelClient.currentLevel : ((typeof window !== 'undefined' && (window.myLevel || window.myPlayerLevel)) || 1);
 
-    const hasZeus = (myLvl >= 4) && (
-                    (typeof window !== 'undefined' && window.myZeusCount > 0) ||
-                    (propInv['props_zeus_yildirimi'] > 0) ||
-                    (Array.isArray(inv) && (inv.includes('props_zeus_yildirimi') || inv.includes('zeus_yildirimi'))) ||
-                    (av.heldItem === 'zeus_yildirimi' || av.heldItem === 'zeus_spear' || av.heldItem === 'zeus_simsegi') ||
-                    (typeof isItemOwned === 'function' && isItemOwned('props', 'zeus_yildirimi')) ||
-                    (typeof window !== 'undefined' && !!window.hasZeusLightning));
+    let zeusCount = 0;
+    if (propInv['props_zeus_yildirimi'] !== undefined) {
+        zeusCount = Number(propInv['props_zeus_yildirimi']) || 0;
+    } else if (typeof window !== 'undefined' && window.myZeusCount !== undefined) {
+        zeusCount = Number(window.myZeusCount) || 0;
+    } else if (propInv['zeus_yildirimi'] !== undefined) {
+        zeusCount = Number(propInv['zeus_yildirimi']) || 0;
+    } else if (Array.isArray(inv) && (inv.includes('props_zeus_yildirimi') || inv.includes('zeus_yildirimi'))) {
+        zeusCount = 1;
+    } else if (av.heldItem === 'zeus_yildirimi' || av.heldItem === 'zeus_spear' || av.heldItem === 'zeus_simsegi') {
+        zeusCount = 1;
+    }
 
-    const hasJammer = (myLvl >= 3) && (
-                      (typeof window !== 'undefined' && window.myJammerCount > 0) ||
-                      (propInv['props_jammer'] > 0) ||
-                      (propInv['jammer'] > 0) ||
-                      (Array.isArray(inv) && (inv.includes('props_jammer') || inv.includes('jammer'))) ||
-                      (typeof isItemOwned === 'function' && (isItemOwned('props', 'jammer') || isItemOwned('props', 'props_jammer'))));
+    let jammerCount = 0;
+    if (propInv['props_jammer'] !== undefined) {
+        jammerCount = Number(propInv['props_jammer']) || 0;
+    } else if (typeof window !== 'undefined' && window.myJammerCount !== undefined) {
+        jammerCount = Number(window.myJammerCount) || 0;
+    } else if (propInv['jammer'] !== undefined) {
+        jammerCount = Number(propInv['jammer']) || 0;
+    } else if (Array.isArray(inv) && (inv.includes('props_jammer') || inv.includes('jammer'))) {
+        jammerCount = 1;
+    }
 
-    const hasMugKnife = (myLvl >= 5) && (
-                        (typeof window !== 'undefined' && (window.myMugKnifeCount > 0 || !!window.myHasMugKnife)) ||
-                        (propInv['props_mug_knife'] > 0) ||
-                        (propInv['mug_knife'] > 0) ||
-                        (propInv['props_gasp_bicagi'] > 0) ||
-                        (propInv['gasp_bicagi'] > 0) ||
-                        (Array.isArray(inv) && (inv.includes('props_mug_knife') || inv.includes('mug_knife') || inv.includes('props_gasp_bicagi') || inv.includes('gasp_bicagi'))) ||
-                        (typeof isItemOwned === 'function' && (isItemOwned('props', 'mug_knife') || isItemOwned('props', 'props_mug_knife') || isItemOwned('props', 'props_gasp_bicagi'))));
+    let mugKnifeCount = 0;
+    if (propInv['props_mug_knife'] !== undefined) {
+        mugKnifeCount = Number(propInv['props_mug_knife']) || 0;
+    } else if (typeof window !== 'undefined' && window.myMugKnifeCount !== undefined) {
+        mugKnifeCount = Number(window.myMugKnifeCount) || 0;
+    } else if (typeof window !== 'undefined' && window.myHasMugKnife) {
+        mugKnifeCount = 1;
+    } else if (propInv['props_gasp_bicagi'] !== undefined) {
+        mugKnifeCount = Number(propInv['props_gasp_bicagi']) || 0;
+    } else if (Array.isArray(inv) && (inv.includes('props_mug_knife') || inv.includes('mug_knife') || inv.includes('props_gasp_bicagi') || inv.includes('gasp_bicagi'))) {
+        mugKnifeCount = 1;
+    }
 
-    return { hasZeus, hasJammer, hasMugKnife, myLvl };
+    const hasZeus = (myLvl >= 2) && (zeusCount > 0 || (typeof window !== 'undefined' && !!window.hasZeusLightning));
+    const hasJammer = (myLvl >= 2) && (jammerCount > 0);
+    const mugKnifeAvailable = (myLvl >= 2) && (mugKnifeCount > 0);
+
+    return { hasZeus, hasJammer, hasMugKnife: mugKnifeAvailable, zeusCount, jammerCount, mugKnifeCount, myLvl };
 }
 window.checkProfileSpecialActionsOwnership = checkProfileSpecialActionsOwnership;
 
@@ -292,31 +309,32 @@ function openPlayerInteractionModal(targetId, targetPlayer) {
                 </button>
             `;
         } else {
-            // YALNIZCA EŞYAYA SAHİP OLAN OYUNCULARDA GÖZÜKÜR & TEMATİK ANİMASYONLARLA YANIP SÖNER
-            const { hasZeus, hasJammer, hasMugKnife } = checkProfileSpecialActionsOwnership();
+            // Seviye 2 ve üzeri oyuncular için Saldırı & Sabotaj Teçhizatı (Jammer, Gasp, Zeus)
+            const { hasZeus, hasJammer, hasMugKnife, zeusCount, jammerCount, mugKnifeCount, myLvl } = checkProfileSpecialActionsOwnership();
 
             let specialActionsHtml = '';
-            if (hasJammer) {
+            if (myLvl >= 2) {
+                // 1. Sinyal Kesici Jammer
                 specialActionsHtml += `
-                    <button onclick="useJammerOnInteractingPlayer()" class="profile-side-tab tab-jammer animated-jammer" title="📡 Sinyal Kesici (Jammer)">
+                    <button onclick="useJammerOnInteractingPlayer()" class="profile-side-tab tab-jammer ${jammerCount > 0 ? 'animated-jammer' : 'dimmed-special'}" title="📡 Sinyal Kesici (Jammer) - ${jammerCount > 0 ? jammerCount + ' Adet' : 'Tekinsiz Tekin\'den Al'}">
                         <span class="tab-icon">📡</span>
-                        <span class="tab-tooltip">📡 Sinyal Kesici (3 Dk Sustur)</span>
+                        <span class="tab-tooltip">📡 Sinyal Kesici ${jammerCount > 0 ? '(' + jammerCount + ' Adet)' : '(0 Adet - VIP Club)'}</span>
                     </button>
                 `;
-            }
-            if (hasMugKnife) {
+
+                // 2. Gasp Bıçağı
                 specialActionsHtml += `
-                    <button id="profileMugActionBtn" onclick="useMugKnifeOnInteractingPlayer()" class="profile-side-tab tab-mug animated-mug" title="🗡️ Gasp Bıçağı (Max 2.000 TL)">
+                    <button id="profileMugActionBtn" onclick="useMugKnifeOnInteractingPlayer()" class="profile-side-tab tab-mug ${mugKnifeCount > 0 ? 'animated-mug' : 'dimmed-special'}" title="🗡️ Gasp Bıçağı - ${mugKnifeCount > 0 ? 'Hazır' : 'Tekinsiz Tekin\'den Al'}">
                         <span class="tab-icon">🗡️</span>
-                        <span class="tab-tooltip" id="profileMugTooltip">🗡️ Gasp Bıçağı (Max 2.000 TL)</span>
+                        <span class="tab-tooltip" id="profileMugTooltip">🗡️ Gasp Bıçağı ${mugKnifeCount > 0 ? '(Max 2.000 TL)' : '(0 Adet - VIP Club)'}</span>
                     </button>
                 `;
-            }
-            if (hasZeus) {
+
+                // 3. Zeus'un İlahi Yıldırımı
                 specialActionsHtml += `
-                    <button onclick="useZeusLightningOnInteractingPlayer()" class="profile-side-tab tab-zeus animated-zeus" title="⚡ Zeus'un Yıldırımı (İlahi Gazap - Günde 3 Kez)">
+                    <button onclick="useZeusLightningOnInteractingPlayer()" class="profile-side-tab tab-zeus ${zeusCount > 0 ? 'animated-zeus' : 'dimmed-special'}" title="⚡ Zeus'un Yıldırımı - ${zeusCount > 0 ? zeusCount + ' Adet' : 'Tekinsiz Tekin\'den Al'}">
                         <span class="tab-icon">⚡</span>
-                        <span class="tab-tooltip">⚡ Zeus'un Yıldırımı (Çarp & Kül Et!)</span>
+                        <span class="tab-tooltip">⚡ Zeus'un Yıldırımı ${zeusCount > 0 ? '(' + zeusCount + ' Adet)' : '(0 Adet - VIP Club)'}</span>
                     </button>
                 `;
             }
@@ -1703,8 +1721,13 @@ function sendTeaToInteractingPlayer() {
 function useJammerOnInteractingPlayer() {
     if (!currentInteractingPlayer) return;
     const myLvl = (typeof LevelClient !== 'undefined' && LevelClient.currentLevel) || window.myLevel || 1;
-    if (myLvl < 3) {
-        if (window.showGameError) window.showGameError('Sinyal Kesici (Jammer) kullanabilmek için en az Seviye 3 olmalısınız!');
+    if (myLvl < 2) {
+        if (window.showGameError) window.showGameError('Sinyal Kesici (Jammer) kullanabilmek için en az Seviye 2 olmalısınız!');
+        return;
+    }
+    const { jammerCount } = checkProfileSpecialActionsOwnership();
+    if (jammerCount <= 0) {
+        if (window.showGameError) window.showGameError("❌ Üzerinizde Sinyal Kesici (Jammer) kalmadı! VİP Club'da Tekinsiz Tekin'den satın alabilirsiniz (1.500 TL).");
         return;
     }
     const targetName = currentInteractingPlayer.name;
@@ -1726,8 +1749,13 @@ window.useJammerOnInteractingPlayer = useJammerOnInteractingPlayer;
 function useMugKnifeOnInteractingPlayer() {
     if (!currentInteractingPlayer) return;
     const myLvl = (typeof LevelClient !== 'undefined' && LevelClient.currentLevel) || window.myLevel || 1;
-    if (myLvl < 5) {
-        if (window.showGameError) window.showGameError('Gasp Bıçağı kullanabilmek için en az Seviye 5 olmalısınız!');
+    if (myLvl < 2) {
+        if (window.showGameError) window.showGameError('Gasp Bıçağı kullanabilmek için en az Seviye 2 olmalısınız!');
+        return;
+    }
+    const { mugKnifeCount } = checkProfileSpecialActionsOwnership();
+    if (mugKnifeCount <= 0) {
+        if (window.showGameError) window.showGameError("❌ Üzerinizde Gasp Bıçağı kalmadı! VİP Club'da Tekinsiz Tekin'den satın alabilirsiniz (2 💎).");
         return;
     }
     const targetName = currentInteractingPlayer.name;
@@ -1763,8 +1791,13 @@ window.useMugKnifeOnInteractingPlayer = useMugKnifeOnInteractingPlayer;
 function useZeusLightningOnInteractingPlayer() {
     if (!currentInteractingPlayer) return;
     const myLvl = (typeof LevelClient !== 'undefined' && LevelClient.currentLevel) || window.myLevel || 1;
-    if (myLvl < 4) {
-        if (window.showGameError) window.showGameError("Zeus'un İlahi Yıldırımı'nı çağırabilmek için en az Seviye 4 olmalısınız!");
+    if (myLvl < 2) {
+        if (window.showGameError) window.showGameError("Zeus'un İlahi Yıldırımı'nı çağırabilmek için en az Seviye 2 olmalısınız!");
+        return;
+    }
+    const { zeusCount } = checkProfileSpecialActionsOwnership();
+    if (zeusCount <= 0) {
+        if (window.showGameError) window.showGameError("❌ Üzerinizde Zeus'un İlahi Yıldırımı kalmadı! VİP Club'da Tekinsiz Tekin'den satın alabilirsiniz (2 💎).");
         return;
     }
     const targetName = currentInteractingPlayer.name;
@@ -2739,6 +2772,9 @@ if (typeof socket !== 'undefined' && socket) {
         if (data && typeof data.hasItem === 'boolean') {
             window.hasZeusLightning = data.hasItem;
         }
+        if (data && data.count !== undefined) {
+            window.myZeusCount = Number(data.count) || 0;
+        }
     });
 
     socket.on('friendRequestReceived', (data) => {
@@ -2768,6 +2804,15 @@ if (typeof socket !== 'undefined' && socket) {
 
     socket.on('propInventoryUpdate', (propInv) => {
         window.myPropInventory = propInv || {};
+        if (propInv && propInv['props_jammer'] !== undefined) {
+            window.myJammerCount = Number(propInv['props_jammer']) || 0;
+        }
+        if (propInv && propInv['props_zeus_yildirimi'] !== undefined) {
+            window.myZeusCount = Number(propInv['props_zeus_yildirimi']) || 0;
+        }
+        if (propInv && propInv['props_mug_knife'] !== undefined) {
+            window.myMugKnifeCount = Number(propInv['props_mug_knife']) || 0;
+        }
         updatePropsCountBadge();
         if (isItemInventoryOpen) renderItemInventoryUI();
         if (typeof renderWardrobeUI === 'function') renderWardrobeUI();

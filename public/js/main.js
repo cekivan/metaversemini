@@ -90,6 +90,8 @@ socket.on('loginSuccess', (data) => {
             if (typeof updatePropsCountBadge === 'function') updatePropsCountBadge();
         }
         if (data.jammerCount !== undefined) window.myJammerCount = data.jammerCount;
+        if (data.zeusCount !== undefined) window.myZeusCount = data.zeusCount;
+        if (data.mugKnifeCount !== undefined) window.myMugKnifeCount = data.mugKnifeCount;
         if (data.hasMugKnife !== undefined) window.myHasMugKnife = data.hasMugKnife;
         if (data.bodyguardsEquipped !== undefined) window.myBodyguardsEquipped = data.bodyguardsEquipped;
         if (data.bodyguardCount !== undefined) window.myBodyguardCount = data.bodyguardCount;

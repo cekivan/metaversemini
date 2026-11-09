@@ -318,7 +318,7 @@
       },
       "_id": "6ad3debb1552c02d3989a159",
       "username": "yasin",
-      "money": 1000000,
+      "money": 1001000,
       "gender": "male",
       "role": "admin",
       "isAdmin": true,
@@ -456,7 +456,7 @@
         "props_gasp_bicagi": 1,
         "props_kola": 2,
         "props_drone": 1,
-        "props_zeus_yildirimi": 3,
+        "props_zeus_yildirimi": 2,
         "props_cicek_lale": 1,
         "props_cicek_gul": 1,
         "props_cicek_lavanta": 1,
@@ -851,7 +851,7 @@
       },
       "horseExpiresAt": null,
       "horseModel": "royal_sprite",
-      "diamonds": 50,
+      "diamonds": 52,
       "ores": {
         "komur": 31,
         "bakir": 18,
@@ -878,7 +878,7 @@
       "hasMugKnife": true,
       "lastMugTime": 1793436812151,
       "zeusStrikes": {
-        "date": "2026-11-04",
+        "date": "2026-11-09",
         "count": 1
       },
       "farmPlots": [
@@ -1021,11 +1021,12 @@
       "totalXP": 5000,
       "level": 10,
       "dailyReward": {
-        "currentDay": 1,
-        "lastClaimDate": "2026-11-09",
+        "currentDay": 2,
+        "lastClaimDate": "2026-11-10",
         "freezesUsed": 0,
-        "totalClaims": 1
-      }
+        "totalClaims": 2
+      },
+      "zeusCount": 2
     },
     "babake": {
       "_id": "6ad3debb1552c02d3989a15f",
@@ -1694,7 +1695,7 @@
     "deneme": {
       "_id": "6ad3debc1552c02d3989a172",
       "username": "deneme",
-      "money": 79134,
+      "money": 79634,
       "gender": "male",
       "auth": {
         "hash": "3f5a6b2fc1b6c285f920e9f1e0eee7c81a53970115e7a043b8526d5a0177907e",
@@ -1821,7 +1822,7 @@
       "scale": 1,
       "scaleExpiresAt": null,
       "skinSets": {},
-      "diamonds": 5,
+      "diamonds": 6,
       "ores": {
         "komur": 11,
         "bakir": 6,
@@ -1850,7 +1851,7 @@
       "jammerCount": 0,
       "badgeUnlockOrder": [
         "resident",
-        "fish",
+        "fishing",
         "mining"
       ],
       "motto": "BROKE ZIBRAMKE",
@@ -1865,7 +1866,13 @@
       "lastCheckedSeniorityDays": 1,
       "minedRocksCount": 16,
       "totalXP": 16,
-      "level": 1
+      "level": 1,
+      "dailyReward": {
+        "currentDay": 1,
+        "lastClaimDate": "2026-11-10",
+        "freezesUsed": 0,
+        "totalClaims": 1
+      }
     },
     "mehmet": {
       "_id": "6ad3debc1552c02d3989a178",
@@ -11817,7 +11824,7 @@
       "money": 4343,
       "diamonds": 12,
       "level": 2,
-      "totalXP": 22,
+      "totalXP": 25,
       "gender": "male",
       "auth": {
         "hash": "2aaf36c305a7c601473ed67aafa64776590b597b66bc9197c6a857ceac0f5d37",
@@ -11857,14 +11864,21 @@
         "face_none",
         "props_none",
         "hats_baret_sari",
-        "shirts_vest_reflector_yellow"
+        "shirts_vest_reflector_yellow",
+        "props_mug_knife",
+        "props_jammer",
+        "props_zeus_yildirimi"
       ],
       "friends": [],
       "friendRequests": [],
       "house": null,
       "houses": {},
       "furnitureInventory": [],
-      "propInventory": {},
+      "propInventory": {
+        "props_jammer": 4,
+        "props_zeus_yildirimi": 4,
+        "props_mug_knife": 5
+      },
       "likes": 0,
       "dislikes": 0,
       "ratings": {},
@@ -11947,6 +11961,20 @@
         "komur": 3,
         "bakir": 2,
         "demir": 1
+      },
+      "jammerCount": 4,
+      "zeusCount": 4,
+      "mugKnifeCount": 5,
+      "hasMugKnife": true,
+      "dailyReward": {
+        "currentDay": 0,
+        "lastClaimDate": null,
+        "freezesUsed": 0,
+        "totalClaims": 0
+      },
+      "zeusStrikes": {
+        "date": "2026-11-09",
+        "count": 1
       }
     },
     "test_caylak_17942303": {
@@ -18105,6 +18133,163 @@
       "standupCount": 0,
       "ganyanBetsCount": 0,
       "createdAt": 1794251447751
+    },
+    "k2test_94802": {
+      "username": "k2test_94802",
+      "money": 1000,
+      "diamonds": 0,
+      "level": 1,
+      "totalXP": 0,
+      "dailyReward": {
+        "currentDay": 0,
+        "lastClaimDate": null,
+        "freezesUsed": 0,
+        "totalClaims": 0
+      },
+      "gender": "male",
+      "auth": {
+        "hash": "f1856414df9b6a12b17139b0d8160fe339d489401cf3506131d0f47806caa92b",
+        "salt": "bc17602296ab359ddca9bd686920d982"
+      },
+      "role": "user",
+      "isAdmin": false,
+      "isMod": false,
+      "badgeUnlockOrder": [
+        "resident"
+      ],
+      "minedRocksCount": 0,
+      "botanicHarvestCount": 0,
+      "gamerGamesCount": 0,
+      "avatar": {
+        "model": "karakter_2",
+        "hat": "none",
+        "hair": "hair_k2_fade_pompadour",
+        "face": "none",
+        "skinColor": "#ffd1a4",
+        "shirtColor": "k2_cyber_street",
+        "color": "k2_cyber_street",
+        "shirt": "k2_cyber_street",
+        "pants": "pants_k2_tactical_jogger",
+        "shoes": "shoes_k2_skate_pro",
+        "heldItem": "none"
+      },
+      "inventory": [
+        "hair_k2_fade_pompadour",
+        "hair_hair_k2_fade_pompadour",
+        "skins_#ffd1a4",
+        "shirts_k2_cyber_street",
+        "k2_cyber_street",
+        "pants_pants_k2_tactical_jogger",
+        "pants_k2_tactical_jogger",
+        "shoes_shoes_k2_skate_pro",
+        "shoes_k2_skate_pro",
+        "face_none",
+        "props_none"
+      ],
+      "friends": [],
+      "friendRequests": [],
+      "house": null,
+      "houses": {},
+      "furnitureInventory": [],
+      "propInventory": {},
+      "likes": 0,
+      "dislikes": 0,
+      "ratings": {},
+      "motto": "",
+      "mood": "happy",
+      "fishCaughtCount": 0,
+      "minedCount": 0,
+      "botanicHarvestPoints": 0,
+      "batakGamesCount": 0,
+      "okeyGamesCount": 0,
+      "tavlaGamesCount": 0,
+      "billiardGamesCount": 0,
+      "chessGamesCount": 0,
+      "amiralBattiGamesCount": 0,
+      "xoxGamesCount": 0,
+      "standupCount": 0,
+      "ganyanBetsCount": 0,
+      "createdAt": 1794254348641
+    },
+    "testdummy_target": {
+      "username": "testdummy_target",
+      "money": 1000,
+      "diamonds": 0,
+      "level": 1,
+      "totalXP": 0,
+      "dailyReward": {
+        "currentDay": 0,
+        "lastClaimDate": null,
+        "freezesUsed": 0,
+        "totalClaims": 0
+      },
+      "gender": "male",
+      "auth": {
+        "hash": "055d0250ae2c4f273d5df8706d578e1bc9f617726f5d8699ade97d2f602cb219",
+        "salt": "8c8ec32b87507bd15b6e71b5ddbee278"
+      },
+      "role": "user",
+      "isAdmin": false,
+      "isMod": false,
+      "badgeUnlockOrder": [
+        "resident"
+      ],
+      "minedRocksCount": 0,
+      "botanicHarvestCount": 0,
+      "gamerGamesCount": 0,
+      "avatar": {
+        "model": "karakter_2",
+        "hat": "none",
+        "hair": "hair_k2_fade_pompadour",
+        "face": "none",
+        "skinColor": "#ffd1a4",
+        "shirtColor": "k2_cyber_street",
+        "color": "k2_cyber_street",
+        "shirt": "k2_cyber_street",
+        "pants": "pants_k2_tactical_jogger",
+        "shoes": "shoes_k2_skate_pro",
+        "heldItem": "none"
+      },
+      "inventory": [
+        "hair_k2_fade_pompadour",
+        "hair_hair_k2_fade_pompadour",
+        "skins_#ffd1a4",
+        "shirts_k2_cyber_street",
+        "k2_cyber_street",
+        "pants_pants_k2_tactical_jogger",
+        "pants_k2_tactical_jogger",
+        "shoes_shoes_k2_skate_pro",
+        "shoes_k2_skate_pro",
+        "face_none",
+        "props_none"
+      ],
+      "friends": [],
+      "friendRequests": [],
+      "house": null,
+      "houses": {},
+      "furnitureInventory": [],
+      "propInventory": {},
+      "likes": 0,
+      "dislikes": 0,
+      "ratings": {},
+      "motto": "",
+      "mood": "happy",
+      "fishCaughtCount": 0,
+      "minedCount": 0,
+      "botanicHarvestPoints": 0,
+      "batakGamesCount": 0,
+      "okeyGamesCount": 0,
+      "tavlaGamesCount": 0,
+      "billiardGamesCount": 0,
+      "chessGamesCount": 0,
+      "amiralBattiGamesCount": 0,
+      "xoxGamesCount": 0,
+      "standupCount": 0,
+      "ganyanBetsCount": 0,
+      "createdAt": 1794259351764,
+      "jammerExpiresAt": 1794259903480,
+      "isAshed": false,
+      "ashedUntil": 0
     }
   },
   "leaderboard": {
