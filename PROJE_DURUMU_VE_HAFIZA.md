@@ -34,6 +34,17 @@
 
 ## 2. Son Yapılan Kritik Geliştirmeler & Çözülen Sorunlar
 
+### 🍃 10 Kasım 2026 | MongoDB Atlas Canlı Bağlantısı, Seviye/XP Verilerinin Geri Yüklenmesi & İki Yönlü Senkronizasyon Koruması
+1. **MongoDB Atlas Entegrasyonu:**
+   - `.env` içerisindeki bağlantı adresi MongoDB Atlas kümesine bağlandı ve canlı veritabanı aktif edildi (`316 kullanıcı`).
+2. **Kök Sebep Analizi ve Seviye Verilerinin Geri Yüklenmesi:**
+   - `src/dataManager.js` içindeki `syncDataJsonToMongo()` fonksiyonunun MongoDB'de mevcut olan kullanıcıları güncellememesi ve eski MongoDB verilerini çekerek `data.json`'daki yeni seviyeleri ezmesi sorunu tespit edildi.
+   - Git hafızasındaki en güncel commit (`37b7dfe`) üzerinden tüm kullanıcıların seviye (`level`), toplam XP (`totalXP`), bakiye ve özel eşyaları çıkarılarak MongoDB Atlas'a ve `data.json`'a eksiksiz işlendi (`yasin`: Lv 10, `10kasım`: Lv 2, `kadın`: Lv 3, `ahmet`: Lv 10).
+3. **Kalıcı Çift Yönlü Güvenlik ve Anlık Senkronizasyon:**
+   - `syncDataJsonToMongo()` iki yönlü akıllı birleştirme (merge) yapacak şekilde güçlendirildi; artık daha yüksek seviye ve XP'ler asla ezilmez.
+   - `flushNowSync()` anlık disk yazımı ve `User.updateOne` anlık MongoDB kaydı entegre edildi.
+   - Proxy içindeki Date serileştirme hatası (`this is not a Date object`) çözüldü.
+
 ### 🚀 10 Kasım 2026 | Sol Üst Seviye Barının Kaldırılması, Beta v1.4 Butonunun Silinmesi & Seviye 2 Jammer / Zeus Yıldırımı Çözümü
 1. **Sol Üst HUD Seviye Barının Kaldırılması:**
    - `public/index.html` içerisindeki `#hudLevelContainer` DOM elemanı silindi; sol üstteki XP barı ve rozet kaldırıldı. Oyuncunun seviye ilerlemesi artık sadece Profil modalindeki 12 kare rozet vitrininde ve Seviye Sistemi penceresinde görünür.

@@ -6,6 +6,31 @@ Bu dosya, projede yapılan tüm geliştirmelerin, mimari değişikliklerin, hata
 
 ## 📅 10 Kasım 2026
 
+### ⏰ 00:50 | 🍃 MongoDB Atlas Canlı Bağlantısı, Seviye/XP Verilerinin Geri Yüklenmesi & İki Yönlü Senkronizasyon Koruması
+- **Kullanıcı Talebi:**
+  - *"level güncellemeleri falan gitmiş hep buradan yüklediğim için. mongodbye hani kaydolması gerekmiyor muydu?"*
+
+- **Tespit Edilen Kök Sebepler:**
+  1. **MongoDB Atlas URI Eksikliği (.env):** `.env` dosyasında yerel `mongodb://127.0.0.1:27017/lokal_test` adresi tanımlıydı; yerel MongoDB servisi çalışmadığı için sunucu `ECONNREFUSED` hatası verip doğrudan yerel `data.json` dosyasına fallback yapıyordu. Kullanıcının gerçek MongoDB Atlas adresi `.env` dosyasına eklendi.
+  2. **Tek Yönlü ve Ezici Senkronizasyon (syncDataJsonToMongo):** `src/dataManager.js` içindeki `syncDataJsonToMongo()` fonksiyonu, MongoDB'de zaten var olan kullanıcıları `data.json` ile güncellemiyordu (`if (!existing) continue`). Ardından MongoDB'deki eski (seviye sistemi eklenmeden önceki) dokümanları çekip belleğe yüklüyor ve `scheduleDiskBackup()` ile `data.json`'daki yeni seviye ve XP verilerinin üzerine yazıyordu!
+  3. **Proxy Date Serileştirme Hatası:** `createDeepDirtyProxy` fonksiyonunun `Date` nesnelerini sarmalaması sebebiyle `Date.prototype.toJSON` çökmekte ve diske yazma işlemi `this is not a Date object` uyarısı vermekteydi.
+
+- **Uygulanan Çözümler:**
+  1. **Tüm Seviye ve Eşya Verilerinin Geri Yüklenmesi:**
+     - Git commit `37b7dfe` hafızasından tüm kullanıcıların seviye (`level`), toplam XP (`totalXP`), bakiye, elmas, jammer ve zeus envanterleri çıkarıldı.
+     - `scratch/restore_and_sync_mongo.js` aracıyla MongoDB Atlas veritabanındaki 316 kullanıcının tamamı güncellendi ve eşitlendi:
+       - `yasin`: Seviye 10, totalXP: 5000, 1.001.000 TL, 52 Elmas, 2 Jammer, 2 Zeus.
+       - `ahmet`: Seviye 10.
+       - `kadın`: Seviye 3, totalXP: 74.
+       - `10kasım`: Seviye 2, totalXP: 25, 4 Jammer, 4 Zeus, 5 Gasp Bıçağı.
+  2. **İki Yönlü Akıllı Senkronizasyon (syncDataJsonToMongo):**
+     - `src/dataManager.js` güncellendi: Artık hem eksik kullanıcılar MongoDB'ye aktarılıyor, hem de MongoDB'de mevcut olan kullanıcıların daha yüksek/yeni verileri (`level`, `totalXP`, `money`, `diamonds`, `jammerCount`, vb.) otomatik olarak MongoDB Atlas'a işleniyor.
+  3. **Anlık Diske Yazma (flushNowSync) & Proxy Koruması:**
+     - `createDeepDirtyProxy` içerisine `Date`, `RegExp` ve `Buffer` filtreleri eklendi; serileştirme hatası tamamen çözüldü.
+     - `flushNowSync()` fonksiyonu eklendi ve `levelSystem.js` içerisine entegre edildi. Artık oyuncu seviye atladığında veya verisi güncellendiğinde hem anında MongoDB'ye (`User.updateOne`) hem de diske (`flushNowSync`) sıfır gecikmeyle kaydedilmektedir.
+
+---
+
 ### ⏰ 00:30 | 🚀 Sol Üst Seviye Barının Kaldırılması, Üst Menüden Beta v1.4 Butonunun Silinmesi & Seviye 2 Jammer / Zeus Yıldırımı Kilitlerinin Açılması
 - **Kullanıcı Talepleri:**
   1. *"bir de level ilerlemesi profilde var sol üstten kaldır bu ilerlemeyi."*
@@ -111,6 +136,31 @@ Bu dosya, projede yapılan tüm geliştirmelerin, mimari değişikliklerin, hata
 ---
 
 ## 📅 10 Kasım 2026
+
+### ⏰ 00:50 | 🍃 MongoDB Atlas Canlı Bağlantısı, Seviye/XP Verilerinin Geri Yüklenmesi & İki Yönlü Senkronizasyon Koruması
+- **Kullanıcı Talebi:**
+  - *"level güncellemeleri falan gitmiş hep buradan yüklediğim için. mongodbye hani kaydolması gerekmiyor muydu?"*
+
+- **Tespit Edilen Kök Sebepler:**
+  1. **MongoDB Atlas URI Eksikliği (.env):** `.env` dosyasında yerel `mongodb://127.0.0.1:27017/lokal_test` adresi tanımlıydı; yerel MongoDB servisi çalışmadığı için sunucu `ECONNREFUSED` hatası verip doğrudan yerel `data.json` dosyasına fallback yapıyordu. Kullanıcının gerçek MongoDB Atlas adresi `.env` dosyasına eklendi.
+  2. **Tek Yönlü ve Ezici Senkronizasyon (syncDataJsonToMongo):** `src/dataManager.js` içindeki `syncDataJsonToMongo()` fonksiyonu, MongoDB'de zaten var olan kullanıcıları `data.json` ile güncellemiyordu (`if (!existing) continue`). Ardından MongoDB'deki eski (seviye sistemi eklenmeden önceki) dokümanları çekip belleğe yüklüyor ve `scheduleDiskBackup()` ile `data.json`'daki yeni seviye ve XP verilerinin üzerine yazıyordu!
+  3. **Proxy Date Serileştirme Hatası:** `createDeepDirtyProxy` fonksiyonunun `Date` nesnelerini sarmalaması sebebiyle `Date.prototype.toJSON` çökmekte ve diske yazma işlemi `this is not a Date object` uyarısı vermekteydi.
+
+- **Uygulanan Çözümler:**
+  1. **Tüm Seviye ve Eşya Verilerinin Geri Yüklenmesi:**
+     - Git commit `37b7dfe` hafızasından tüm kullanıcıların seviye (`level`), toplam XP (`totalXP`), bakiye, elmas, jammer ve zeus envanterleri çıkarıldı.
+     - `scratch/restore_and_sync_mongo.js` aracıyla MongoDB Atlas veritabanındaki 316 kullanıcının tamamı güncellendi ve eşitlendi:
+       - `yasin`: Seviye 10, totalXP: 5000, 1.001.000 TL, 52 Elmas, 2 Jammer, 2 Zeus.
+       - `ahmet`: Seviye 10.
+       - `kadın`: Seviye 3, totalXP: 74.
+       - `10kasım`: Seviye 2, totalXP: 25, 4 Jammer, 4 Zeus, 5 Gasp Bıçağı.
+  2. **İki Yönlü Akıllı Senkronizasyon (syncDataJsonToMongo):**
+     - `src/dataManager.js` güncellendi: Artık hem eksik kullanıcılar MongoDB'ye aktarılıyor, hem de MongoDB'de mevcut olan kullanıcıların daha yüksek/yeni verileri (`level`, `totalXP`, `money`, `diamonds`, `jammerCount`, vb.) otomatik olarak MongoDB Atlas'a işleniyor.
+  3. **Anlık Diske Yazma (flushNowSync) & Proxy Koruması:**
+     - `createDeepDirtyProxy` içerisine `Date`, `RegExp` ve `Buffer` filtreleri eklendi; serileştirme hatası tamamen çözüldü.
+     - `flushNowSync()` fonksiyonu eklendi ve `levelSystem.js` içerisine entegre edildi. Artık oyuncu seviye atladığında veya verisi güncellendiğinde hem anında MongoDB'ye (`User.updateOne`) hem de diske (`flushNowSync`) sıfır gecikmeyle kaydedilmektedir.
+
+---
 
 ### ⏰ 00:30 | 🚀 Sol Üst Seviye Barının Kaldırılması, Üst Menüden Beta v1.4 Butonunun Silinmesi & Seviye 2 Jammer / Zeus Yıldırımı Kilitlerinin Açılması
 - **Kullanıcı Talepleri:**

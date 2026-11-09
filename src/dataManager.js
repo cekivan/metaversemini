@@ -18,12 +18,15 @@ function markUserDirty(username) {
 }
 
 function createDeepDirtyProxy(targetObj, rootUsername) {
-    if (!targetObj || typeof targetObj !== 'object') return targetObj;
+    if (!targetObj || typeof targetObj !== 'object' || targetObj instanceof Date || targetObj instanceof RegExp || Buffer.isBuffer(targetObj)) return targetObj;
     return new Proxy(targetObj, {
         get(target, prop) {
             const val = target[prop];
-            if (val && typeof val === 'object') {
+            if (val && typeof val === 'object' && !(val instanceof Date) && !(val instanceof RegExp) && !Buffer.isBuffer(val)) {
                 return createDeepDirtyProxy(val, rootUsername);
+            }
+            if (typeof val === 'function') {
+                return val.bind(target);
             }
             return val;
         },
@@ -44,7 +47,7 @@ function createUsersProxy(rawObj = {}) {
     return new Proxy(rawObj, {
         get(target, prop) {
             const val = target[prop];
-            if (val && typeof val === 'object' && typeof prop === 'string') {
+            if (val && typeof val === 'object' && typeof prop === 'string' && !(val instanceof Date)) {
                 return createDeepDirtyProxy(val, prop);
             }
             return val;
@@ -88,22 +91,41 @@ let persistentData = {
 };
 
 let diskBackupTimer = null;
-function scheduleDiskBackup() {
+function flushNowSync() {
+    if (diskBackupTimer) {
+        clearTimeout(diskBackupTimer);
+        diskBackupTimer = null;
+    }
+    try {
+        const dataToSave = {
+            users: persistentData.users,
+            leaderboard: persistentData.leaderboard,
+            botanicMarketStock: persistentData.botanicMarketStock || { papatya: 20, lale: 20, gul: 20, lavanta: 20, orkide: 20, aycicegi: 20 }
+        };
+        const tempFile = DATA_FILE + '.tmp';
+        fs.writeFileSync(tempFile, JSON.stringify(dataToSave, null, 2), 'utf-8');
+        fs.renameSync(tempFile, DATA_FILE);
+    } catch (e) {
+        console.warn('Disk backup sync hatası:', e.message);
+    }
+}
+
+function scheduleDiskBackup(immediate = false) {
+    if (immediate) {
+        flushNowSync();
+        return;
+    }
     if (diskBackupTimer) return;
     diskBackupTimer = setTimeout(() => {
         diskBackupTimer = null;
-        try {
-            const dataToSave = {
-                users: persistentData.users,
-                leaderboard: persistentData.leaderboard,
-                botanicMarketStock: persistentData.botanicMarketStock || { papatya: 20, lale: 20, gul: 20, lavanta: 20, orkide: 20, aycicegi: 20 }
-            };
-            const tempFile = DATA_FILE + '.tmp';
-            fs.writeFileSync(tempFile, JSON.stringify(dataToSave, null, 2), 'utf-8');
-            fs.renameSync(tempFile, DATA_FILE);
-        } catch (e) { console.warn('Disk backup:', e.message); }
-    }, 1500);
+        flushNowSync();
+    }, 400); // 1500ms'den 400ms'ye indirilerek veri kaybı riski minimize edildi
 }
+
+// Süreç aniden kapansa bile verileri diske kesin kaydet
+process.on('exit', () => flushNowSync());
+process.on('SIGINT', () => { flushNowSync(); process.exit(0); });
+process.on('SIGTERM', () => { flushNowSync(); process.exit(0); });
 
 // --- 1. KRİPTOGRAFİK ŞİFRELEME (SCRYPT İLE GÜVENLİ HASH) ---
 function hashPassword(password, salt) {
@@ -278,6 +300,36 @@ async function syncDataJsonToMongo() {
                         delete doc.__v;
                         await User.create(doc);
                         addedCount++;
+                    } else {
+                        // Mevcut kullanıcıda data.json'daki daha yüksek/yeni verileri MongoDB'ye aktar
+                        const updateDoc = {};
+                        if (u.level !== undefined && (existing.level === undefined || u.level > (existing.level || 1))) {
+                            updateDoc.level = u.level;
+                        }
+                        if (u.totalXP !== undefined && (existing.totalXP === undefined || u.totalXP > (existing.totalXP || 0))) {
+                            updateDoc.totalXP = u.totalXP;
+                        }
+                        if (u.money !== undefined && u.money > (existing.money || 0)) {
+                            updateDoc.money = u.money;
+                        }
+                        if (u.diamonds !== undefined && u.diamonds > (existing.diamonds || 0)) {
+                            updateDoc.diamonds = u.diamonds;
+                        }
+                        if (u.jammerCount !== undefined && u.jammerCount > (existing.jammerCount || 0)) {
+                            updateDoc.jammerCount = u.jammerCount;
+                        }
+                        if (u.zeusCount !== undefined && u.zeusCount > (existing.zeusCount || 0)) {
+                            updateDoc.zeusCount = u.zeusCount;
+                        }
+                        if (u.mugKnifeCount !== undefined && u.mugKnifeCount > (existing.mugKnifeCount || 0)) {
+                            updateDoc.mugKnifeCount = u.mugKnifeCount;
+                        }
+                        if (u.hasMugKnife && !existing.hasMugKnife) {
+                            updateDoc.hasMugKnife = true;
+                        }
+                        if (Object.keys(updateDoc).length > 0) {
+                            await User.updateOne({ _id: existing._id }, { $set: updateDoc });
+                        }
                     }
                 } catch (userErr) {
                     // Tek bir kullanıcının hatası diğerlerini engellemesin
@@ -1168,6 +1220,7 @@ module.exports = {
     saveUserData,
     savePersistentDataAtomic,
     flushNow,
+    flushNowSync,
     findUserKey,
     parseHouseRoom,
     getFriendListData,

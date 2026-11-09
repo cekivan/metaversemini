@@ -163,8 +163,12 @@ function addPlayerXP(io, players, socketId, uData, xpAmount, source = 'genel') {
         });
     }
 
-    if (typeof dataManager !== 'undefined' && dataManager.savePersistentData) {
-        dataManager.savePersistentData();
+    if (typeof dataManager !== 'undefined') {
+        if (newLevel > oldLevel && typeof dataManager.flushNowSync === 'function') {
+            dataManager.flushNowSync();
+        } else if (dataManager.savePersistentData) {
+            dataManager.savePersistentData();
+        }
     }
 }
 
